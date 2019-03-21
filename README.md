@@ -21,13 +21,13 @@ Run the same command to update when a newer version becomes available.
 cd into a flutter project.
 
 ```bash
-cd to/my/project
+cd 
 ```
 
-Then, only the first time, you'll need to initialize for desktop.
+The first time you use hover for a project, you'll need to initialize the project for desktop. `hover init` requires a project path. This is usualy the path for your project on github or a self-hosted git service. __If you are unsure, just make something up, it can always be changed later.__
 
 ```bash
-hover init
+hover init github.com/my-project/simpleApplication
 ```
 
 This creates the directory `desktop` and adds Go files.
