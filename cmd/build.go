@@ -41,14 +41,11 @@ var buildCmd = &cobra.Command{
 		var outputBinaryPath = filepath.Join(outputDirectoryPath, projectName)
 		switch targetOS {
 		case "linux":
-			// ++ TODO
+			// no special filename
 		case "darwin":
-			fmt.Println("MacOX not yet supported")
-			os.Exit(1)
+			// no special filename
 		case "windows":
 			outputBinaryPath += ".exe"
-			fmt.Println("Windows not yet supported")
-			os.Exit(1)
 		default:
 			fmt.Printf("Target platform %s is not supported.\n", targetOS)
 			os.Exit(1)
