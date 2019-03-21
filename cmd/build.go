@@ -7,6 +7,7 @@ import (
 	"path/filepath"
 	"runtime"
 
+	"github.com/alecthomas/template"
 	"github.com/otiai10/copy"
 	"github.com/spf13/cobra"
 
@@ -38,18 +39,19 @@ var buildCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		var outputBinaryPath = filepath.Join(outputDirectoryPath, projectName)
+		var outputBinaryName = projectName
 		switch targetOS {
-		case "linux":
-			// no special filename
 		case "darwin":
 			// no special filename
+		case "linux":
+			// no special filename
 		case "windows":
-			outputBinaryPath += ".exe"
+			outputBinaryName += ".exe"
 		default:
 			fmt.Printf("Target platform %s is not supported.\n", targetOS)
 			os.Exit(1)
 		}
+		outputBinaryPath := filepath.Join(outputDirectoryPath, outputBinaryName)
 
 		engineCachePath := enginecache.ValidateOrUpdateEngine(targetOS)
 
@@ -156,8 +158,6 @@ var buildCmd = &cobra.Command{
 			"CGO_LDFLAGS="+cgoLdflags,
 		)
 
-		// static build
-
 		// set vars: (const?)
 		// vmArguments
 
@@ -169,5 +169,37 @@ var buildCmd = &cobra.Command{
 			fmt.Printf("Go build failed: %v\n", err)
 			os.Exit(1)
 		}
+
+		var runscriptExtension string
+		switch targetOS {
+		case "darwin":
+			runscriptExtension = "sh"
+			fmt.Println("run script for darwin is not yet supported")
+			return // TODO these two are not yet supported
+		case "linux":
+			runscriptExtension = "sh"
+		case "windows":
+			runscriptExtension = "bat"
+			fmt.Println("run script for windows is not yet supported")
+			return // TODO these two are not yet supported
+		default:
+			fmt.Printf("Target platform %s is not supported, runscriptExtension not implemented.\n", targetOS)
+			os.Exit(1)
+		}
+
+		tmplRunScript := template.Must(template.New("").Parse(assetsBox.MustString("run/" + targetOS + "." + runscriptExtension)))
+		runscriptFile, err := os.OpenFile(filepath.Join(outputDirectoryPath, projectName+"."+runscriptExtension), os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0775)
+		if err != nil {
+			fmt.Printf("Failed creating run script: %v\n", err)
+			os.Exit(1)
+		}
+		defer runscriptFile.Close()
+
+		err = tmplRunScript.Execute(runscriptFile, outputBinaryName)
+		if err != nil {
+			fmt.Printf("Failed executing runscript template: %v\n", err)
+			os.Exit(1)
+		}
+		fmt.Println(runscriptFile.Name())
 	},
 }
