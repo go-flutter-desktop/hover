@@ -43,3 +43,7 @@ hover build
 cd desktop/build/outputs/linux
 ./yourApplicationName
 ```
+
+## Issues
+
+Please report issues at the [go-flutter issue tracker](https://github.com/go-flutter-desktop/go-flutter/issues/).
