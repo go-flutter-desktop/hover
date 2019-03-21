@@ -317,6 +317,10 @@ func ValidateOrUpdateEngine(targetOS string) (engineCachePath string) {
 			os.Exit(1)
 		}
 
+		// TODO: these symlinks are absolute and copied that way as well, this
+		// doesn't work well for creating standalone applications. Investigate
+		// what the symlinks are for, and how to make them relative so that an
+		// application may be copied across machines/filesystems.
 		createSymLink(frameworkDestPath+"/Versions/A", frameworkDestPath+"/Versions/Current")
 		createSymLink(frameworkDestPath+"/Versions/Current/FlutterEmbedder", frameworkDestPath+"/FlutterEmbedder")
 		createSymLink(frameworkDestPath+"/Versions/Current/Headers", frameworkDestPath+"/Headers")
