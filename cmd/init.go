@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
@@ -15,9 +16,16 @@ func init() {
 }
 
 var initCmd = &cobra.Command{
-	Use:   "init",
+	Use:   "init [project]",
 	Short: "Initialize a flutter project to use go-flutter",
+	Args: func(cmd *cobra.Command, args []string) error {
+		if len(args) != 1 {
+			return errors.New("requires one argument, the project path. e.g.: github.com/my-organization/my-app")
+		}
+		return nil
+	},
 	Run: func(cmd *cobra.Command, args []string) {
+		projectPath := args[0]
 		assertInFlutterProject()
 
 		err := os.Mkdir("desktop", 0775)
@@ -53,7 +61,7 @@ var initCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		cmdGoModInit := exec.Command(goBin, "mod", "init")
+		cmdGoModInit := exec.Command(goBin, "mod", "init", projectPath+"/desktop")
 		cmdGoModInit.Dir = filepath.Join(wd, "desktop")
 		cmdGoModInit.Env = append(os.Environ(),
 			"GO111MODULE=on",
