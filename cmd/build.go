@@ -80,6 +80,25 @@ var buildCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
+		var engineFile string
+		switch targetOS {
+		case "darwin":
+			engineFile = "FlutterEmbedder.framework"
+		case "linux":
+			engineFile = "libflutter_engine.so"
+		case "windows":
+			engineFile = "flutter_engine.dll"
+		}
+
+		err = copy.Copy(
+			filepath.Join(engineCachePath, engineFile),
+			filepath.Join(outputDirectoryPath, engineFile),
+		)
+		if err != nil {
+			fmt.Printf("Failed to copy %s: %v\n", engineFile, err)
+			os.Exit(1)
+		}
+
 		err = copy.Copy(
 			filepath.Join(engineCachePath, "artifacts", "icudtl.dat"),
 			filepath.Join(outputDirectoryPath, "icudtl.dat"),
@@ -101,11 +120,11 @@ var buildCmd = &cobra.Command{
 		var cgoLdflags string
 		switch targetOS {
 		case "darwin":
-			cgoLdflags = fmt.Sprintf("-F%s -Wl,-rpath,@executable_path", engineCachePath)
+			cgoLdflags = fmt.Sprintf("-s -F%s -Wl,-rpath,@executable_path", engineCachePath)
 		case "linux":
-			cgoLdflags = fmt.Sprintf("-L%s", engineCachePath)
+			cgoLdflags = fmt.Sprintf("-s -L%s", engineCachePath)
 		case "windows":
-			cgoLdflags = fmt.Sprintf("-L%s", engineCachePath)
+			cgoLdflags = fmt.Sprintf("-s -L%s", engineCachePath)
 		default:
 			fmt.Printf("Target platform %s is not supported, cgo_ldflags not implemented.\n", targetOS)
 			os.Exit(1)
