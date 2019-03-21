@@ -15,4 +15,3 @@ go get -u github.com/go-flutter-desktop/hover
 ```
 
 Run the same command to update when a newer version becomes available.
-

@@ -167,7 +167,7 @@ func downloadFile(filepath string, url string) error {
 // flutter version, or otherwise downloads a new engine. The returned path is
 // that of the engine location.
 func ValidateOrUpdateEngine(targetOS string) (engineCachePath string) {
-	engineCachePath = filepath.Join(cachePath(), "glutter", "engine", targetOS)
+	engineCachePath = filepath.Join(cachePath(), "hover", "engine", targetOS)
 
 	cachedEngineVersionPath := filepath.Join(engineCachePath, "version")
 	cachedEngineVersionBytes, err := ioutil.ReadFile(cachedEngineVersionPath)
@@ -264,7 +264,7 @@ func ValidateOrUpdateEngine(targetOS string) (engineCachePath string) {
 
 	icudtlDownloadURL := fmt.Sprintf(targetedDomain+"/flutter_infra/flutter/%s/%s/artifacts.zip", requiredEngineVersionFullHash, platform)
 
-	dir, err := ioutil.TempDir("", "glutter-engine-download")
+	dir, err := ioutil.TempDir("", "hover-engine-download")
 	if err != nil {
 		fmt.Printf("Failed to create tmp dir for engine download: %v\n", err)
 		os.Exit(1)

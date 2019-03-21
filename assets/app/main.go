@@ -11,7 +11,7 @@ import (
 	"github.com/go-flutter-desktop/go-flutter"
 )
 
-// VMArguments may be set by glutter at compile-time
+// VMArguments may be set by hover at compile-time
 var VMArguments string
 
 func main() {
