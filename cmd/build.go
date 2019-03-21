@@ -117,11 +117,11 @@ var buildCmd = &cobra.Command{
 		var cgoLdflags string
 		switch targetOS {
 		case "darwin":
-			cgoLdflags = fmt.Sprintf("-s -F%s -Wl,-rpath,@executable_path", engineCachePath)
+			cgoLdflags = fmt.Sprintf("-F%s -Wl,-rpath,@executable_path", engineCachePath)
 		case "linux":
-			cgoLdflags = fmt.Sprintf("-s -L%s", engineCachePath)
+			cgoLdflags = fmt.Sprintf("-L%s", engineCachePath)
 		case "windows":
-			cgoLdflags = fmt.Sprintf("-s -L%s", engineCachePath)
+			cgoLdflags = fmt.Sprintf("-L%s", engineCachePath)
 		default:
 			fmt.Printf("Target platform %s is not supported, cgo_ldflags not implemented.\n", targetOS)
 			os.Exit(1)
