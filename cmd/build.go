@@ -128,12 +128,28 @@ var buildCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		cmdGoModDownload := exec.Command(goBin, "mod", "download")
 		wd, err := os.Getwd()
 		if err != nil {
 			fmt.Printf("Failed to get working dir: %v\n", err)
 			os.Exit(1)
 		}
+
+		cmdGoGetU := exec.Command(goBin, "get", "-u", "github.com/go-flutter-desktop/go-flutter")
+		cmdGoGetU.Dir = filepath.Join(wd, "desktop")
+		cmdGoGetU.Env = append(os.Environ(),
+			"GO111MODULE=on",
+			"CGO_LDFLAGS="+cgoLdflags,
+		)
+		cmdGoGetU.Stderr = os.Stderr
+		cmdGoGetU.Stdout = os.Stdout
+
+		err = cmdGoGetU.Run()
+		if err != nil {
+			fmt.Printf("Go get -u github.com/go-flutter-desktop/go-flutter failed: %v\n", err)
+			os.Exit(1)
+		}
+
+		cmdGoModDownload := exec.Command(goBin, "mod", "download")
 		cmdGoModDownload.Dir = filepath.Join(wd, "desktop")
 		cmdGoModDownload.Env = append(os.Environ(),
 			"GO111MODULE=on",
