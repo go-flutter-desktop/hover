@@ -16,6 +16,14 @@ go get -u github.com/go-flutter-desktop/hover
 
 Run the same command to update when a newer version becomes available.
 
+Install these dependencies:
+
+* You need to make sure you have dependencies of GLFW:
+	* On macOS, you need Xcode or Command Line Tools for Xcode (`xcode-select --install`) for required headers and libraries.
+	* On Ubuntu/Debian-like Linux distributions, you need `libgl1-mesa-dev xorg-dev` packages.
+	* On CentOS/Fedora-like Linux distributions, you need `libX11-devel libXcursor-devel libXrandr-devel libXinerama-devel mesa-libGL-devel libXi-devel` packages.
+	* See [here](http://www.glfw.org/docs/latest/compile.html#compile_deps) for full details.
+
 ### Use
 
 cd into a flutter project.
