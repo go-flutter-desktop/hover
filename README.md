@@ -40,8 +40,7 @@ To build and execute, run:
 
 ```bash
 hover build
-cd desktop/build/outputs/linux
-./yourApplicationName
+./desktop/build/outputs/linux/yourApplicationName
 ```
 
 ## Issues
