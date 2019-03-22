@@ -30,11 +30,11 @@ The first time you use hover for a project, you'll need to initialize the projec
 hover init github.com/my-organization/simpleApplication
 ```
 
-This creates the directory `desktop` and adds Go files.
+This creates the directory `desktop` and adds boilerplate files such as Go code and a default logo.
 
-You may add plugins in `desktop/cmd/options.go`
+Optionally, you may add [plugins](https://github.com/go-flutter-desktop/plugins) to `desktop/cmd/options.go`
 
-Optionally change the logo in `desktop/assets/logo.png`, which is used as icon for the window.
+Optionally, change the logo in `desktop/assets/logo.png`, which is used as icon for the window.
 
 To build and execute, run:
 
