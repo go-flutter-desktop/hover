@@ -7,7 +7,6 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"github.com/alecthomas/template"
 	"github.com/otiai10/copy"
 	"github.com/spf13/cobra"
 
@@ -170,36 +169,40 @@ var buildCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		var runscriptExtension string
-		switch targetOS {
-		case "darwin":
-			runscriptExtension = "sh"
-			fmt.Println("run script for darwin is not yet supported")
-			return // TODO these two are not yet supported
-		case "linux":
-			runscriptExtension = "sh"
-		case "windows":
-			runscriptExtension = "bat"
-			fmt.Println("run script for windows is not yet supported")
-			return // TODO these two are not yet supported
-		default:
-			fmt.Printf("Target platform %s is not supported, runscriptExtension not implemented.\n", targetOS)
-			os.Exit(1)
-		}
+		// It looks like we don't need the runscript anyway, disabled for now
+		// until I'm sure resolving assets can be done cross-platform at
+		// runtime.
 
-		tmplRunScript := template.Must(template.New("").Parse(assetsBox.MustString("run/" + targetOS + "." + runscriptExtension)))
-		runscriptFile, err := os.OpenFile(filepath.Join(outputDirectoryPath, projectName+"."+runscriptExtension), os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0775)
-		if err != nil {
-			fmt.Printf("Failed creating run script: %v\n", err)
-			os.Exit(1)
-		}
-		defer runscriptFile.Close()
+		// var runscriptExtension string
+		// switch targetOS {
+		// case "darwin":
+		// 	runscriptExtension = "sh"
+		// 	fmt.Println("run script for darwin is not yet supported")
+		// 	return // TODO these two are not yet supported
+		// case "linux":
+		// 	runscriptExtension = "sh"
+		// case "windows":
+		// 	runscriptExtension = "bat"
+		// 	fmt.Println("run script for windows is not yet supported")
+		// 	return // TODO these two are not yet supported
+		// default:
+		// 	fmt.Printf("Target platform %s is not supported, runscriptExtension not implemented.\n", targetOS)
+		// 	os.Exit(1)
+		// }
 
-		err = tmplRunScript.Execute(runscriptFile, outputBinaryName)
-		if err != nil {
-			fmt.Printf("Failed executing runscript template: %v\n", err)
-			os.Exit(1)
-		}
-		fmt.Println(runscriptFile.Name())
+		// tmplRunScript := template.Must(template.New("").Parse(assetsBox.MustString("run/" + targetOS + "." + runscriptExtension)))
+		// runscriptFile, err := os.OpenFile(filepath.Join(outputDirectoryPath, projectName+"."+runscriptExtension), os.O_CREATE|os.O_RDWR|os.O_TRUNC, 0775)
+		// if err != nil {
+		// 	fmt.Printf("Failed creating run script: %v\n", err)
+		// 	os.Exit(1)
+		// }
+		// defer runscriptFile.Close()
+
+		// err = tmplRunScript.Execute(runscriptFile, outputBinaryName)
+		// if err != nil {
+		// 	fmt.Printf("Failed executing runscript template: %v\n", err)
+		// 	os.Exit(1)
+		// }
+		// fmt.Println(runscriptFile.Name())
 	},
 }
