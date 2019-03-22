@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/go-flutter-desktop/go-flutter"
+	"github.com/pkg/errors"
 )
 
 // VMArguments may be set by hover at compile-time
@@ -28,13 +29,21 @@ func main() {
 }
 
 func iconProvider() ([]image.Image, error) {
-	imgFile, err := os.Open(filepath.Join("assets", "logo.png"))
+	execPath, err := os.Executable()
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to resolve executable path")
+	}
+	execPath, err = filepath.EvalSymlinks(execPath)
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to eval symlinks for executable path")
+	}
+	imgFile, err := os.Open(filepath.Join(filepath.Dir(execPath), "assets", "logo.png"))
+	if err != nil {
+		return nil, errors.Wrap(err, "failed to open assets/logo.png")
 	}
 	img, _, err := image.Decode(imgFile)
 	if err != nil {
-		return nil, err
+		return nil, errors.Wrap(err, "failed to decode image")
 	}
 	return []image.Image{img}, nil
 }
