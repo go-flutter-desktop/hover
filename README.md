@@ -1,4 +1,4 @@
-# Hover - Release Flutter applications on the desktop
+# Hover - Run Flutter apps on the desktop with hot-reload
 
 Hover is a simple build tool to create flutter desktop applications.
 
