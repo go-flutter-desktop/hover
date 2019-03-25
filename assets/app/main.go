@@ -12,13 +12,13 @@ import (
 	"github.com/pkg/errors"
 )
 
-// VMArguments may be set by hover at compile-time
-var VMArguments string
+// vmArguments may be set by hover at compile-time
+var vmArguments string
 
 func main() {
 	// DO NOT EDIT, add options in options.go
 	mainOptions := []flutter.Option{
-		flutter.OptionVMArguments(strings.Split(VMArguments, ";")),
+		flutter.OptionVMArguments(strings.Split(vmArguments, ";")),
 		flutter.WindowIcon(iconProvider),
 	}
 	err := flutter.Run(append(options, mainOptions...)...)
