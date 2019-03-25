@@ -1,8 +1,10 @@
 # Hover - Run Flutter apps on the desktop with hot-reload
 
-Hover is a simple build tool to create flutter desktop applications.
+Hover is a simple build tool to create [Flutter](https://flutter.dev) desktop applications.
 
 **Hover is brand new and under development, it should be considered alpha. Anything can break, please backup your data before using hover**
+
+Hover is part of the [go-flutter](https://github.com/go-flutter-desktop/go-flutter) project. Please report issues at the [go-flutter issue tracker](https://github.com/go-flutter-desktop/go-flutter/issues/).
 
 ## Getting started
 
