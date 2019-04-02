@@ -8,7 +8,9 @@ Hover is part of the [go-flutter](https://github.com/go-flutter-desktop/go-flutt
 
 ## Install
 
-First install go, then install hover like this:
+Hover uses [Go](https://golang.org) to build your Flutter application to desktop. Hover itself is also written using the Go language. You will need to [install go](https://golang.org/doc/install) on your development machine.
+
+Then install hover like this:
 
 ```bash
 go get -u github.com/go-flutter-desktop/hover
