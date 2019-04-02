@@ -37,9 +37,9 @@ func iconProvider() ([]image.Image, error) {
 	if err != nil {
 		return nil, errors.Wrap(err, "failed to eval symlinks for executable path")
 	}
-	imgFile, err := os.Open(filepath.Join(filepath.Dir(execPath), "assets", "logo.png"))
+	imgFile, err := os.Open(filepath.Join(filepath.Dir(execPath), "assets", "icon.png"))
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to open assets/logo.png")
+		return nil, errors.Wrap(err, "failed to open assets/icon.png")
 	}
 	img, _, err := image.Decode(imgFile)
 	if err != nil {
