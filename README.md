@@ -6,9 +6,7 @@ Hover is a simple build tool to create [Flutter](https://flutter.dev) desktop ap
 
 Hover is part of the [go-flutter](https://github.com/go-flutter-desktop/go-flutter) project. Please report issues at the [go-flutter issue tracker](https://github.com/go-flutter-desktop/go-flutter/issues/).
 
-## Getting started
-
-### Install
+## Install
 
 First install go, then install hover like this:
 
@@ -26,7 +24,11 @@ Install these dependencies:
 	* On CentOS/Fedora-like Linux distributions, you need `libX11-devel libXcursor-devel libXrandr-devel libXinerama-devel mesa-libGL-devel libXi-devel` packages.
 	* See [here](http://www.glfw.org/docs/latest/compile.html#compile_deps) for full details.
 
-### Init project
+## Getting started with an existing Flutter project
+
+This assumes you have an existing flutter project which you want to run on desktop. If you don't have a project yet, follow the flutter tutorial for setting up a new project first.
+
+### Init project for hover
 
 cd into a flutter project.
 
