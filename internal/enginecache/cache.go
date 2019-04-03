@@ -19,13 +19,13 @@ import (
 	"github.com/pkg/errors"
 )
 
-func createSymLink(from, to string) error {
-	err := os.Remove(to)
+func createSymLink(oldname, newname string) error {
+	err := os.Remove(newname)
 	if err != nil && !os.IsNotExist(err) {
 		return errors.Wrap(err, "failed to remove existing symlink")
 	}
 
-	err = os.Symlink(from, to)
+	err = os.Symlink(oldname, newname)
 	if err != nil {
 		return errors.Wrap(err, "failed to create symlink")
 	}
@@ -317,15 +317,11 @@ func ValidateOrUpdateEngine(targetOS string) (engineCachePath string) {
 			os.Exit(1)
 		}
 
-		// TODO: these symlinks are absolute and copied that way as well, this
-		// doesn't work well for creating standalone applications. Investigate
-		// what the symlinks are for, and how to make them relative so that an
-		// application may be copied across machines/filesystems.
-		createSymLink(frameworkDestPath+"/Versions/A", frameworkDestPath+"/Versions/Current")
-		createSymLink(frameworkDestPath+"/Versions/Current/FlutterEmbedder", frameworkDestPath+"/FlutterEmbedder")
-		createSymLink(frameworkDestPath+"/Versions/Current/Headers", frameworkDestPath+"/Headers")
-		createSymLink(frameworkDestPath+"/Versions/Current/Modules", frameworkDestPath+"/Modules")
-		createSymLink(frameworkDestPath+"/Versions/Current/Resources", frameworkDestPath+"/Resources")
+		createSymLink("A", frameworkDestPath+"/Versions/Current")
+		createSymLink("Versions/Current/FlutterEmbedder", frameworkDestPath+"/FlutterEmbedder")
+		createSymLink("Versions/Current/Headers", frameworkDestPath+"/Headers")
+		createSymLink("Versions/Current/Modules", frameworkDestPath+"/Modules")
+		createSymLink("Versions/Current/Resources", frameworkDestPath+"/Resources")
 
 	case "linux-x64":
 		err := os.Rename(
