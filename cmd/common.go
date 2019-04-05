@@ -69,3 +69,15 @@ Fail:
 	os.Exit(1)
 	return ""
 }
+
+func assertHoverInitialized() {
+	_, err := os.Stat("desktop")
+	if os.IsNotExist(err) {
+		fmt.Println("Directory 'desktop' is missing, did you run `hover init` in this project?")
+		os.Exit(1)
+	}
+	if err != nil {
+		fmt.Printf("Failed to detect directory desktop: %v\n", err)
+		os.Exit(1)
+	}
+}

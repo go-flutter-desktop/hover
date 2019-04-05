@@ -28,6 +28,7 @@ var buildCmd = &cobra.Command{
 	Short: "Build a desktop release",
 	Run: func(cmd *cobra.Command, args []string) {
 		projectName := assertInFlutterProject()
+		assertHoverInitialized()
 
 		// Hardcode target to the current OS (no cross-compile support yet)
 		targetOS := runtime.GOOS

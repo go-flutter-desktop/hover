@@ -52,7 +52,7 @@ var initCmd = &cobra.Command{
 
 		copyAsset("app/main.go", filepath.Join(desktopCmdPath, "main.go"))
 		copyAsset("app/options.go", filepath.Join(desktopCmdPath, "options.go"))
-		copyAsset("app/logo.png", filepath.Join(desktopAssetsPath, "logo.png"))
+		copyAsset("app/icon.png", filepath.Join(desktopAssetsPath, "icon.png"))
 		copyAsset("app/gitignore", filepath.Join("desktop", ".gitignore"))
 
 		wd, err := os.Getwd()
