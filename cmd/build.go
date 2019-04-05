@@ -19,7 +19,7 @@ var dotSlash = string([]byte{'.', filepath.Separator})
 var buildTargetMainDart string
 
 func init() {
-	buildCmd.Flags().StringVarP(&buildTargetMainDart, "target", "t", "lib/main.dart", "The main entry-point file of the application.")
+	buildCmd.Flags().StringVarP(&buildTargetMainDart, "target", "t", "lib/main_desktop.dart", "The main entry-point file of the application.")
 	rootCmd.AddCommand(buildCmd)
 }
 

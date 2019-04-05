@@ -61,17 +61,19 @@ debugDefaultTargetPlatformOverride = TargetPlatform.fuchsia;
 To run the application and attach flutter for hot-reload support:
 
 ```bash
-hover run --target lib/main_desktop.dart
+hover run
 ```
 
 The hot-reload is manual because you'll need to press 'r' in the terminal to hot-reload the application.
+
+By default, hover uses the file `lib/main_desktop.dart` as entrypoint. You may specify a different endpoint by using the `--target` flag.
 
 ### Build standalone application
 
 To create a standalone debug build run this command:
 
 ```bash
-hover build --target lib/main_desktop.dart
+hover build
 ```
 
 The output will be in `desktop/build/outputs/linux` or windows or darwin depending on your OS. Hover does not yet support cross-compilation.
