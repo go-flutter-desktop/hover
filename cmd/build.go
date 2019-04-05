@@ -135,11 +135,14 @@ func build(projectName string, targetOS string, vmArguments []string) {
 	var cgoLdflags string
 	switch targetOS {
 	case "darwin":
-		cgoLdflags = fmt.Sprintf("-F%s -Wl,-rpath,@executable_path", engineCachePath)
+		engineCachePathEscaped := strings.ReplaceAll(engineCachePath, " ", "\\ ")
+		cgoLdflags = fmt.Sprintf("-F%s -Wl,-rpath,@executable_path", engineCachePathEscaped)
 	case "linux":
-		cgoLdflags = fmt.Sprintf("-L%s", engineCachePath)
+		engineCachePathEscaped := strings.ReplaceAll(engineCachePath, " ", "\\ ")
+		cgoLdflags = fmt.Sprintf("-L%s", engineCachePathEscaped)
 	case "windows":
-		cgoLdflags = fmt.Sprintf("-L%s", engineCachePath)
+		engineCachePathEscaped := strings.ReplaceAll(engineCachePath, " ", "^ ")
+		cgoLdflags = fmt.Sprintf("-L%s", engineCachePathEscaped)
 	default:
 		fmt.Printf("Target platform %s is not supported, cgo_ldflags not implemented.\n", targetOS)
 		os.Exit(1)
@@ -162,7 +165,7 @@ func build(projectName string, targetOS string, vmArguments []string) {
 
 	err = cmdGoGetU.Run()
 	if err != nil {
-		fmt.Printf("Go get -u github.com/go-flutter-desktop/go-flutter failed: %v\n", err)
+		fmt.Printf("Updating go-flutter to latest version failed: %v\n", err)
 		os.Exit(1)
 	}
 
