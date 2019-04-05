@@ -143,11 +143,14 @@ func build(projectName string, targetOS string, vmArguments []string) {
 	var cgoLdflags string
 	switch targetOS {
 	case "darwin":
-		cgoLdflags = fmt.Sprintf("-F%s -Wl,-rpath,@executable_path", engineCachePath)
+		engineCachePathEscaped := strings.ReplaceAll(engineCachePath, " ", "\\ ")
+		cgoLdflags = fmt.Sprintf("-F%s -Wl,-rpath,@executable_path", engineCachePathEscaped)
 	case "linux":
-		cgoLdflags = fmt.Sprintf("-L%s", engineCachePath)
+		engineCachePathEscaped := strings.ReplaceAll(engineCachePath, " ", "\\ ")
+		cgoLdflags = fmt.Sprintf("-L%s", engineCachePathEscaped)
 	case "windows":
-		cgoLdflags = fmt.Sprintf("-L%s", engineCachePath)
+		engineCachePathEscaped := strings.ReplaceAll(engineCachePath, " ", "^ ")
+		cgoLdflags = fmt.Sprintf("-L%s", engineCachePathEscaped)
 	default:
 		fmt.Printf("hover: Target platform %s is not supported, cgo_ldflags not implemented.\n", targetOS)
 		os.Exit(1)
