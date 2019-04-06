@@ -39,44 +39,52 @@ func unzip(src string, dest string) ([]string, error) {
 
 	r, err := zip.OpenReader(src)
 	if err != nil {
-		return nil, err
+		return filenames, err
 	}
 	defer r.Close()
 
 	for _, f := range r.File {
-		rc, err := f.Open()
-		if err != nil {
-			return nil, err
-		}
-		defer rc.Close()
 
 		// Store filename/path for returning and using later on
 		fpath := filepath.Join(dest, f.Name)
 
 		// Check for ZipSlip. More Info: http://bit.ly/2MsjAWE
 		if !strings.HasPrefix(fpath, filepath.Clean(dest)+string(os.PathSeparator)) {
-			return nil, fmt.Errorf("%s: illegal file path", fpath)
+			return filenames, fmt.Errorf("%s: illegal file path", fpath)
 		}
+
+		filenames = append(filenames, fpath)
 
 		if f.FileInfo().IsDir() {
+			// Make Folder
 			os.MkdirAll(fpath, os.ModePerm)
-		} else {
-			if err = os.MkdirAll(filepath.Dir(fpath), os.ModePerm); err != nil {
-				return nil, err
-			}
-
-			outFile, err := os.OpenFile(fpath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
-			if err != nil {
-				return nil, err
-			}
-
-			_, err = io.Copy(outFile, rc)
-			outFile.Close()
-			if err != nil {
-				return nil, errors.Wrap(err, "failed to copy file")
-			}
+			continue
 		}
-		filenames = append(filenames, fpath)
+
+		// Make File
+		if err = os.MkdirAll(filepath.Dir(fpath), os.ModePerm); err != nil {
+			return filenames, err
+		}
+
+		outFile, err := os.OpenFile(fpath, os.O_WRONLY|os.O_CREATE|os.O_TRUNC, f.Mode())
+		if err != nil {
+			return filenames, err
+		}
+
+		rc, err := f.Open()
+		if err != nil {
+			return filenames, err
+		}
+
+		_, err = io.Copy(outFile, rc)
+
+		// Close the file without defer to close before next iteration of loop
+		outFile.Close()
+		rc.Close()
+
+		if err != nil {
+			return filenames, err
+		}
 	}
 	return filenames, nil
 }
@@ -85,12 +93,7 @@ func unzip(src string, dest string) ([]string, error) {
 func printDownloadPercent(done chan chan struct{}, path string, expectedSize int64) {
 	var completedCh chan struct{}
 	for {
-		file, err := os.Open(path)
-		if err != nil {
-			log.Fatal(err)
-		}
-
-		fi, err := file.Stat()
+		fi, err := os.Stat(path)
 		if err != nil {
 			log.Fatal(err)
 		}
