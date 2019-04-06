@@ -121,6 +121,36 @@ func printDownloadPercent(done chan chan struct{}, path string, expectedSize int
 	}
 }
 
+func moveFile(srcPath, destPath string) error {
+	srcFile, err := os.Open(srcPath)
+	if err != nil {
+		return fmt.Errorf("Couldn't open src file: %s", err)
+	}
+	srcFileInfo, err := srcFile.Stat()
+	if err != nil {
+		return err
+	}
+	flag := os.O_WRONLY | os.O_CREATE | os.O_TRUNC
+	perm := srcFileInfo.Mode() & os.ModePerm
+	destFile, err := os.OpenFile(destPath, flag, perm)
+	if err != nil {
+		srcFile.Close()
+		return fmt.Errorf("Couldn't open dest file: %s", err)
+	}
+	defer destFile.Close()
+	_, err = io.Copy(destFile, srcFile)
+	srcFile.Close()
+	if err != nil {
+		return fmt.Errorf("Writing to output file failed: %s", err)
+	}
+	// The copy was successful, so now delete the original file
+	err = os.Remove(srcPath)
+	if err != nil {
+		return fmt.Errorf("Failed removing original file: %s", err)
+	}
+	return nil
+}
+
 // Function to download file with given path and url.
 func downloadFile(filepath string, url string) error {
 	// // Print download url in case user needs it.
@@ -327,7 +357,7 @@ func ValidateOrUpdateEngine(targetOS string) (engineCachePath string) {
 		createSymLink("Versions/Current/Resources", frameworkDestPath+"/Resources")
 
 	case "linux-x64":
-		err := os.Rename(
+		err := moveFile(
 			filepath.Join(engineExtractPath, "libflutter_engine.so"),
 			filepath.Join(engineCachePath, "/libflutter_engine.so"),
 		)
@@ -337,7 +367,7 @@ func ValidateOrUpdateEngine(targetOS string) (engineCachePath string) {
 		}
 
 	case "windows-x64":
-		err := os.Rename(
+		err := moveFile(
 			filepath.Join(engineExtractPath, "flutter_engine.dll"),
 			filepath.Join(engineCachePath, "/flutter_engine.dll"),
 		)
