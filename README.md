@@ -26,6 +26,10 @@ Install these dependencies:
 	* On CentOS/Fedora-like Linux distributions, you need `libX11-devel libXcursor-devel libXrandr-devel libXinerama-devel mesa-libGL-devel libXi-devel` packages.
 	* See [here](http://www.glfw.org/docs/latest/compile.html#compile_deps) for full details.
 
+## Fonts
+
+No text visible? Make sure you have used fonts added to the project. The default font for `MaterialApp`, Roboto, is not installed on all machines.
+
 ## Getting started with an existing Flutter project
 
 This assumes you have an existing flutter project which you want to run on desktop. If you don't have a project yet, follow the flutter tutorial for setting up a new project first.
