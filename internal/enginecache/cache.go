@@ -245,13 +245,13 @@ func ValidateOrUpdateEngine(targetOS string) (engineCachePath string) {
 	}
 
 	// Retrieve the full version hash by querying github
-	url := fmt.Sprintf("https://api.github.com/search/commits?q=%s", requiredEngineVersion)
+	url := fmt.Sprintf("https://api.github.com/repos/flutter/engine/commits/%s", requiredEngineVersion)
 	req, err := http.NewRequest("GET", os.ExpandEnv(url), nil)
 	if err != nil {
 		fmt.Printf("Failed to create http request: %v\n", err)
 		os.Exit(1)
 	}
-	req.Header.Set("Accept", "application/vnd.github.cloak-preview")
+	req.Header.Set("Accept", "application/vnd.github.v3+json")
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
@@ -266,17 +266,19 @@ func ValidateOrUpdateEngine(targetOS string) (engineCachePath string) {
 	}
 
 	// We define a struct to build JSON object from the response
-	var hashResponse struct {
-		Items []struct {
-			Sha string `json:"sha"`
-		} `json:"items"`
+	var apiResponse struct {
+		Sha string `json:"sha"`
 	}
-	err = json.Unmarshal(body, &hashResponse)
+	err = json.Unmarshal(body, &apiResponse)
 	if err != nil {
 		fmt.Printf("Failed to unmarshall reply github: %v\n", err)
 		os.Exit(1)
 	}
-	var requiredEngineVersionFullHash = hashResponse.Items[0].Sha
+	if apiResponse.Sha == "" {
+		fmt.Printf("Failed to fetch full sha for engine version %s from GitHub\n", requiredEngineVersion)
+		os.Exit(1)
+	}
+	var requiredEngineVersionFullHash = apiResponse.Sha
 
 	// TODO: support more arch's than x64?
 	var platform = targetOS + "-x64"
