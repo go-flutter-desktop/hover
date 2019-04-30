@@ -17,9 +17,11 @@ import (
 var dotSlash = string([]byte{'.', filepath.Separator})
 
 var buildTargetMainDart string
+var buildTargetManifest string
 
 func init() {
 	buildCmd.Flags().StringVarP(&buildTargetMainDart, "target", "t", "lib/main_desktop.dart", "The main entry-point file of the application.")
+	buildCmd.Flags().StringVarP(&buildTargetManifest, "manifest", "m", "pubspec.yaml", "Flutter manifest file of the application.")
 	rootCmd.AddCommand(buildCmd)
 }
 
@@ -80,6 +82,7 @@ func build(projectName string, targetOS string, vmArguments []string) {
 	cmdFlutterBuild := exec.Command(flutterBin, "build", "bundle",
 		"--asset-dir", filepath.Join(outputDirectoryPath, "flutter_assets"),
 		"--target", buildTargetMainDart,
+		"--manifest", buildTargetManifest,
 	)
 	cmdFlutterBuild.Stderr = os.Stderr
 	cmdFlutterBuild.Stdout = os.Stdout
