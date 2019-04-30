@@ -14,7 +14,9 @@ import (
 const defaultObservatoryPort = "50300"
 
 func init() {
+
 	runCmd.Flags().StringVarP(&buildTargetMainDart, "target", "t", "lib/main_desktop.dart", "The main entry-point file of the application.")
+	runCmd.Flags().StringVarP(&buildTargetManifest, "manifest", "m", "pubspec.yaml", "Flutter manifest file of the application.")
 	rootCmd.AddCommand(runCmd)
 }
 
@@ -54,6 +56,7 @@ func runAndAttach(projectName string, targetOS string) {
 
 	cmdFlutterAttach := exec.Command("flutter", "attach",
 		"--target", buildTargetMainDart,
+		"--manifest", buildTargetManifest,
 		"--debug-port", "50300",
 		"--device-id", "flutter-tester",
 	)
