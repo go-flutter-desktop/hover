@@ -1,10 +1,13 @@
 package cmd
 
 import (
+	"bufio"
 	"fmt"
+	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"runtime"
 
 	"github.com/spf13/cobra"
@@ -36,33 +39,63 @@ var runCmd = &cobra.Command{
 func runAndAttach(projectName string, targetOS string) {
 	cmdApp := exec.Command(dotSlash + filepath.Join("desktop", "build", "outputs", targetOS, projectName))
 	cmdApp.Stderr = os.Stderr
-	cmdApp.Stdout = os.Stdout
-	err := cmdApp.Start()
+
+	// Create stdout, streams to parse the debug-uri of the flutter app.
+	// debug-uri is used for hotreloading.
+	stdoutApp, err := cmdApp.StdoutPipe()
+	if err == nil {
+		re := regexp.MustCompile("(?:http:\\/\\/)[^:]*:50300\\/[^\\/]*\\/")
+
+		go func(reader io.Reader) {
+			scanner := bufio.NewScanner(reader)
+			debugUriFound := false
+			for scanner.Scan() {
+				fmt.Println(scanner.Text()) // defualt stdout
+				if !debugUriFound {
+					match := re.FindStringSubmatch(scanner.Text())
+					if len(match) == 1 {
+						debugUriFound = true
+						startHotReloadProcess(buildTargetMainDart, match[0])
+					}
+				}
+			}
+		}(stdoutApp)
+	} else {
+		fmt.Printf("unable to parse flutter debuger'%s' failed with error: %v Hotreload disabled\n", projectName, err)
+		cmdApp.Stdout = os.Stdout
+	}
+
+	err = cmdApp.Start()
 	if err != nil {
 		fmt.Printf("failed to start app '%s': %v\n", projectName, err)
 		os.Exit(1)
 	}
-	go func() {
-		err = cmdApp.Wait()
-		if err != nil {
-			fmt.Printf("app '%s' exited with error: %v\n", projectName, err)
-			os.Exit(cmdApp.ProcessState.ExitCode())
-		}
-		fmt.Printf("app '%s' exited.\n", projectName)
-		os.Exit(0)
-	}()
 
-	cmdFlutterAttach := exec.Command("flutter", "attach",
-		"--target", buildTargetMainDart,
-		"--debug-port", "50300",
-		"--device-id", "flutter-tester",
-	)
+	err = cmdApp.Wait()
+	if err != nil {
+		fmt.Printf("app '%s' exited with error: %v\n", projectName, err)
+		os.Exit(cmdApp.ProcessState.ExitCode())
+	}
+	fmt.Printf("app '%s' exited.\n", projectName)
+	os.Exit(0)
+}
+
+func startHotReloadProcess(buildTargetMainDart string, uri string) {
+	cmdFlutterAttach := exec.Command("flutter", "attach")
 	cmdFlutterAttach.Stdin = os.Stdin
 	cmdFlutterAttach.Stdout = os.Stdout
 	cmdFlutterAttach.Stderr = os.Stderr
-	err = cmdFlutterAttach.Run()
+
+	cmdFlutterAttach.Args = []string{
+		"flutter", "attach",
+		"--target", buildTargetMainDart,
+		"--device-id", "flutter-tester",
+		"--debug-uri", uri,
+	}
+	err := cmdFlutterAttach.Run()
 	if err != nil {
-		fmt.Printf("flutter attach failed: %v\n", err)
-		os.Exit(1)
+		fmt.Printf("flutter attach failed: %v Hotreload disabled\n", err)
+	} else {
+		defer cmdFlutterAttach.Process.Kill()
 	}
 }

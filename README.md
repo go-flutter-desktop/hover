@@ -60,7 +60,7 @@ Make sure you have a main_desktop.dart that contains the following code before `
 debugDefaultTargetPlatformOverride = TargetPlatform.fuchsia;
 ```
 
-### Run with manual hot-reload
+### Run with hot-reload
 
 To run the application and attach flutter for hot-reload support:
 
@@ -71,6 +71,8 @@ hover run
 The hot-reload is manual because you'll need to press 'r' in the terminal to hot-reload the application.
 
 By default, hover uses the file `lib/main_desktop.dart` as entrypoint. You may specify a different endpoint by using the `--target` flag.
+
+If you want to integrate go-flutter with VSCode, read this [issue](https://github.com/go-flutter-desktop/go-flutter/issues/129).
 
 ### Build standalone application
 
