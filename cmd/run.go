@@ -56,7 +56,7 @@ func runAndAttach(projectName string, targetOS string) {
 					match := re.FindStringSubmatch(scanner.Text())
 					if len(match) == 1 {
 						debugUriFound = true
-						startHotReloadProcess(buildTargetMainDart, match[0])
+						go startHotReloadProcess(buildTargetMainDart, match[0])
 					}
 				}
 			}
