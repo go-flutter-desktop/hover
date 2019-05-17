@@ -18,10 +18,12 @@ var dotSlash = string([]byte{'.', filepath.Separator})
 
 var buildTargetMainDart string
 var buildTargetManifest string
+var buildTargetBranch string
 
 func init() {
 	buildCmd.Flags().StringVarP(&buildTargetMainDart, "target", "t", "lib/main_desktop.dart", "The main entry-point file of the application.")
 	buildCmd.Flags().StringVarP(&buildTargetManifest, "manifest", "m", "pubspec.yaml", "Flutter manifest file of the application.")
+	buildCmd.Flags().StringVarP(&buildTargetBranch, "branch", "b", "@master", "The go-flutter-desktop/go-flutter branch to use when building the embedder")
 	rootCmd.AddCommand(buildCmd)
 }
 
@@ -148,7 +150,7 @@ func build(projectName string, targetOS string, vmArguments []string) {
 		os.Exit(1)
 	}
 
-	cmdGoGetU := exec.Command(goBin, "get", "-u", "github.com/go-flutter-desktop/go-flutter")
+	cmdGoGetU := exec.Command(goBin, "get", "-u", "github.com/go-flutter-desktop/go-flutter"+buildTargetBranch)
 	cmdGoGetU.Dir = filepath.Join(wd, "desktop")
 	cmdGoGetU.Env = append(os.Environ(),
 		"GO111MODULE=on",
