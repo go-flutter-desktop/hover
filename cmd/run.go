@@ -19,6 +19,9 @@ const defaultObservatoryPort = "50300"
 func init() {
 	runCmd.Flags().StringVarP(&buildTargetMainDart, "target", "t", "lib/main_desktop.dart", "The main entry-point file of the application.")
 	runCmd.Flags().StringVarP(&buildTargetManifest, "manifest", "m", "pubspec.yaml", "Flutter manifest file of the application.")
+	runCmd.Flags().StringVarP(&buildTargetBranch, "branch", "b", "@master", "The go-flutter-desktop/go-flutter branch to use when building the embedder")
+	runCmd.Flags().MarkHidden("branch")
+
 	rootCmd.AddCommand(runCmd)
 }
 
@@ -49,13 +52,13 @@ func runAndAttach(projectName string, targetOS string) {
 
 		go func(reader io.Reader) {
 			scanner := bufio.NewScanner(reader)
-			debugUriFound := false
+			debugURIFound := false
 			for scanner.Scan() {
 				fmt.Println(scanner.Text()) // defualt stdout
-				if !debugUriFound {
+				if !debugURIFound {
 					match := re.FindStringSubmatch(scanner.Text())
 					if len(match) == 1 {
-						debugUriFound = true
+						debugURIFound = true
 						go startHotReloadProcess(buildTargetMainDart, match[0])
 					}
 				}
