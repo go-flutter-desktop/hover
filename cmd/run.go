@@ -44,18 +44,14 @@ func runAndAttach(projectName string, targetOS string) {
 	cmdApp := exec.Command(dotSlash + filepath.Join("desktop", "build", "outputs", targetOS, projectName))
 	cmdFlutterAttach := exec.Command("flutter", "attach")
 
-	// Create stdout, streams to parse the debug-uri of the flutter app.
-	// debug-uri is used for hotreloading.
-	errorMsg := "hover: unable to parse flutter debuger'%s'\n"
-
 	stdoutApp, err := cmdApp.StdoutPipe()
 	if err != nil {
-		fmt.Printf(errorMsg, projectName)
+		fmt.Printf("hover: unable to create stdout pipe on app: %v\n", err)
 		os.Exit(1)
 	}
 	stderrApp, err := cmdApp.StderrPipe()
 	if err != nil {
-		fmt.Printf(errorMsg, projectName)
+		fmt.Printf("hover: unable to create stderr pipe on app: %v\n", err)
 		os.Exit(1)
 	}
 
