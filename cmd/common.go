@@ -4,9 +4,13 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
+	"runtime"
 
+	"github.com/go-flutter-desktop/hover/internal/pubspec"
+	homedir "github.com/mitchellh/go-homedir"
+	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
-	yaml "gopkg.in/yaml.v2"
 )
 
 func init() {
@@ -36,24 +40,9 @@ func initBinaries() {
 // and returns the project name.
 func assertInFlutterProject() string {
 	{
-		var pubspec struct {
-			Name         string
-			Dependencies map[string]interface{}
-		}
-		file, err := os.Open("pubspec.yaml")
+		pubspec, err := pubspec.ReadLocal()
 		if err != nil {
-			if os.IsNotExist(err) {
-				fmt.Println("Error: No pubspec.yaml file found.")
-				goto Fail
-			}
-			fmt.Printf("Failed to open pubspec.yaml: %v\n", err)
-			os.Exit(1)
-		}
-		defer file.Close()
-
-		err = yaml.NewDecoder(file).Decode(&pubspec)
-		if err != nil {
-			fmt.Printf("Failed to decode pubspec.yaml: %v\n", err)
+			fmt.Printf("Error: %v\n", err)
 			goto Fail
 		}
 		if _, exists := pubspec.Dependencies["flutter"]; !exists {
@@ -80,4 +69,20 @@ func assertHoverInitialized() {
 		fmt.Printf("Failed to detect directory desktop: %v\n", err)
 		os.Exit(1)
 	}
+}
+
+// findPubcachePath returns the absolute path for the pub-cache or an error.
+func findPubcachePath() (string, error) {
+	var path string
+	switch runtime.GOOS {
+	case "darwin", "linux":
+		home, err := homedir.Dir()
+		if err != nil {
+			return "", errors.Wrap(err, "failed to resolve user home dir")
+		}
+		path = filepath.Join(home, ".pub-cache")
+	case "windows":
+		path = filepath.Join(os.Getenv("APPDATA"), "Pub", "Cache")
+	}
+	return path, nil
 }
