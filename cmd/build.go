@@ -23,7 +23,7 @@ var buildTargetBranch string
 func init() {
 	buildCmd.Flags().StringVarP(&buildTargetMainDart, "target", "t", "lib/main_desktop.dart", "The main entry-point file of the application.")
 	buildCmd.Flags().StringVarP(&buildTargetManifest, "manifest", "m", "pubspec.yaml", "Flutter manifest file of the application.")
-	buildCmd.Flags().StringVarP(&buildTargetBranch, "branch", "b", "@master", "The go-flutter-desktop/go-flutter branch to use when building the embedder")
+	buildCmd.Flags().StringVarP(&buildTargetBranch, "branch", "b", "", "The go-flutter-desktop/go-flutter branch to use when building the embedder. (@master for example)")
 	runCmd.Flags().MarkHidden("branch")
 	rootCmd.AddCommand(buildCmd)
 }
