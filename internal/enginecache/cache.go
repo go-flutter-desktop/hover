@@ -3,7 +3,6 @@ package enginecache
 import (
 	"archive/zip"
 	"encoding/json"
-	"flag"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -232,16 +231,10 @@ func ValidateOrUpdateEngine(targetOS string) (engineCachePath string) {
 		os.Exit(1)
 	}
 
-	// TODO: move flag up the chain to cobra as flag and env var
-	chinaPtr := flag.Bool("china", false, "Whether or not installation is in China")
-	flag.Parse()
-
-	// If flag china is passed, targeted domain is changed (China partially blocking google)
-	var targetedDomain = ""
-	if *chinaPtr {
-		targetedDomain = "https://storage.flutter-io.cn"
-	} else {
-		targetedDomain = "https://storage.googleapis.com"
+	targetedDomain := "https://storage.googleapis.com"
+	envURLFlutter := os.Getenv("FLUTTER_STORAGE_BASE_URL")
+	if envURLFlutter != "" {
+		targetedDomain = envURLFlutter
 	}
 
 	// Retrieve the full version hash by querying github
