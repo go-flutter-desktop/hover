@@ -46,14 +46,14 @@ func assertInFlutterProject() string {
 				fmt.Println("Error: No pubspec.yaml file found.")
 				goto Fail
 			}
-			fmt.Printf("Failed to open pubspec.yaml: %v\n", err)
+      fmt.Printf("hover: Failed to open pubspec.yaml: %v\n", err)
 			os.Exit(1)
 		}
 		defer file.Close()
 
 		err = yaml.NewDecoder(file).Decode(&pubspec)
 		if err != nil {
-			fmt.Printf("Failed to decode pubspec.yaml: %v\n", err)
+      fmt.Printf("hover: Failed to decode pubspec.yaml: %v\n", err)
 			goto Fail
 		}
 		if _, exists := pubspec.Dependencies["flutter"]; !exists {
@@ -77,7 +77,7 @@ func assertHoverInitialized() {
 		os.Exit(1)
 	}
 	if err != nil {
-		fmt.Printf("Failed to detect directory desktop: %v\n", err)
+    fmt.Printf("hover: Failed to detect directory desktop: %v\n", err)
 		os.Exit(1)
 	}
 }
