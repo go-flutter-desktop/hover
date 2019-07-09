@@ -39,14 +39,14 @@ var initCmd = &cobra.Command{
 		desktopCmdPath := filepath.Join("desktop", "cmd")
 		err = os.Mkdir(desktopCmdPath, 0775)
 		if err != nil {
-			fmt.Printf("Failed to create `%s`: %v\n", desktopCmdPath, err)
+      fmt.Printf("hover: Failed to create `%s`: %v\n", desktopCmdPath, err)
 			os.Exit(1)
 		}
 
 		desktopAssetsPath := filepath.Join("desktop", "assets")
 		err = os.Mkdir(desktopAssetsPath, 0775)
 		if err != nil {
-			fmt.Printf("Failed to create `%s`: %v\n", desktopAssetsPath, err)
+      fmt.Printf("hover: Failed to create `%s`: %v\n", desktopAssetsPath, err)
 			os.Exit(1)
 		}
 
@@ -57,7 +57,7 @@ var initCmd = &cobra.Command{
 
 		wd, err := os.Getwd()
 		if err != nil {
-			fmt.Printf("Failed to get working dir: %v\n", err)
+      fmt.Printf("hover: Failed to get working dir: %v\n", err)
 			os.Exit(1)
 		}
 
@@ -70,7 +70,7 @@ var initCmd = &cobra.Command{
 		cmdGoModInit.Stdout = os.Stdout
 		err = cmdGoModInit.Run()
 		if err != nil {
-			fmt.Printf("Go mod init failed: %v\n", err)
+      fmt.Printf("hover: Go mod init failed: %v\n", err)
 			os.Exit(1)
 		}
 
@@ -84,7 +84,7 @@ var initCmd = &cobra.Command{
 		cmdGoModTidy.Stdout = os.Stdout
 		err = cmdGoModTidy.Run()
 		if err != nil {
-			fmt.Printf("Go mod tidy failed: %v\n", err)
+      fmt.Printf("hover: Go mod tidy failed: %v\n", err)
 			os.Exit(1)
 		}
 	},
@@ -93,19 +93,19 @@ var initCmd = &cobra.Command{
 func copyAsset(boxed, to string) {
 	file, err := os.Create(to)
 	if err != nil {
-		fmt.Printf("Failed to create %s: %v\n", to, err)
+    fmt.Printf("hover: Failed to create %s: %v\n", to, err)
 		os.Exit(1)
 	}
 	defer file.Close()
 	boxedFile, err := assetsBox.Open(boxed)
 	if err != nil {
-		fmt.Printf("Failed to find boxed file %s: %v\n", boxed, err)
+    fmt.Printf("hover: Failed to find boxed file %s: %v\n", boxed, err)
 		os.Exit(1)
 	}
 	defer boxedFile.Close()
 	_, err = io.Copy(file, boxedFile)
 	if err != nil {
-		fmt.Printf("Failed to write file %s: %v\n", to, err)
+    fmt.Printf("hover: Failed to write file %s: %v\n", to, err)
 		os.Exit(1)
 	}
 }

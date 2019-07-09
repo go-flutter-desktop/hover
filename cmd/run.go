@@ -20,6 +20,7 @@ func init() {
 	runCmd.Flags().StringVarP(&buildTargetMainDart, "target", "t", "lib/main_desktop.dart", "The main entry-point file of the application.")
 	runCmd.Flags().StringVarP(&buildTargetManifest, "manifest", "m", "pubspec.yaml", "Flutter manifest file of the application.")
 	runCmd.Flags().StringVarP(&buildTargetBranch, "branch", "b", "", "The go-flutter-desktop/go-flutter branch to use when building the embedder. (@master for example)")
+	runCmd.Flags().StringVarP(&buildCachePath, "cache-path", "", "", "The path that hover uses to cache dependencies such as the Flutter engine .so/.dll (defaults to the standard user cache directory)")
 	runCmd.Flags().MarkHidden("branch")
 
 	rootCmd.AddCommand(runCmd)

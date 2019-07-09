@@ -19,12 +19,15 @@ var dotSlash = string([]byte{'.', filepath.Separator})
 var buildTargetMainDart string
 var buildTargetManifest string
 var buildTargetBranch string
+var buildCachePath string
 
 func init() {
 	buildCmd.Flags().StringVarP(&buildTargetMainDart, "target", "t", "lib/main_desktop.dart", "The main entry-point file of the application.")
 	buildCmd.Flags().StringVarP(&buildTargetManifest, "manifest", "m", "pubspec.yaml", "Flutter manifest file of the application.")
 	buildCmd.Flags().StringVarP(&buildTargetBranch, "branch", "b", "", "The go-flutter-desktop/go-flutter branch to use when building the embedder. (@master for example)")
-	runCmd.Flags().MarkHidden("branch")
+	buildCmd.Flags().StringVarP(&buildCachePath, "cache-path", "", "", "The path that hover uses to cache dependencies such as the Flutter engine .so/.dll (defaults to the standard user cache directory)")
+	buildCmd.Flags().MarkHidden("branch")
+
 	rootCmd.AddCommand(buildCmd)
 }
 
@@ -50,7 +53,7 @@ func build(projectName string, targetOS string, vmArguments []string) {
 
 	outputDirectoryPath, err := filepath.Abs(filepath.Join("desktop", "build", "outputs", targetOS))
 	if err != nil {
-		fmt.Printf("Failed to resolve absolute path for output directory: %v\n", err)
+		fmt.Printf("hover: Failed to resolve absolute path for output directory: %v\n", err)
 		os.Exit(1)
 	}
 
@@ -63,22 +66,27 @@ func build(projectName string, targetOS string, vmArguments []string) {
 	case "windows":
 		outputBinaryName += ".exe"
 	default:
-		fmt.Printf("Target platform %s is not supported.\n", targetOS)
+		fmt.Printf("hover: Target platform %s is not supported.\n", targetOS)
 		os.Exit(1)
 	}
 	outputBinaryPath := filepath.Join(outputDirectoryPath, outputBinaryName)
 
-	engineCachePath := enginecache.ValidateOrUpdateEngine(targetOS)
+	var engineCachePath string
+	if buildCachePath != "" {
+		engineCachePath = enginecache.ValidateOrUpdateEngineAtPath(targetOS, buildCachePath)
+	} else {
+		engineCachePath = enginecache.ValidateOrUpdateEngine(targetOS)
+	}
 
 	err = os.RemoveAll(outputDirectoryPath)
 	if err != nil {
-		fmt.Printf("failed to clean output directory %s: %v\n", outputDirectoryPath, err)
+		fmt.Printf("hover: failed to clean output directory %s: %v\n", outputDirectoryPath, err)
 		os.Exit(1)
 	}
 
 	err = os.MkdirAll(outputDirectoryPath, 0775)
 	if err != nil {
-		fmt.Printf("failed to create output directory %s: %v\n", outputDirectoryPath, err)
+		fmt.Printf("hover: failed to create output directory %s: %v\n", outputDirectoryPath, err)
 		os.Exit(1)
 	}
 
@@ -91,7 +99,7 @@ func build(projectName string, targetOS string, vmArguments []string) {
 	cmdFlutterBuild.Stdout = os.Stdout
 	err = cmdFlutterBuild.Run()
 	if err != nil {
-		fmt.Printf("Flutter build failed: %v\n", err)
+		fmt.Printf("hover: Flutter build failed: %v\n", err)
 		os.Exit(1)
 	}
 
@@ -110,7 +118,7 @@ func build(projectName string, targetOS string, vmArguments []string) {
 		filepath.Join(outputDirectoryPath, engineFile),
 	)
 	if err != nil {
-		fmt.Printf("Failed to copy %s: %v\n", engineFile, err)
+		fmt.Printf("hover: Failed to copy %s: %v\n", engineFile, err)
 		os.Exit(1)
 	}
 
@@ -119,7 +127,7 @@ func build(projectName string, targetOS string, vmArguments []string) {
 		filepath.Join(outputDirectoryPath, "icudtl.dat"),
 	)
 	if err != nil {
-		fmt.Printf("Failed to copy icudtl.dat: %v\n", err)
+		fmt.Printf("hover: Failed to copy icudtl.dat: %v\n", err)
 		os.Exit(1)
 	}
 
@@ -128,7 +136,7 @@ func build(projectName string, targetOS string, vmArguments []string) {
 		filepath.Join(outputDirectoryPath, "assets"),
 	)
 	if err != nil {
-		fmt.Printf("Failed to copy desktop/assets: %v\n", err)
+		fmt.Printf("hover: Failed to copy desktop/assets: %v\n", err)
 		os.Exit(1)
 	}
 
@@ -141,13 +149,13 @@ func build(projectName string, targetOS string, vmArguments []string) {
 	case "windows":
 		cgoLdflags = fmt.Sprintf("-L%s", engineCachePath)
 	default:
-		fmt.Printf("Target platform %s is not supported, cgo_ldflags not implemented.\n", targetOS)
+		fmt.Printf("hover: Target platform %s is not supported, cgo_ldflags not implemented.\n", targetOS)
 		os.Exit(1)
 	}
 
 	wd, err := os.Getwd()
 	if err != nil {
-		fmt.Printf("Failed to get working dir: %v\n", err)
+		fmt.Printf("hover: Failed to get working dir: %v\n", err)
 		os.Exit(1)
 	}
 
@@ -162,7 +170,7 @@ func build(projectName string, targetOS string, vmArguments []string) {
 
 	err = cmdGoGetU.Run()
 	if err != nil {
-		fmt.Printf("Go get -u github.com/go-flutter-desktop/go-flutter failed: %v\n", err)
+		fmt.Printf("hover: Updating go-flutter to latest version failed: %v\n", err)
 		os.Exit(1)
 	}
 
@@ -176,7 +184,7 @@ func build(projectName string, targetOS string, vmArguments []string) {
 
 	err = cmdGoModDownload.Run()
 	if err != nil {
-		fmt.Printf("Go mod download failed: %v\n", err)
+		fmt.Printf("hover: Go mod download failed: %v\n", err)
 		os.Exit(1)
 	}
 
@@ -199,7 +207,7 @@ func build(projectName string, targetOS string, vmArguments []string) {
 
 	err = cmdGoBuild.Run()
 	if err != nil {
-		fmt.Printf("Go build failed: %v\n", err)
+		fmt.Printf("hover: Go build failed: %v\n", err)
 		os.Exit(1)
 	}
 }

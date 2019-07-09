@@ -190,21 +190,28 @@ func downloadFile(filepath string, url string) error {
 	<-doneCompletedCh         // wait for signal that printing has completed
 
 	elapsed := time.Since(start)
-	log.Printf("\033[2K\rDownload completed in %s\n", elapsed)
-
+	log.Printf("\033[2K\rhover: Download completed in %.2fs\n", elapsed.Seconds())
 	return nil
 }
 
-// ValidateOrUpdateEngine validates the engine we have cached matches the
-// flutter version, or otherwise downloads a new engine. The returned path is
-// that of the engine location.
-func ValidateOrUpdateEngine(targetOS string) (engineCachePath string) {
-	engineCachePath = filepath.Join(cachePath(), "hover", "engine", targetOS)
+// ValidateOrUpdateEngineAtPath validates the engine we have cached matches the
+// flutter version, or otherwise downloads a new engine. The engine cache
+// location is set by the the user.
+func ValidateOrUpdateEngineAtPath(targetOS string, cachePath string) (engineCachePath string) {
+	engineCachePath = filepath.Join(cachePath, "hover", "engine", targetOS)
+
+	if strings.Contains(engineCachePath, " ") {
+		fmt.Printf("hover: Cannot save the engine to '%s', engine cache is not compatible with path containing spaces.\n", cachePath)
+		fmt.Printf("       Please run hover with a another engine cache path. Example:\n")
+		fmt.Printf("              hover run --engine-cache-path \"C:\\cache\"\n\n")
+		fmt.Printf("       The --engine-cache-path flag will have to be provided to every build and run command.")
+		os.Exit(1)
+	}
 
 	cachedEngineVersionPath := filepath.Join(engineCachePath, "version")
 	cachedEngineVersionBytes, err := ioutil.ReadFile(cachedEngineVersionPath)
 	if err != nil && !os.IsNotExist(err) {
-		fmt.Printf("Failed to read cached engine version: %v\n", err)
+		fmt.Printf("hover: Failed to read cached engine version: %v\n", err)
 		os.Exit(1)
 	}
 	cachedEngineVersion := string(cachedEngineVersionBytes)
@@ -220,14 +227,14 @@ func ValidateOrUpdateEngine(targetOS string) (engineCachePath string) {
 		// the new engine.
 		err = os.RemoveAll(engineCachePath)
 		if err != nil {
-			fmt.Printf("Failed to remove outdated engine: %v\n", err)
+			fmt.Printf("hover: Failed to remove outdated engine: %v\n", err)
 			os.Exit(1)
 		}
 	}
 
 	err = os.MkdirAll(engineCachePath, 0775)
 	if err != nil {
-		fmt.Printf("Failed to create engine cache directory: %v\n", err)
+		fmt.Printf("hover: Failed to create engine cache directory: %v\n", err)
 		os.Exit(1)
 	}
 
@@ -241,20 +248,20 @@ func ValidateOrUpdateEngine(targetOS string) (engineCachePath string) {
 	url := fmt.Sprintf("https://api.github.com/repos/flutter/engine/commits/%s", requiredEngineVersion)
 	req, err := http.NewRequest("GET", os.ExpandEnv(url), nil)
 	if err != nil {
-		fmt.Printf("Failed to create http request: %v\n", err)
+		fmt.Printf("hover: Failed to create http request: %v\n", err)
 		os.Exit(1)
 	}
 	req.Header.Set("Accept", "application/vnd.github.v3+json")
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		fmt.Printf("Failed to find engine version on github: %v\n", err)
+		fmt.Printf("hover: Failed to find engine version on github: %v\n", err)
 		os.Exit(1)
 	}
 	body, err := ioutil.ReadAll(resp.Body)
 	resp.Body.Close()
 	if err != nil {
-		fmt.Printf("Failed to read response body from github: %v\n", err)
+		fmt.Printf("hover: Failed to read response body from github: %v\n", err)
 		os.Exit(1)
 	}
 
@@ -264,11 +271,11 @@ func ValidateOrUpdateEngine(targetOS string) (engineCachePath string) {
 	}
 	err = json.Unmarshal(body, &apiResponse)
 	if err != nil {
-		fmt.Printf("Failed to unmarshall reply github: %v\n", err)
+		fmt.Printf("hover: Failed to unmarshall reply github: %v\n", err)
 		os.Exit(1)
 	}
 	if apiResponse.Sha == "" {
-		fmt.Printf("Failed to fetch full sha for engine version %s from GitHub\n", requiredEngineVersion)
+		fmt.Printf("hover: Failed to fetch full sha for engine version %s from GitHub\n", requiredEngineVersion)
 		os.Exit(1)
 	}
 	var requiredEngineVersionFullHash = apiResponse.Sha
@@ -286,7 +293,7 @@ func ValidateOrUpdateEngine(targetOS string) (engineCachePath string) {
 	case "windows":
 		engineDownloadURL += platform + "-embedder.zip"
 	default:
-		fmt.Printf("Glutter cannot run on %s, download engine not implemented.\n", runtime.GOOS)
+		fmt.Printf("hover: cannot run on %s, download engine not implemented.\n", runtime.GOOS)
 		os.Exit(1)
 	}
 
@@ -294,7 +301,7 @@ func ValidateOrUpdateEngine(targetOS string) (engineCachePath string) {
 
 	dir, err := ioutil.TempDir("", "hover-engine-download")
 	if err != nil {
-		fmt.Printf("Failed to create tmp dir for engine download: %v\n", err)
+		fmt.Printf("hover: Failed to create tmp dir for engine download: %v\n", err)
 		os.Exit(1)
 	}
 	defer os.RemoveAll(dir)
@@ -308,19 +315,19 @@ func ValidateOrUpdateEngine(targetOS string) (engineCachePath string) {
 	engineExtractPath := filepath.Join(dir, "engine")
 	artifactsZipPath := filepath.Join(dir, "artifacts.zip")
 
-	fmt.Printf("Downloading engine for platform %s at version %s...\n", platform, requiredEngineVersion)
+	fmt.Printf("hover: Downloading engine for platform %s at version %s...\n", platform, requiredEngineVersion)
 	err = downloadFile(engineZipPath, engineDownloadURL)
 	if err != nil {
-		fmt.Printf("Failed to download engine: %v\n", err)
+		fmt.Printf("hover: Failed to download engine: %v\n", err)
 		os.Exit(1)
 	}
 
 	// TODO: make artifacts download a separate function, it doesn't need to be
 	// downloaded with engine because it's OS independent.
-	fmt.Printf("Downloading artifacts at version %s...\n", requiredEngineVersion)
+	fmt.Printf("hover: Downloading artifacts at version %s...\n", requiredEngineVersion)
 	err = downloadFile(artifactsZipPath, icudtlDownloadURL)
 	if err != nil {
-		fmt.Printf("Failed to download artifacts: %v\n", err)
+		fmt.Printf("hover: Failed to download artifacts: %v\n", err)
 		os.Exit(1)
 	}
 
@@ -341,7 +348,7 @@ func ValidateOrUpdateEngine(targetOS string) (engineCachePath string) {
 		frameworkDestPath := filepath.Join(engineCachePath, "FlutterEmbedder.framework")
 		_, err = unzip(frameworkZipPath, frameworkDestPath)
 		if err != nil {
-			fmt.Printf("Failed to unzip engine framework: %v\n", err)
+			fmt.Printf("hover: Failed to unzip engine framework: %v\n", err)
 			os.Exit(1)
 		}
 
@@ -357,7 +364,7 @@ func ValidateOrUpdateEngine(targetOS string) (engineCachePath string) {
 			filepath.Join(engineCachePath, "/libflutter_engine.so"),
 		)
 		if err != nil {
-			fmt.Printf("Failed to move downloaded libflutter_engine.so: %v\n", err)
+			fmt.Printf("hover: Failed to move downloaded libflutter_engine.so: %v\n", err)
 			os.Exit(1)
 		}
 
@@ -367,16 +374,24 @@ func ValidateOrUpdateEngine(targetOS string) (engineCachePath string) {
 			filepath.Join(engineCachePath, "/flutter_engine.dll"),
 		)
 		if err != nil {
-			fmt.Printf("Failed to move downloaded flutter_engine.dll: %v\n", err)
+			fmt.Printf("hover: Failed to move downloaded flutter_engine.dll: %v\n", err)
 			os.Exit(1)
 		}
 	}
 
 	err = ioutil.WriteFile(cachedEngineVersionPath, []byte(requiredEngineVersion), 0664)
 	if err != nil {
-		fmt.Printf("Failed to write version file: %v\n", err)
+		fmt.Printf("hover: Failed to write version file: %v\n", err)
 		os.Exit(1)
 	}
 
+	return
+}
+
+// ValidateOrUpdateEngine validates the engine we have cached matches the
+// flutter version, or otherwise downloads a new engine. The returned path is
+// that of the engine location.
+func ValidateOrUpdateEngine(targetOS string) (engineCachePath string) {
+	engineCachePath = ValidateOrUpdateEngineAtPath(targetOS, cachePath())
 	return
 }

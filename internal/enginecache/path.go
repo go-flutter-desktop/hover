@@ -12,7 +12,7 @@ import (
 func cachePath() string {
 	homePath, err := homedir.Dir()
 	if err != nil {
-		fmt.Printf("Failed to resolve home path: %v\n", err)
+    fmt.Printf("hover: Failed to resolve home path: %v\n", err)
 		os.Exit(1)
 	}
 
@@ -25,7 +25,7 @@ func cachePath() string {
 	case "windows":
 		p = filepath.Join(homePath, "AppData", "Local")
 	default:
-		fmt.Printf("Glutter cannot run on %s, enginecache not implemented.\n", runtime.GOOS)
+		fmt.Printf("hover: cannot run on %s, enginecache not implemented.\n", runtime.GOOS)
 		os.Exit(1)
 	}
 	return p
