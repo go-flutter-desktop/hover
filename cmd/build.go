@@ -25,8 +25,9 @@ func init() {
 	buildCmd.Flags().StringVarP(&buildTargetMainDart, "target", "t", "lib/main_desktop.dart", "The main entry-point file of the application.")
 	buildCmd.Flags().StringVarP(&buildTargetManifest, "manifest", "m", "pubspec.yaml", "Flutter manifest file of the application.")
 	buildCmd.Flags().StringVarP(&buildTargetBranch, "branch", "b", "", "The go-flutter-desktop/go-flutter branch to use when building the embedder. (@master for example)")
-	buildCmd.Flags().StringVarP(&buildCachePath, "engineCache", "", "", "The path to save the flutter engine to (default is resolved to user cache)")
+	buildCmd.Flags().StringVarP(&buildCachePath, "engine-cache-path", "", "", "The path to save the flutter engine to (default is resolved to user cache)")
 	runCmd.Flags().MarkHidden("branch")
+
 	rootCmd.AddCommand(buildCmd)
 }
 
@@ -72,7 +73,7 @@ func build(projectName string, targetOS string, vmArguments []string) {
 
 	var engineCachePath string
 	if buildCachePath != "" {
-		engineCachePath = enginecache.ValidateOrUpdateEnginePath(targetOS, buildCachePath)
+		engineCachePath = enginecache.ValidateOrUpdateEngineAtPath(targetOS, buildCachePath)
 	} else {
 		engineCachePath = enginecache.ValidateOrUpdateEngine(targetOS)
 	}

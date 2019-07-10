@@ -20,7 +20,7 @@ func init() {
 	runCmd.Flags().StringVarP(&buildTargetMainDart, "target", "t", "lib/main_desktop.dart", "The main entry-point file of the application.")
 	runCmd.Flags().StringVarP(&buildTargetManifest, "manifest", "m", "pubspec.yaml", "Flutter manifest file of the application.")
 	runCmd.Flags().StringVarP(&buildTargetBranch, "branch", "b", "", "The go-flutter-desktop/go-flutter branch to use when building the embedder. (@master for example)")
-	runCmd.Flags().StringVarP(&buildCachePath, "engineCache", "", "", "The path to save the flutter engine to (default is resolved to user cache)")
+	runCmd.Flags().StringVarP(&buildCachePath, "engine-cache-path", "", "", "The path to save the flutter engine to (default is resolved to user cache)")
 	runCmd.Flags().MarkHidden("branch")
 
 	rootCmd.AddCommand(runCmd)

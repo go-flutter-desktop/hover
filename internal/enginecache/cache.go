@@ -194,17 +194,17 @@ func downloadFile(filepath string, url string) error {
 	return nil
 }
 
-// ValidateOrUpdateEnginePath validates the engine we have cached matches the
+// ValidateOrUpdateEngineAtPath validates the engine we have cached matches the
 // flutter version, or otherwise downloads a new engine. The engine cache
 // location is set by the the user.
-func ValidateOrUpdateEnginePath(targetOS string, cachePath string) (engineCachePath string) {
+func ValidateOrUpdateEngineAtPath(targetOS string, cachePath string) (engineCachePath string) {
 	engineCachePath = filepath.Join(cachePath, "hover", "engine", targetOS)
 
 	if strings.Contains(engineCachePath, " ") {
-		fmt.Printf("hover: Cannot save the engine to '%s', engineCache is not compatible path containing spaces.\n", cachePath)
-		fmt.Printf("       Please run hover with a another engineCache path.\n")
-		fmt.Printf("              Example: hover run --engineCache \"C:\\cache\"\n\n")
-		fmt.Printf("       The --engineCache will have to be provided to every hover command.")
+		fmt.Printf("hover: Cannot save the engine to '%s', engine cache is not compatible with path containing spaces.\n", cachePath)
+		fmt.Printf("       Please run hover with a another engine cache path. Example:\n")
+		fmt.Printf("              hover run --engine-cache-path \"C:\\cache\"\n\n")
+		fmt.Printf("       The --engine-cache-path flag will have to be provided to every build and run command.")
 		os.Exit(1)
 	}
 
@@ -392,6 +392,6 @@ func ValidateOrUpdateEnginePath(targetOS string, cachePath string) (engineCacheP
 // flutter version, or otherwise downloads a new engine. The returned path is
 // that of the engine location.
 func ValidateOrUpdateEngine(targetOS string) (engineCachePath string) {
-	engineCachePath = ValidateOrUpdateEnginePath(targetOS, cachePath())
+	engineCachePath = ValidateOrUpdateEngineAtPath(targetOS, cachePath())
 	return
 }
