@@ -23,7 +23,7 @@ Run the same command to update when a newer version becomes available.
 
 Install these dependencies:
 
-* You need to make sure you have a C compiler  .
+* You need to make sure you have a C compiler.  
   The recommended C compiler are documented [here](https://github.com/golang/go/wiki/InstallFromSource#install-c-tools).
 
 * You need to make sure you have dependencies of GLFW:
