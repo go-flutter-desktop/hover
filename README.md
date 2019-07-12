@@ -23,6 +23,9 @@ Run the same command to update when a newer version becomes available.
 
 Install these dependencies:
 
+* You need to make sure you have a C compiler  .
+  The recommended C compiler are documented [here](https://github.com/golang/go/wiki/InstallFromSource#install-c-tools).
+
 * You need to make sure you have dependencies of GLFW:
 	* On macOS, you need Xcode or Command Line Tools for Xcode (`xcode-select --install`) for required headers and libraries.
 	* On Ubuntu/Debian-like Linux distributions, you need `libgl1-mesa-dev xorg-dev` packages.
