@@ -95,14 +95,17 @@ func build(projectName string, targetOS string, vmArguments []string) {
 	cmdCheckFlutterOut, err := cmdCheckFlutter.Output()
 	if err != nil {
 		fmt.Printf("hover: failed to check your flutter version: %v\n", err)
-	}
-	re := regexp.MustCompile("•\\schannel\\s(\\w*)\\s•")
+	} else {
+		re := regexp.MustCompile("•\\schannel\\s(\\w*)\\s•")
 
-	match := re.FindStringSubmatch(string(cmdCheckFlutterOut))
-	if len(match) >= 1 {
-		if match[0] != "beta" {
-			fmt.Println("hover: ⚠ The go-flutter project tries to stay compatible with the beta channel of Flutter.")
-			fmt.Println("hover: ⚠     It's advertised to use the beta channel. ($ flutter channel beta)")
+		match := re.FindStringSubmatch(string(cmdCheckFlutterOut))
+		if len(match) >= 1 {
+			if match[0] != "beta" {
+				fmt.Println("hover: ⚠ The go-flutter project tries to stay compatible with the beta channel of Flutter.")
+				fmt.Println("hover: ⚠     It's advised to use the beta channel. ($ flutter channel beta)")
+			}
+		} else {
+			fmt.Printf("hover: failed to check your flutter version: Unrecognized output format")
 		}
 	}
 
