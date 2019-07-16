@@ -17,7 +17,7 @@ var rootCmd = &cobra.Command{
 // Execute executes the rootCmd
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Printf("hover command failed: %v\n", err)
+		fmt.Printf("hover: command failed: %v\n", err)
 		os.Exit(1)
 	}
 }

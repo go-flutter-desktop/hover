@@ -219,7 +219,7 @@ func ValidateOrUpdateEngineAtPath(targetOS string, cachePath string) (engineCach
 
 	if cachedEngineVersion != "" {
 		if cachedEngineVersion == requiredEngineVersion {
-			fmt.Println("Using engine from cache")
+			fmt.Println("hover: Using engine from cache")
 			return
 		}
 
