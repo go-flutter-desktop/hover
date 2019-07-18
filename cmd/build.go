@@ -17,18 +17,21 @@ import (
 
 var dotSlash = string([]byte{'.', filepath.Separator})
 
-var buildTargetMainDart string
-var buildTargetManifest string
-var buildTargetBranch string
-var buildCachePath string
+var (
+	buildTarget    string
+	buildManifest  string
+	buildBranch    string
+	buildDebug     bool
+	buildCachePath string
+)
 
 func init() {
-	buildCmd.Flags().StringVarP(&buildTargetMainDart, "target", "t", "lib/main_desktop.dart", "The main entry-point file of the application.")
-	buildCmd.Flags().StringVarP(&buildTargetManifest, "manifest", "m", "pubspec.yaml", "Flutter manifest file of the application.")
-	buildCmd.Flags().StringVarP(&buildTargetBranch, "branch", "b", "", "The go-flutter-desktop/go-flutter branch to use when building the embedder. (@master for example)")
+	buildCmd.Flags().StringVarP(&buildTarget, "target", "t", "lib/main_desktop.dart", "The main entry-point file of the application.")
+	buildCmd.Flags().StringVarP(&buildManifest, "manifest", "m", "pubspec.yaml", "Flutter manifest file of the application.")
+	buildCmd.Flags().StringVarP(&buildBranch, "branch", "b", "", "The go-flutter-desktop/go-flutter branch to use when building the embedder. (@master for example)")
+	buildCmd.Flags().BoolVar(&buildDebug, "debug", false, "Build a debug version of the app.")
 	buildCmd.Flags().StringVarP(&buildCachePath, "cache-path", "", "", "The path that hover uses to cache dependencies such as the Flutter engine .so/.dll (defaults to the standard user cache directory)")
 	buildCmd.Flags().MarkHidden("branch")
-
 	rootCmd.AddCommand(buildCmd)
 }
 
@@ -47,11 +50,6 @@ var buildCmd = &cobra.Command{
 }
 
 func build(projectName string, targetOS string, vmArguments []string) {
-
-	// TODO: release build
-	// "--disable-dart-asserts", // release mode flag
-	// "--disable-observatory",
-
 	outputDirectoryPath, err := filepath.Abs(filepath.Join("desktop", "build", "outputs", targetOS))
 	if err != nil {
 		fmt.Printf("hover: Failed to resolve absolute path for output directory: %v\n", err)
@@ -111,8 +109,8 @@ func build(projectName string, targetOS string, vmArguments []string) {
 
 	cmdFlutterBuild := exec.Command(flutterBin, "build", "bundle",
 		"--asset-dir", filepath.Join(outputDirectoryPath, "flutter_assets"),
-		"--target", buildTargetMainDart,
-		"--manifest", buildTargetManifest,
+		"--target", buildTarget,
+		"--manifest", buildManifest,
 	)
 	cmdFlutterBuild.Stderr = os.Stderr
 	cmdFlutterBuild.Stdout = os.Stdout
@@ -132,13 +130,21 @@ func build(projectName string, targetOS string, vmArguments []string) {
 		engineFile = "flutter_engine.dll"
 	}
 
+	outputEngineFile := filepath.Join(outputDirectoryPath, engineFile)
 	err = copy.Copy(
 		filepath.Join(engineCachePath, engineFile),
-		filepath.Join(outputDirectoryPath, engineFile),
+		outputEngineFile,
 	)
 	if err != nil {
 		fmt.Printf("hover: Failed to copy %s: %v\n", engineFile, err)
 		os.Exit(1)
+	}
+	if !buildDebug && targetOS == "linux" {
+		err = exec.Command("strip", "-s", outputEngineFile).Run()
+		if err != nil {
+			fmt.Printf("Failed to strip %s: %v\n", outputEngineFile, err)
+			os.Exit(1)
+		}
 	}
 
 	err = copy.Copy(
@@ -178,7 +184,7 @@ func build(projectName string, targetOS string, vmArguments []string) {
 		os.Exit(1)
 	}
 
-	cmdGoGetU := exec.Command(goBin, "get", "-u", "github.com/go-flutter-desktop/go-flutter"+buildTargetBranch)
+	cmdGoGetU := exec.Command(goBin, "get", "-u", "github.com/go-flutter-desktop/go-flutter"+buildBranch)
 	cmdGoGetU.Dir = filepath.Join(wd, "desktop")
 	cmdGoGetU.Env = append(os.Environ(),
 		"GO111MODULE=on",
@@ -207,9 +213,28 @@ func build(projectName string, targetOS string, vmArguments []string) {
 		os.Exit(1)
 	}
 
+	var ldflags []string
+	if !buildDebug {
+		vmArguments = append(vmArguments, "--disable-dart-asserts")
+		vmArguments = append(vmArguments, "--disable-observatory")
+
+		switch targetOS {
+		case "darwin":
+			ldflags = append(ldflags, "-H=darwingui") // TODO: get the correct flag here..
+		case "linux":
+			// nothing to do
+		case "windows":
+			ldflags = append(ldflags, "-H=windowsgui")
+		default:
+			fmt.Printf("Target platform %s is not supported, extra ldflags not implemented.\n", targetOS)
+			os.Exit(1)
+		}
+	}
+	ldflags = append(ldflags, fmt.Sprintf("-X main.vmArguments=%s", strings.Join(vmArguments, ";")))
+
 	cmdGoBuild := exec.Command(goBin, "build",
 		"-o", outputBinaryPath,
-		fmt.Sprintf("-ldflags=-X main.vmArguments=%s", strings.Join(vmArguments, ";")),
+		fmt.Sprintf("-ldflags=%s", strings.Join(ldflags, " ")),
 		dotSlash+"cmd",
 	)
 	cmdGoBuild.Dir = filepath.Join(wd, "desktop")
@@ -217,9 +242,6 @@ func build(projectName string, targetOS string, vmArguments []string) {
 		"GO111MODULE=on",
 		"CGO_LDFLAGS="+cgoLdflags,
 	)
-
-	// set vars: (const?)
-	// vmArguments
 
 	cmdGoBuild.Stderr = os.Stderr
 	cmdGoBuild.Stdout = os.Stdout

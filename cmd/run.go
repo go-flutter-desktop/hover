@@ -17,12 +17,11 @@ import (
 const defaultObservatoryPort = "50300"
 
 func init() {
-	runCmd.Flags().StringVarP(&buildTargetMainDart, "target", "t", "lib/main_desktop.dart", "The main entry-point file of the application.")
-	runCmd.Flags().StringVarP(&buildTargetManifest, "manifest", "m", "pubspec.yaml", "Flutter manifest file of the application.")
-	runCmd.Flags().StringVarP(&buildTargetBranch, "branch", "b", "", "The go-flutter-desktop/go-flutter branch to use when building the embedder. (@master for example)")
+	runCmd.Flags().StringVarP(&buildTarget, "target", "t", "lib/main_desktop.dart", "The main entry-point file of the application.")
+	runCmd.Flags().StringVarP(&buildManifest, "manifest", "m", "pubspec.yaml", "Flutter manifest file of the application.")
+	runCmd.Flags().StringVarP(&buildBranch, "branch", "b", "", "The go-flutter-desktop/go-flutter branch to use when building the embedder. (@master for example)")
 	runCmd.Flags().StringVarP(&buildCachePath, "cache-path", "", "", "The path that hover uses to cache dependencies such as the Flutter engine .so/.dll (defaults to the standard user cache directory)")
 	runCmd.Flags().MarkHidden("branch")
-
 	rootCmd.AddCommand(runCmd)
 }
 
@@ -35,6 +34,9 @@ var runCmd = &cobra.Command{
 
 		// Can only run on host OS
 		targetOS := runtime.GOOS
+
+		// forcefully enable --debug (which is not an option for `hover run`)
+		buildDebug = true
 
 		build(projectName, targetOS, []string{"--observatory-port=50300"})
 		runAndAttach(projectName, targetOS)
@@ -66,7 +68,7 @@ func runAndAttach(projectName string, targetOS string) {
 			fmt.Println(text)
 			match := re.FindStringSubmatch(text)
 			if len(match) == 1 {
-				startHotReloadProcess(cmdFlutterAttach, buildTargetMainDart, match[0])
+				startHotReloadProcess(cmdFlutterAttach, buildTarget, match[0])
 				break
 			}
 		}
