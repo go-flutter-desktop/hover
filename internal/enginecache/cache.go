@@ -10,7 +10,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -293,7 +292,7 @@ func ValidateOrUpdateEngineAtPath(targetOS string, cachePath string) (engineCach
 	case "windows":
 		engineDownloadURL += platform + "-embedder.zip"
 	default:
-		fmt.Printf("hover: cannot run on %s, download engine not implemented.\n", runtime.GOOS)
+		fmt.Printf("hover: cannot run on %s, download engine not implemented.\n", targetOS)
 		os.Exit(1)
 	}
 

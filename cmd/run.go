@@ -19,7 +19,7 @@ const defaultObservatoryPort = "50300"
 func init() {
 	runCmd.Flags().StringVarP(&buildTarget, "target", "t", "lib/main_desktop.dart", "The main entry-point file of the application.")
 	runCmd.Flags().StringVarP(&buildManifest, "manifest", "m", "pubspec.yaml", "Flutter manifest file of the application.")
-	runCmd.Flags().StringVarP(&buildBranch, "branch", "b", "", "The go-flutter-desktop/go-flutter branch to use when building the embedder. (@master for example)")
+	runCmd.Flags().StringVarP(&buildBranch, "branch", "b", "", "The 'go-flutter' version to use. (@master for example)")
 	runCmd.Flags().StringVarP(&buildCachePath, "cache-path", "", "", "The path that hover uses to cache dependencies such as the Flutter engine .so/.dll (defaults to the standard user cache directory)")
 	runCmd.Flags().MarkHidden("branch")
 	rootCmd.AddCommand(runCmd)
@@ -79,6 +79,7 @@ func runAndAttach(projectName string, targetOS string) {
 	// Non-blockingly echo command stderr to terminal
 	go io.Copy(os.Stderr, stderrApp)
 
+	fmt.Printf("hover: Running %s in debug mode\n", projectName)
 	err = cmdApp.Start()
 	if err != nil {
 		fmt.Printf("hover: failed to start app '%s': %v\n", projectName, err)
