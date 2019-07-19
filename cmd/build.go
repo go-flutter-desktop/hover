@@ -221,9 +221,9 @@ func build(projectName string, targetOS string, vmArguments []string) {
 		if targetOS == "windows" {
 			ldflags = append(ldflags, "-H=windowsgui")
 		}
+		ldflags = append(ldflags, "-s")
+		ldflags = append(ldflags, "-w")
 	}
-	ldflags = append(ldflags, "-s")
-	ldflags = append(ldflags, "-w")
 	ldflags = append(ldflags, fmt.Sprintf("-X main.vmArguments=%s", strings.Join(vmArguments, ";")))
 
 	cmdGoBuild := exec.Command(goBin, "build",
