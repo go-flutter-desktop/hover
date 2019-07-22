@@ -34,7 +34,7 @@ Install these dependencies:
 
 ## Fonts
 
-No text visible? Make sure you have used fonts added to the project. The default font for `MaterialApp`, Roboto, is not installed on all machines.
+No text visible? Make sure to use fonts who are included in the flutter assets/fonts system. The default font for `MaterialApp`, Roboto, is not installed on all machines.
 
 ## Getting started with an existing Flutter project
 
