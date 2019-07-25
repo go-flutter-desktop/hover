@@ -24,6 +24,7 @@ var (
 	buildBranch    string
 	buildDebug     bool
 	buildCachePath string
+	buildPath      string
 )
 
 func init() {
@@ -32,6 +33,7 @@ func init() {
 	buildCmd.Flags().StringVarP(&buildBranch, "branch", "b", "", "The 'go-flutter' version to use. (@master for example)")
 	buildCmd.Flags().BoolVar(&buildDebug, "debug", false, "Build a debug version of the app.")
 	buildCmd.Flags().StringVarP(&buildCachePath, "cache-path", "", "", "The path that hover uses to cache dependencies such as the Flutter engine .so/.dll (defaults to the standard user cache directory)")
+	buildCmd.Flags().StringVarP(&buildPath, "path", "p", "go-desktop", "The path that hover uses to save the 'go-flutter' desktop source code (default is 'go-desktop')")
 	buildCmd.Flags().MarkHidden("branch")
 	rootCmd.AddCommand(buildCmd)
 }
@@ -51,7 +53,7 @@ var buildCmd = &cobra.Command{
 }
 
 func build(projectName string, targetOS string, vmArguments []string) {
-	outputDirectoryPath, err := filepath.Abs(filepath.Join("desktop", "build", "outputs", targetOS))
+	outputDirectoryPath, err := filepath.Abs(filepath.Join(buildPath, "build", "outputs", targetOS))
 	if err != nil {
 		fmt.Printf("hover: Failed to resolve absolute path for output directory: %v\n", err)
 		os.Exit(1)
@@ -160,11 +162,11 @@ func build(projectName string, targetOS string, vmArguments []string) {
 	}
 
 	err = copy.Copy(
-		filepath.Join("desktop", "assets"),
+		filepath.Join(buildPath, "assets"),
 		filepath.Join(outputDirectoryPath, "assets"),
 	)
 	if err != nil {
-		fmt.Printf("hover: Failed to copy desktop/assets: %v\n", err)
+		fmt.Printf("hover: Failed to copy %s/assets: %v\n", buildPath, err)
 		os.Exit(1)
 	}
 
@@ -244,7 +246,7 @@ func build(projectName string, targetOS string, vmArguments []string) {
 		fmt.Sprintf("-ldflags=%s", strings.Join(ldflags, " ")),
 		dotSlash+"cmd",
 	)
-	cmdGoBuild.Dir = filepath.Join(wd, "desktop")
+	cmdGoBuild.Dir = filepath.Join(wd, buildPath)
 	cmdGoBuild.Env = append(os.Environ(),
 		"GO111MODULE=on",
 		"CGO_LDFLAGS="+cgoLdflags,
