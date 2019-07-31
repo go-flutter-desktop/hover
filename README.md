@@ -98,7 +98,6 @@ To start the binary: (replace `yourApplicationName` with your app name)
 
 It's possible to zip the whole dir `desktop/build/outputs/linux` and ship it to a different machine.
 
-There is no support for release binaries yet, only debug.
 
 ## Issues
 
