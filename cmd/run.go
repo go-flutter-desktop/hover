@@ -21,6 +21,8 @@ func init() {
 	runCmd.Flags().StringVarP(&buildManifest, "manifest", "m", "pubspec.yaml", "Flutter manifest file of the application.")
 	runCmd.Flags().StringVarP(&buildBranch, "branch", "b", "", "The 'go-flutter' version to use. (@master for example)")
 	runCmd.Flags().StringVarP(&buildCachePath, "cache-path", "", "", "The path that hover uses to cache dependencies such as the Flutter engine .so/.dll (defaults to the standard user cache directory)")
+	runCmd.Flags().BoolVar(&buildOmitEmbedder, "omit-embedder", false, "Don't (re)compile 'go-flutter' source code, useful when only working with Dart code")
+	runCmd.Flags().BoolVar(&buildOmitFlutterBundle, "omit-flutter", false, "Don't (re)compile the current Flutter project, useful when only working with Golang code (plugin)")
 	runCmd.Flags().MarkHidden("branch")
 	rootCmd.AddCommand(runCmd)
 }
@@ -31,6 +33,12 @@ var runCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		projectName := assertInFlutterProject()
 		assertHoverInitialized()
+
+		// ensure we have something to build
+		if buildOmitEmbedder && buildOmitFlutterBundle {
+			fmt.Println("hover: flags omit-embedder and omit-flutter are not compatible.")
+			os.Exit(1)
+		}
 
 		// Can only run on host OS
 		targetOS := runtime.GOOS
