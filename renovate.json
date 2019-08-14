@@ -3,5 +3,8 @@
   "automerge": true,
   "major": {
     "automerge": false
-  }
+  },
+  "postUpdateOptions": [
+    "gomodTidy"
+  ]
 }
