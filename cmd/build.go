@@ -31,10 +31,9 @@ var (
 func init() {
 	buildCmd.Flags().StringVarP(&buildTarget, "target", "t", "lib/main_desktop.dart", "The main entry-point file of the application.")
 	buildCmd.Flags().StringVarP(&buildManifest, "manifest", "m", "pubspec.yaml", "Flutter manifest file of the application.")
-	buildCmd.Flags().StringVarP(&buildBranch, "branch", "b", "", "The 'go-flutter' version to use. (@master for example)")
+	buildCmd.Flags().StringVarP(&buildBranch, "branch", "b", "", "The 'go-flutter' version to use. (@master or @v0.20.0 for example)")
 	buildCmd.Flags().BoolVar(&buildDebug, "debug", false, "Build a debug version of the app.")
 	buildCmd.Flags().StringVarP(&buildCachePath, "cache-path", "", "", "The path that hover uses to cache dependencies such as the Flutter engine .so/.dll (defaults to the standard user cache directory)")
-	buildCmd.Flags().MarkHidden("branch")
 	rootCmd.AddCommand(buildCmd)
 }
 
