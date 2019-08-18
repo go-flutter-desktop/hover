@@ -39,6 +39,7 @@ var runCmd = &cobra.Command{
 		buildDebug = true
 
 		build(projectName, targetOS, []string{"--observatory-port=50300"})
+		fmt.Println("hover: build finished, starting app...")
 		runAndAttach(projectName, targetOS)
 	},
 }
