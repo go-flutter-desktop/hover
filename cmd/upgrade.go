@@ -13,6 +13,7 @@ import (
 
 func init() {
 	upgradeCmd.Flags().StringVarP(&buildCachePath, "cache-path", "", "", "The path that hover uses to cache dependencies such as the Flutter engine .so/.dll (defaults to the standard user cache directory)")
+  upgradeCmd.Flags().StringVarP(&buildPath, "path", "p", defaultBuildPath, "The path that hover uses to save the 'go-flutter' desktop source code")
 	upgradeCmd.Flags().MarkHidden("branch")
 	rootCmd.AddCommand(upgradeCmd)
 }
@@ -63,7 +64,7 @@ func upgradeGoFlutter(targetOS string, engineCachePath string) (err error) {
 	}
 
 	cmdGoGetU := exec.Command(goBin, "get", "-u", "github.com/go-flutter-desktop/go-flutter"+buildBranch)
-	cmdGoGetU.Dir = filepath.Join(wd, "desktop")
+	cmdGoGetU.Dir = filepath.Join(wd, buildPath)
 	cmdGoGetU.Env = append(os.Environ(),
 		"GO111MODULE=on",
 		"CGO_LDFLAGS="+cgoLdflags,
@@ -82,7 +83,7 @@ func upgradeGoFlutter(targetOS string, engineCachePath string) (err error) {
 	}
 
 	cmdGoModDownload := exec.Command(goBin, "mod", "download")
-	cmdGoModDownload.Dir = filepath.Join(wd, "desktop")
+	cmdGoModDownload.Dir = filepath.Join(wd, buildPath)
 	cmdGoModDownload.Env = append(os.Environ(),
 		"GO111MODULE=on",
 	)
@@ -95,7 +96,7 @@ func upgradeGoFlutter(targetOS string, engineCachePath string) (err error) {
 		return
 	}
 
-	currentTag, err := enginecache.CurrentGoFlutterTag(wd)
+	currentTag, err := enginecache.CurrentGoFlutterTag(filepath.Join(wd, buildPath))
 	if err != nil {
 		fmt.Printf("hover: %v\n", err)
 		os.Exit(1)

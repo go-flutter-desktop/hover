@@ -33,7 +33,7 @@ func init() {
 	buildCmd.Flags().StringVarP(&buildBranch, "branch", "b", "", "The 'go-flutter' version to use. (@master for example)")
 	buildCmd.Flags().BoolVar(&buildDebug, "debug", false, "Build a debug version of the app.")
 	buildCmd.Flags().StringVarP(&buildCachePath, "cache-path", "", "", "The path that hover uses to cache dependencies such as the Flutter engine .so/.dll (defaults to the standard user cache directory)")
-	buildCmd.Flags().StringVarP(&buildPath, "path", "p", "go-desktop", "The path that hover uses to save the 'go-flutter' desktop source code (default is 'go-desktop')")
+	buildCmd.Flags().StringVarP(&buildPath, "path", "p", defaultBuildPath, "The path that hover uses to save the 'go-flutter' desktop source code")
 	buildCmd.Flags().MarkHidden("branch")
 	rootCmd.AddCommand(buildCmd)
 }
@@ -191,7 +191,7 @@ func build(projectName string, targetOS string, vmArguments []string) {
 
 	if buildBranch == "" {
 
-		currentTag, err := enginecache.CurrentGoFlutterTag(wd)
+		currentTag, err := enginecache.CurrentGoFlutterTag(filepath.Join(wd, buildPath))
 		if err != nil {
 			fmt.Printf("hover: %v\n", err)
 			os.Exit(1)
@@ -215,7 +215,7 @@ func build(projectName string, targetOS string, vmArguments []string) {
 		} else {
 			// when the buildBranch is empty and the currentTag is a release.
 			// Check if the 'go-flutter' needs updates.
-			enginecache.CheckFoGoFlutterUpdate(wd, currentTag)
+			enginecache.CheckFoGoFlutterUpdate(filepath.Join(wd, buildPath), currentTag)
 		}
 
 	} else {

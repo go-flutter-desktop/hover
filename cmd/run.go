@@ -21,7 +21,7 @@ func init() {
 	runCmd.Flags().StringVarP(&buildManifest, "manifest", "m", "pubspec.yaml", "Flutter manifest file of the application.")
 	runCmd.Flags().StringVarP(&buildBranch, "branch", "b", "", "The 'go-flutter' version to use. (@master for example)")
 	runCmd.Flags().StringVarP(&buildCachePath, "cache-path", "", "", "The path that hover uses to cache dependencies such as the Flutter engine .so/.dll (defaults to the standard user cache directory)")
-	runCmd.Flags().StringVarP(&buildPath, "path", "p", "go-desktop", "The path that hover uses to save the 'go-flutter' desktop source code (default is 'go-desktop')")
+	runCmd.Flags().StringVarP(&buildPath, "path", "p", defaultBuildPath, "The path that hover uses to save the 'go-flutter' desktop source code")
 	runCmd.Flags().MarkHidden("branch")
 	rootCmd.AddCommand(runCmd)
 }

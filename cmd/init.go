@@ -11,7 +11,10 @@ import (
 	"github.com/spf13/cobra"
 )
 
+const defaultBuildPath = "go"
+
 func init() {
+	initCmd.Flags().StringVarP(&buildPath, "path", "p", defaultBuildPath, "The path that hover uses to save the 'go-flutter' desktop source code")
 	rootCmd.AddCommand(initCmd)
 }
 
@@ -28,22 +31,22 @@ var initCmd = &cobra.Command{
 		projectPath := args[0]
 		assertInFlutterProject()
 
-		err := os.Mkdir("go-desktop", 0775)
+		err := os.Mkdir(buildPath, 0775)
 		if err != nil {
 			if os.IsExist(err) {
-				fmt.Println("hover: A file or directory named `go-desktop` already exists. Cannot continue init.")
+				fmt.Println("hover: A file or directory named `" + buildPath + "` already exists. Cannot continue init.")
 				os.Exit(1)
 			}
 		}
 
-		desktopCmdPath := filepath.Join("go-desktop", "cmd")
+		desktopCmdPath := filepath.Join(buildPath, "cmd")
 		err = os.Mkdir(desktopCmdPath, 0775)
 		if err != nil {
 			fmt.Printf("hover: Failed to create `%s`: %v\n", desktopCmdPath, err)
 			os.Exit(1)
 		}
 
-		desktopAssetsPath := filepath.Join("go-desktop", "assets")
+		desktopAssetsPath := filepath.Join(buildPath, "assets")
 		err = os.Mkdir(desktopAssetsPath, 0775)
 		if err != nil {
 			fmt.Printf("hover: Failed to create `%s`: %v\n", desktopAssetsPath, err)
@@ -53,7 +56,7 @@ var initCmd = &cobra.Command{
 		copyAsset("app/main.go", filepath.Join(desktopCmdPath, "main.go"))
 		copyAsset("app/options.go", filepath.Join(desktopCmdPath, "options.go"))
 		copyAsset("app/icon.png", filepath.Join(desktopAssetsPath, "icon.png"))
-		copyAsset("app/gitignore", filepath.Join("go-desktop", ".gitignore"))
+		copyAsset("app/gitignore", filepath.Join(buildPath, ".gitignore"))
 
 		wd, err := os.Getwd()
 		if err != nil {
@@ -61,8 +64,8 @@ var initCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		cmdGoModInit := exec.Command(goBin, "mod", "init", projectPath+"/go-desktop")
-		cmdGoModInit.Dir = filepath.Join(wd, "go-desktop")
+		cmdGoModInit := exec.Command(goBin, "mod", "init", projectPath+buildPath)
+		cmdGoModInit.Dir = filepath.Join(wd, buildPath)
 		cmdGoModInit.Env = append(os.Environ(),
 			"GO111MODULE=on",
 		)
@@ -75,7 +78,7 @@ var initCmd = &cobra.Command{
 		}
 
 		cmdGoModTidy := exec.Command(goBin, "mod", "tidy")
-		cmdGoModTidy.Dir = filepath.Join(wd, "go-desktop")
+		cmdGoModTidy.Dir = filepath.Join(wd, buildPath)
 		fmt.Println(cmdGoModTidy.Dir)
 		cmdGoModTidy.Env = append(os.Environ(),
 			"GO111MODULE=on",

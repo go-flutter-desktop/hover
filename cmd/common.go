@@ -71,9 +71,9 @@ Fail:
 }
 
 func assertHoverInitialized() {
-	_, err := os.Stat("desktop")
+	_, err := os.Stat(buildPath)
 	if os.IsNotExist(err) {
-		fmt.Println("hover: Directory 'desktop' is missing, did you run `hover init` in this project?")
+		fmt.Println("hover: Directory " + buildPath + " is missing, did you run `hover init` in this project?")
 		os.Exit(1)
 	}
 	if err != nil {
