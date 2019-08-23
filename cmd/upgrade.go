@@ -102,7 +102,7 @@ func upgradeGoFlutter(targetOS string, engineCachePath string) (err error) {
 		os.Exit(1)
 	}
 
-	fmt.Printf("hover: 'go-flutter' upgraded to: %s\n", currentTag)
+	fmt.Printf("hover: 'go-flutter' is on version: %s\n", currentTag)
 
 	return nil
 

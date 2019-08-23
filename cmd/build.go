@@ -19,22 +19,23 @@ import (
 var dotSlash = string([]byte{'.', filepath.Separator})
 
 var (
-	buildTarget    string
-	buildManifest  string
-	buildBranch    string
-	buildDebug     bool
-	buildCachePath string
-	buildPath      string
+	buildTarget            string
+	buildManifest          string
+	buildBranch            string
+	buildDebug             bool
+	buildPath              string
+	buildCachePath         string
+	buildOmitEmbedder      bool
+	buildOmitFlutterBundle bool
 )
 
 func init() {
 	buildCmd.Flags().StringVarP(&buildTarget, "target", "t", "lib/main_desktop.dart", "The main entry-point file of the application.")
 	buildCmd.Flags().StringVarP(&buildManifest, "manifest", "m", "pubspec.yaml", "Flutter manifest file of the application.")
-	buildCmd.Flags().StringVarP(&buildBranch, "branch", "b", "", "The 'go-flutter' version to use. (@master for example)")
+	buildCmd.Flags().StringVarP(&buildBranch, "branch", "b", "", "The 'go-flutter' version to use. (@master or @v0.20.0 for example)")
 	buildCmd.Flags().BoolVar(&buildDebug, "debug", false, "Build a debug version of the app.")
 	buildCmd.Flags().StringVarP(&buildCachePath, "cache-path", "", "", "The path that hover uses to cache dependencies such as the Flutter engine .so/.dll (defaults to the standard user cache directory)")
 	buildCmd.Flags().StringVarP(&buildPath, "path", "p", defaultBuildPath, "The path that hover uses to save the 'go-flutter' desktop source code")
-	buildCmd.Flags().MarkHidden("branch")
 	rootCmd.AddCommand(buildCmd)
 }
 
@@ -80,10 +81,13 @@ func build(projectName string, targetOS string, vmArguments []string) {
 		engineCachePath = enginecache.ValidateOrUpdateEngine(targetOS)
 	}
 
-	err = os.RemoveAll(outputDirectoryPath)
-	if err != nil {
-		fmt.Printf("hover: failed to clean output directory %s: %v\n", outputDirectoryPath, err)
-		os.Exit(1)
+	if !(buildOmitFlutterBundle || buildOmitEmbedder) {
+		err = os.RemoveAll(outputDirectoryPath)
+		fmt.Printf("hover: Cleaning the build directory\n")
+		if err != nil {
+			fmt.Printf("hover: failed to clean output directory %s: %v\n", outputDirectoryPath, err)
+			os.Exit(1)
+		}
 	}
 
 	err = os.MkdirAll(outputDirectoryPath, 0775)
@@ -110,19 +114,27 @@ func build(projectName string, targetOS string, vmArguments []string) {
 		}
 	}
 
+	var trackWidgetCreation string
+	if buildDebug {
+		trackWidgetCreation = "--track-widget-creation"
+	}
+
 	cmdFlutterBuild := exec.Command(flutterBin, "build", "bundle",
 		"--asset-dir", filepath.Join(outputDirectoryPath, "flutter_assets"),
 		"--target", buildTarget,
 		"--manifest", buildManifest,
+		trackWidgetCreation,
 	)
-
-	fmt.Printf("hover: Bundling flutter app\n")
 	cmdFlutterBuild.Stderr = os.Stderr
 	cmdFlutterBuild.Stdout = os.Stdout
-	err = cmdFlutterBuild.Run()
-	if err != nil {
-		fmt.Printf("hover: Flutter build failed: %v\n", err)
-		os.Exit(1)
+
+	if !buildOmitFlutterBundle {
+		fmt.Printf("hover: Bundling flutter app\n")
+		err = cmdFlutterBuild.Run()
+		if err != nil {
+			fmt.Printf("hover: Flutter build failed: %v\n", err)
+			os.Exit(1)
+		}
 	}
 
 	var engineFile string
@@ -168,6 +180,11 @@ func build(projectName string, targetOS string, vmArguments []string) {
 	if err != nil {
 		fmt.Printf("hover: Failed to copy %s/assets: %v\n", buildPath, err)
 		os.Exit(1)
+	}
+
+	if buildOmitEmbedder {
+		// Omit the 'go-flutter' build
+		return
 	}
 
 	var cgoLdflags string
