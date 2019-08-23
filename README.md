@@ -32,10 +32,6 @@ Install these dependencies:
 	* On CentOS/Fedora-like Linux distributions, you need `libX11-devel libXcursor-devel libXrandr-devel libXinerama-devel mesa-libGL-devel libXi-devel` packages.
 	* See [here](http://www.glfw.org/docs/latest/compile.html#compile_deps) for full details.
 
-## Fonts
-
-No text visible? Make sure you have used fonts added to the project. The default font for `MaterialApp`, Roboto, is not installed on all machines.
-
 ## Getting started with an existing Flutter project
 
 This assumes you have an existing flutter project which you want to run on desktop. If you don't have a project yet, follow the flutter tutorial for setting up a new project first.
@@ -56,15 +52,18 @@ hover init github.com/my-organization/simpleApplication
 
 This creates the directory `desktop` and adds boilerplate files such as Go code and a default logo.
 
-Optionally, you may add [plugins](https://github.com/go-flutter-desktop/plugins) to `desktop/cmd/options.go`
-
-Optionally, change the logo in `desktop/assets/logo.png`, which is used as icon for the window.
-
-Make sure you have a main_desktop.dart that contains the following code before `runApp(..)`:
-
+Make sure you have the following
+[main_desktop.dart](https://github.com/go-flutter-desktop/examples/blob/5508a59ff4916fca9c05dfde4929d8848fd2a947/pointer_demo/lib/main_desktop.dart)
+in the root librairie of your application.  
+It's the following code before `runApp(..)` that makes Flutter run on other platforms:
 ```dart
 debugDefaultTargetPlatformOverride = TargetPlatform.fuchsia;
 ```
+
+
+Optionally, you may add [plugins](https://github.com/go-flutter-desktop/plugins) to `desktop/cmd/options.go`  
+Optionally, change the logo in `desktop/assets/logo.png`, which is used as icon for the window.
+
 
 ### Run with hot-reload
 
@@ -78,7 +77,7 @@ The hot-reload is manual because you'll need to press 'r' in the terminal to hot
 
 By default, hover uses the file `lib/main_desktop.dart` as entrypoint. You may specify a different endpoint by using the `--target` flag.
 
-If you want to integrate go-flutter with VSCode, read this [issue](https://github.com/go-flutter-desktop/go-flutter/issues/129).
+If you want to integrate go-flutter with VSCode, read this [issue](https://github.com/go-flutter-desktop/go-flutter/issues/129#issuecomment-513590141).
 
 ### Build standalone application
 
@@ -98,7 +97,11 @@ To start the binary: (replace `yourApplicationName` with your app name)
 
 It's possible to zip the whole dir `desktop/build/outputs/linux` and ship it to a different machine.
 
-There is no support for release binaries yet, only debug.
+
+## Fonts
+
+No text visible? Make sure to use fonts who are included in the flutter assets/fonts system. The default font for `MaterialApp`, Roboto, is not installed on all machines.
+
 
 ## Issues
 

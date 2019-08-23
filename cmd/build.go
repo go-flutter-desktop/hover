@@ -112,10 +112,16 @@ func build(projectName string, targetOS string, vmArguments []string) {
 		}
 	}
 
+	var trackWidgetCreation string
+	if buildDebug {
+		trackWidgetCreation = "--track-widget-creation"
+	}
+
 	cmdFlutterBuild := exec.Command(flutterBin, "build", "bundle",
 		"--asset-dir", filepath.Join(outputDirectoryPath, "flutter_assets"),
 		"--target", buildTarget,
 		"--manifest", buildManifest,
+		trackWidgetCreation,
 	)
 	cmdFlutterBuild.Stderr = os.Stderr
 	cmdFlutterBuild.Stdout = os.Stdout
