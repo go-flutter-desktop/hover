@@ -13,14 +13,14 @@ import (
 	"github.com/spf13/cobra"
 )
 
-// TODO: make configurable in case port is taken
-const defaultObservatoryPort = "50300"
+var runObservatoryPort string
 
 func init() {
 	runCmd.Flags().StringVarP(&buildTarget, "target", "t", "lib/main_desktop.dart", "The main entry-point file of the application.")
 	runCmd.Flags().StringVarP(&buildManifest, "manifest", "m", "pubspec.yaml", "Flutter manifest file of the application.")
-	buildCmd.Flags().StringVarP(&buildBranch, "branch", "b", "", "The 'go-flutter' version to use. (@master or @v0.20.0 for example)")
+	runCmd.Flags().StringVarP(&buildBranch, "branch", "b", "", "The 'go-flutter' version to use. (@master or @v0.20.0 for example)")
 	runCmd.Flags().StringVarP(&buildCachePath, "cache-path", "", "", "The path that hover uses to cache dependencies such as the Flutter engine .so/.dll (defaults to the standard user cache directory)")
+	runCmd.Flags().StringVarP(&runObservatoryPort, "observatory-port", "", "50300", "The observatory port used to connect hover to VM services (hot-reload/debug/..)")
 	runCmd.Flags().BoolVar(&buildOmitEmbedder, "omit-embedder", false, "Don't (re)compile 'go-flutter' source code, useful when only working with Dart code")
 	runCmd.Flags().BoolVar(&buildOmitFlutterBundle, "omit-flutter", false, "Don't (re)compile the current Flutter project, useful when only working with Golang code (plugin)")
 	rootCmd.AddCommand(runCmd)
@@ -45,7 +45,7 @@ var runCmd = &cobra.Command{
 		// forcefully enable --debug (which is not an option for `hover run`)
 		buildDebug = true
 
-		build(projectName, targetOS, []string{"--observatory-port=50300"})
+		build(projectName, targetOS, []string{"--observatory-port=" + runObservatoryPort})
 		runAndAttach(projectName, targetOS)
 	},
 }
@@ -65,7 +65,7 @@ func runAndAttach(projectName string, targetOS string) {
 		os.Exit(1)
 	}
 
-	re := regexp.MustCompile("(?:http:\\/\\/)[^:]*:50300\\/[^\\/]*\\/")
+	re := regexp.MustCompile("(?:http:\\/\\/)[^:]*:" + runObservatoryPort + "\\/[^\\/]*\\/")
 
 	// Non-blockingly read the stdout to catch the debug-uri
 	go func(reader io.Reader) {
