@@ -36,6 +36,7 @@ type PubSpec struct {
 	Name         string
 	Description  string
 	Version      string
+	Author       string
 	Dependencies map[string]interface{}
 }
 
@@ -62,6 +63,11 @@ func assertInFlutterProject() PubSpec {
 		}
 		if _, exists := pubspec.Dependencies["flutter"]; !exists {
 			fmt.Println("hover: Missing `flutter` in pubspec.yaml dependencies list.")
+			goto Fail
+		}
+
+		if pubspec.Author == "" {
+			fmt.Println("hover: Missing `author` in pubspec.yaml.")
 			goto Fail
 		}
 
