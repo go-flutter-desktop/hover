@@ -87,12 +87,12 @@ To create a standalone debug build run this command:
 hover build
 ```
 
-The output will be in `desktop/build/outputs/linux` or windows or darwin depending on your OS. Hover does not yet support cross-compilation.
+The output will be in `build/desktop/linux` or windows or darwin depending on your OS. Hover does not yet support cross-compilation.
 
 To start the binary: (replace `yourApplicationName` with your app name)
 
 ```bash
-./desktop/build/outputs/linux/yourApplicationName
+./build/desktop/linux/yourApplicationName
 ```
 
 It's possible to zip the whole dir `desktop/build/outputs/linux` and ship it to a different machine.
