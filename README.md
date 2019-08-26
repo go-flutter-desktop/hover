@@ -95,8 +95,27 @@ To start the binary: (replace `yourApplicationName` with your app name)
 ./desktop/build/outputs/linux/yourApplicationName
 ```
 
-It's possible to zip the whole dir `desktop/build/outputs/linux` and ship it to a different machine.
+It's possible to zip the whole dir `desktop/build/outputs/linux` and ship it to a different machine or [package](#package-standalone-application) it and ship it to a different machine or even a software repository.
 
+### Package standalone application
+
+To package the build of your standalone application using for example snapcraft run:
+
+```bash
+hover package snap
+```
+
+To also install the application after packaging it enable the install flag.
+
+```bash
+hover package snap -i
+```
+
+The output will be in `desktop/build/outputs/linux` or windows or darwin depending on your OS.
+
+Currently supported packaging formats are:
+- snap (Linux)
+- deb (Linux)
 
 ## Fonts
 
