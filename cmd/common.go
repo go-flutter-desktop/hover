@@ -6,7 +6,7 @@ import (
 	"os/exec"
 
 	"github.com/spf13/cobra"
-	yaml "gopkg.in/yaml.v2"
+	"gopkg.in/yaml.v2"
 )
 
 func init() {
@@ -32,14 +32,17 @@ func initBinaries() {
 	}
 }
 
+type PubSpec struct {
+	Name         string
+	Description  string
+	Version      string
+	Dependencies map[string]interface{}
+}
+
 // assertInFlutterProject asserts this command is executed in a flutter project
 // and returns the project name.
-func assertInFlutterProject() string {
+func assertInFlutterProject() PubSpec {
 	{
-		var pubspec struct {
-			Name         string
-			Dependencies map[string]interface{}
-		}
 		file, err := os.Open("pubspec.yaml")
 		if err != nil {
 			if os.IsNotExist(err) {
@@ -51,6 +54,7 @@ func assertInFlutterProject() string {
 		}
 		defer file.Close()
 
+		var pubspec = PubSpec{}
 		err = yaml.NewDecoder(file).Decode(&pubspec)
 		if err != nil {
 			fmt.Printf("hover: Failed to decode pubspec.yaml: %v\n", err)
@@ -61,13 +65,13 @@ func assertInFlutterProject() string {
 			goto Fail
 		}
 
-		return pubspec.Name
+		return pubspec
 	}
 
 Fail:
 	fmt.Println("hover: This command should be run from the root of your Flutter project.")
 	os.Exit(1)
-	return ""
+	return PubSpec{}
 }
 
 func assertHoverInitialized() {
