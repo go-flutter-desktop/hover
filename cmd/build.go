@@ -50,7 +50,7 @@ var buildCmd = &cobra.Command{
 }
 
 func build(projectName string, targetOS string, vmArguments []string) {
-	outputDirectoryPath, err := filepath.Abs(filepath.Join("desktop", "build", "outputs", targetOS))
+	outputDirectoryPath, err := filepath.Abs(filepath.Join("build", "desktop", targetOS))
 	if err != nil {
 		fmt.Printf("hover: Failed to resolve absolute path for output directory: %v\n", err)
 		os.Exit(1)
