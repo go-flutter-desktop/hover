@@ -52,7 +52,7 @@ var runCmd = &cobra.Command{
 }
 
 func runAndAttach(projectName string, targetOS string) {
-	cmdApp := exec.Command(dotSlash + filepath.Join("desktop", "build", "outputs", targetOS, projectName))
+	cmdApp := exec.Command(dotSlash + filepath.Join(buildPath, "build", "outputs", targetOS, projectName))
 	cmdFlutterAttach := exec.Command("flutter", "attach")
 
 	stdoutApp, err := cmdApp.StdoutPipe()

@@ -1,9 +1,12 @@
 package cmd
 
 import (
+	"bufio"
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
+	"strings"
 
 	"github.com/spf13/cobra"
 	yaml "gopkg.in/yaml.v2"
@@ -71,13 +74,59 @@ Fail:
 }
 
 func assertHoverInitialized() {
-	_, err := os.Stat("desktop")
+	_, err := os.Stat(buildPath)
 	if os.IsNotExist(err) {
-		fmt.Println("hover: Directory 'desktop' is missing, did you run `hover init` in this project?")
+		if hoverMigration() {
+			return
+		}
+		fmt.Println("hover: Directory '" + buildPath + "' is missing, did you run `hover init` in this project?")
 		os.Exit(1)
 	}
 	if err != nil {
 		fmt.Printf("hover: Failed to detect directory desktop: %v\n", err)
 		os.Exit(1)
 	}
+}
+
+func hoverMigration() bool {
+	oldBuildPath := "desktop"
+	file, err := os.Open(filepath.Join(oldBuildPath, "go.mod"))
+	if err != nil {
+		return false
+	}
+	defer file.Close()
+
+	fmt.Println("hover: ⚠ Found older hover directory layout, hover is now expecting a 'go' directory instead of 'desktop'.")
+	fmt.Println("hover: ⚠    To migrate, rename the 'desktop' directory to 'go'.")
+	fmt.Printf("hover:      Let hover do the migration? ")
+
+	if askForConfirmation() {
+		err := os.Rename(oldBuildPath, buildPath)
+		if err != nil {
+			fmt.Printf("hover: Migration failed: %v\n", err)
+			return false
+		}
+		fmt.Printf("hover: Migration success\n")
+		return true
+	}
+
+	return false
+}
+
+// askForConfirmation asks the user for confirmation.
+func askForConfirmation() bool {
+	fmt.Printf("[Y/n]: ")
+	in := bufio.NewReader(os.Stdin)
+	s, err := in.ReadString('\n')
+	if err != nil {
+		panic(err)
+	}
+
+	s = strings.TrimSpace(s)
+	s = strings.ToLower(s)
+
+	if s == "y" || s == "yes" || s == "" {
+		return true
+	}
+	return false
 }

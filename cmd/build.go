@@ -28,6 +28,8 @@ var (
 	buildOmitFlutterBundle bool
 )
 
+const buildPath = "go"
+
 func init() {
 	buildCmd.Flags().StringVarP(&buildTarget, "target", "t", "lib/main_desktop.dart", "The main entry-point file of the application.")
 	buildCmd.Flags().StringVarP(&buildManifest, "manifest", "m", "pubspec.yaml", "Flutter manifest file of the application.")
@@ -52,7 +54,7 @@ var buildCmd = &cobra.Command{
 }
 
 func build(projectName string, targetOS string, vmArguments []string) {
-	outputDirectoryPath, err := filepath.Abs(filepath.Join("desktop", "build", "outputs", targetOS))
+	outputDirectoryPath, err := filepath.Abs(filepath.Join(buildPath, "build", "outputs", targetOS))
 	if err != nil {
 		fmt.Printf("hover: Failed to resolve absolute path for output directory: %v\n", err)
 		os.Exit(1)
@@ -172,11 +174,11 @@ func build(projectName string, targetOS string, vmArguments []string) {
 	}
 
 	err = copy.Copy(
-		filepath.Join("desktop", "assets"),
+		filepath.Join(buildPath, "assets"),
 		filepath.Join(outputDirectoryPath, "assets"),
 	)
 	if err != nil {
-		fmt.Printf("hover: Failed to copy desktop/assets: %v\n", err)
+		fmt.Printf("hover: Failed to copy %s/assets: %v\n", buildPath, err)
 		os.Exit(1)
 	}
 
@@ -206,7 +208,7 @@ func build(projectName string, targetOS string, vmArguments []string) {
 
 	if buildBranch == "" {
 
-		currentTag, err := enginecache.CurrentGoFlutterTag(wd)
+		currentTag, err := enginecache.CurrentGoFlutterTag(filepath.Join(wd, buildPath))
 		if err != nil {
 			fmt.Printf("hover: %v\n", err)
 			os.Exit(1)
@@ -230,7 +232,7 @@ func build(projectName string, targetOS string, vmArguments []string) {
 		} else {
 			// when the buildBranch is empty and the currentTag is a release.
 			// Check if the 'go-flutter' needs updates.
-			enginecache.CheckFoGoFlutterUpdate(wd, currentTag)
+			enginecache.CheckFoGoFlutterUpdate(filepath.Join(wd, buildPath), currentTag)
 		}
 
 	} else {
@@ -261,7 +263,7 @@ func build(projectName string, targetOS string, vmArguments []string) {
 		fmt.Sprintf("-ldflags=%s", strings.Join(ldflags, " ")),
 		dotSlash+"cmd",
 	)
-	cmdGoBuild.Dir = filepath.Join(wd, "desktop")
+	cmdGoBuild.Dir = filepath.Join(wd, buildPath)
 	cmdGoBuild.Env = append(os.Environ(),
 		"GO111MODULE=on",
 		"CGO_LDFLAGS="+cgoLdflags,

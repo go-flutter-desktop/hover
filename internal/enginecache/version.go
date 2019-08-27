@@ -37,8 +37,8 @@ func flutterRequiredEngineVersion() string {
 // for the current project. If the last update comes back to more than X days,
 // fetch the last Github release semver. If the Github semver is more recent
 // than the current one, display the update notice.
-func CheckFoGoFlutterUpdate(wd string, currentTag string) {
-	cachedGoFlutterCheckPath := filepath.Join(wd, "desktop", ".last_goflutter_check")
+func CheckFoGoFlutterUpdate(goDirectoryPath string, currentTag string) {
+	cachedGoFlutterCheckPath := filepath.Join(goDirectoryPath, ".last_goflutter_check")
 	cachedGoFlutterCheckBytes, err := ioutil.ReadFile(cachedGoFlutterCheckPath)
 	if err != nil && !os.IsNotExist(err) {
 		fmt.Printf("hover: Failed to read the go-flutter last update check: %v\n", err)
@@ -113,8 +113,8 @@ func CheckFoGoFlutterUpdate(wd string, currentTag string) {
 }
 
 // CurrentGoFlutterTag retrieve the semver of go-flutter in 'go.mod'
-func CurrentGoFlutterTag(wd string) (currentTag string, err error) {
-	goModPath := filepath.Join(wd, "desktop", "go.mod")
+func CurrentGoFlutterTag(goDirectoryPath string) (currentTag string, err error) {
+	goModPath := filepath.Join(goDirectoryPath, "go.mod")
 	goModBytes, err := ioutil.ReadFile(goModPath)
 	if err != nil && !os.IsNotExist(err) {
 		err = errors.Wrap(err, "Failed to read the 'go.mod' file: %v")
