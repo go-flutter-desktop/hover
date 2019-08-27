@@ -115,7 +115,7 @@ func hoverMigration() bool {
 
 // askForConfirmation asks the user for confirmation.
 func askForConfirmation() bool {
-	fmt.Printf("[Y/n]: ")
+	fmt.Printf("[y/N]: ")
 	in := bufio.NewReader(os.Stdin)
 	s, err := in.ReadString('\n')
 	if err != nil {
@@ -125,7 +125,7 @@ func askForConfirmation() bool {
 	s = strings.TrimSpace(s)
 	s = strings.ToLower(s)
 
-	if s == "y" || s == "yes" || s == "" {
+	if s == "y" || s == "yes" {
 		return true
 	}
 	return false

@@ -14,6 +14,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/go-flutter-desktop/hover/internal/enginecache"
+	"github.com/go-flutter-desktop/hover/internal/versioncheck"
 )
 
 var dotSlash = string([]byte{'.', filepath.Separator})
@@ -209,7 +210,7 @@ func build(projectName string, targetOS string, vmArguments []string) {
 
 	if buildBranch == "" {
 
-		currentTag, err := enginecache.CurrentGoFlutterTag(filepath.Join(wd, buildPath))
+		currentTag, err := versioncheck.CurrentGoFlutterTag(filepath.Join(wd, buildPath))
 		if err != nil {
 			fmt.Printf("hover: %v\n", err)
 			os.Exit(1)
@@ -233,7 +234,7 @@ func build(projectName string, targetOS string, vmArguments []string) {
 		} else {
 			// when the buildBranch is empty and the currentTag is a release.
 			// Check if the 'go-flutter' needs updates.
-			enginecache.CheckFoGoFlutterUpdate(filepath.Join(wd, buildPath), currentTag)
+			versioncheck.CheckFoGoFlutterUpdate(filepath.Join(wd, buildPath), currentTag)
 		}
 
 	} else {

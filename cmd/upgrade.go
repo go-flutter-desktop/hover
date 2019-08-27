@@ -8,6 +8,8 @@ import (
 	"runtime"
 
 	"github.com/go-flutter-desktop/hover/internal/enginecache"
+	"github.com/go-flutter-desktop/hover/internal/versioncheck"
+
 	"github.com/spf13/cobra"
 )
 
@@ -95,7 +97,7 @@ func upgradeGoFlutter(targetOS string, engineCachePath string) (err error) {
 		return
 	}
 
-	currentTag, err := enginecache.CurrentGoFlutterTag(filepath.Join(wd, buildPath))
+	currentTag, err := versioncheck.CurrentGoFlutterTag(filepath.Join(wd, buildPath))
 	if err != nil {
 		fmt.Printf("hover: %v\n", err)
 		os.Exit(1)
