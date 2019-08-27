@@ -11,10 +11,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
-const defaultBuildPath = "go"
-
 func init() {
-	initCmd.Flags().StringVarP(&buildPath, "path", "p", defaultBuildPath, "The path that hover uses to save the 'go-flutter' desktop source code")
 	rootCmd.AddCommand(initCmd)
 }
 

@@ -23,11 +23,12 @@ var (
 	buildManifest          string
 	buildBranch            string
 	buildDebug             bool
-	buildPath              string
 	buildCachePath         string
 	buildOmitEmbedder      bool
 	buildOmitFlutterBundle bool
 )
+
+const buildPath = "go"
 
 func init() {
 	buildCmd.Flags().StringVarP(&buildTarget, "target", "t", "lib/main_desktop.dart", "The main entry-point file of the application.")
@@ -35,7 +36,6 @@ func init() {
 	buildCmd.Flags().StringVarP(&buildBranch, "branch", "b", "", "The 'go-flutter' version to use. (@master or @v0.20.0 for example)")
 	buildCmd.Flags().BoolVar(&buildDebug, "debug", false, "Build a debug version of the app.")
 	buildCmd.Flags().StringVarP(&buildCachePath, "cache-path", "", "", "The path that hover uses to cache dependencies such as the Flutter engine .so/.dll (defaults to the standard user cache directory)")
-	buildCmd.Flags().StringVarP(&buildPath, "path", "p", defaultBuildPath, "The path that hover uses to save the 'go-flutter' desktop source code")
 	rootCmd.AddCommand(buildCmd)
 }
 
