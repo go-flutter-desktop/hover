@@ -66,11 +66,14 @@ func CheckFoGoFlutterUpdate(goDirectoryPath string, currentTag string) {
 	}
 	lastUpdateTimeStamp := time.Unix(i, 0)
 
-	newCheck := now.Sub(lastUpdateTimeStamp).Hours() > 48.0 ||
+	checkRate := 1.0
+
+	newCheck := now.Sub(lastUpdateTimeStamp).Hours() > checkRate ||
 		(now.Sub(lastUpdateTimeStamp).Minutes() < 1.0 && // keep the notice for X Minutes
 			now.Sub(lastUpdateTimeStamp).Minutes() > 0.0)
 
-	if newCheck {
+	checkUpdateOptOut := os.Getenv("HOVER_IGNORE_CHECK_NEW_RELEASE")
+	if newCheck && checkUpdateOptOut != "true" {
 		fmt.Printf("hover: Checking available release on Github\n")
 
 		// fecth the last githubTag
@@ -86,7 +89,7 @@ func CheckFoGoFlutterUpdate(goDirectoryPath string, currentTag string) {
 
 			// update the timestamp
 			// don't spam people who don't have access to internet
-			now := time.Now().Add(48 * time.Hour)
+			now := time.Now().Add(time.Duration(checkRate) * time.Hour)
 			nowString := strconv.FormatInt(now.Unix(), 10)
 
 			err = ioutil.WriteFile(cachedGoFlutterCheckPath, []byte(nowString), 0664)
@@ -98,10 +101,10 @@ func CheckFoGoFlutterUpdate(goDirectoryPath string, currentTag string) {
 		}
 		if res.Outdated {
 			fmt.Printf("hover: The core library 'go-flutter' has an update available. (%s -> %s)\n", currentTag, res.Current)
-			fmt.Printf("              To update 'go-flutter' run: $ hover upgrade\n")
+			fmt.Printf("              To update 'go-flutter' in this project run: $ hover upgrade\n")
 		}
 
-		if now.Sub(lastUpdateTimeStamp).Hours() > 48.0 {
+		if now.Sub(lastUpdateTimeStamp).Hours() > checkRate {
 			// update the timestamp
 			err = ioutil.WriteFile(cachedGoFlutterCheckPath, []byte(nowString), 0664)
 			if err != nil {

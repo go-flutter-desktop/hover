@@ -81,7 +81,7 @@ func build(projectName string, targetOS string, vmArguments []string) {
 		engineCachePath = enginecache.ValidateOrUpdateEngine(targetOS)
 	}
 
-	if !(buildOmitFlutterBundle || buildOmitEmbedder) {
+	if !buildOmitFlutterBundle && !buildOmitEmbedder {
 		err = os.RemoveAll(outputDirectoryPath)
 		fmt.Printf("hover: Cleaning the build directory\n")
 		if err != nil {
@@ -105,7 +105,8 @@ func build(projectName string, targetOS string, vmArguments []string) {
 
 		match := re.FindStringSubmatch(string(cmdCheckFlutterOut))
 		if len(match) >= 2 {
-			if match[1] == "master" {
+			ignoreWarning := os.Getenv("HOVER_IGNORE_CHANNEL_WARNING")
+			if match[1] != "beta" && ignoreWarning != "true" {
 				fmt.Println("hover: ⚠ The go-flutter project tries to stay compatible with the beta channel of Flutter.")
 				fmt.Println("hover: ⚠     It's advised to use the beta channel. ($ flutter channel beta)")
 			}
