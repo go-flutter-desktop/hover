@@ -64,7 +64,7 @@ var initCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		cmdGoModInit := exec.Command(goBin, "mod", "init", projectPath+buildPath)
+		cmdGoModInit := exec.Command(goBin, "mod", "init", projectPath+"/"+buildPath)
 		cmdGoModInit.Dir = filepath.Join(wd, buildPath)
 		cmdGoModInit.Env = append(os.Environ(),
 			"GO111MODULE=on",
