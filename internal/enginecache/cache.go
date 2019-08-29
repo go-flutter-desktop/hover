@@ -252,6 +252,10 @@ func ValidateOrUpdateEngineAtPath(targetOS string, cachePath string) (engineCach
 		os.Exit(1)
 	}
 	req.Header.Set("Accept", "application/vnd.github.v3+json")
+	githubToken := os.Getenv("GITHUB_TOKEN")
+	if githubToken != "" {
+		req.Header.Set("Authorization", fmt.Sprintf("token %s", githubToken))
+	}
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
