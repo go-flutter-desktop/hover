@@ -4,7 +4,14 @@
   "major": {
     "automerge": false
   },
+  "gomodTidy": true,
+  "requiredStatusChecks": null,
   "postUpdateOptions": [
     "gomodTidy"
+  ],
+  "ignoreDeps": [
+    "golang.org/x/crypto",
+    "golang.org/x/net",
+    "golang.org/x/sys"
   ]
 }
