@@ -9,29 +9,34 @@ import (
 	"runtime"
 	"strings"
 
+	"github.com/hashicorp/go-version"
 	"github.com/otiai10/copy"
 	"github.com/spf13/cobra"
 
 	"github.com/go-flutter-desktop/hover/internal/enginecache"
+	"github.com/go-flutter-desktop/hover/internal/versioncheck"
 )
 
 var dotSlash = string([]byte{'.', filepath.Separator})
 
 var (
-	buildTarget    string
-	buildManifest  string
-	buildBranch    string
-	buildDebug     bool
-	buildCachePath string
+	buildTarget            string
+	buildManifest          string
+	buildBranch            string
+	buildDebug             bool
+	buildCachePath         string
+	buildOmitEmbedder      bool
+	buildOmitFlutterBundle bool
 )
+
+const buildPath = "go"
 
 func init() {
 	buildCmd.Flags().StringVarP(&buildTarget, "target", "t", "lib/main_desktop.dart", "The main entry-point file of the application.")
 	buildCmd.Flags().StringVarP(&buildManifest, "manifest", "m", "pubspec.yaml", "Flutter manifest file of the application.")
-	buildCmd.Flags().StringVarP(&buildBranch, "branch", "b", "", "The go-flutter-desktop/go-flutter branch to use when building the embedder. (@master for example)")
+	buildCmd.Flags().StringVarP(&buildBranch, "branch", "b", "", "The 'go-flutter' version to use. (@master or @v0.20.0 for example)")
 	buildCmd.Flags().BoolVar(&buildDebug, "debug", false, "Build a debug version of the app.")
 	buildCmd.Flags().StringVarP(&buildCachePath, "cache-path", "", "", "The path that hover uses to cache dependencies such as the Flutter engine .so/.dll (defaults to the standard user cache directory)")
-	buildCmd.Flags().MarkHidden("branch")
 	rootCmd.AddCommand(buildCmd)
 }
 
@@ -50,7 +55,7 @@ var buildCmd = &cobra.Command{
 }
 
 func outputDirectoryPath(targetOS string) string {
-	outputDirectoryPath, err := filepath.Abs(filepath.Join("desktop", "build", "outputs", targetOS))
+	outputDirectoryPath, err := filepath.Abs(filepath.Join(buildPath, "build", "outputs", targetOS))
 	if err != nil {
 		fmt.Printf("hover: Failed to resolve absolute path for output directory: %v\n", err)
 		os.Exit(1)
@@ -87,13 +92,16 @@ func build(projectName string, targetOS string, vmArguments []string) {
 		engineCachePath = enginecache.ValidateOrUpdateEngine(targetOS)
 	}
 
-	var err = os.RemoveAll(outputDirectoryPath(targetOS))
-	if err != nil {
-		fmt.Printf("hover: failed to clean output directory %s: %v\n", outputDirectoryPath(targetOS), err)
-		os.Exit(1)
+	if !buildOmitFlutterBundle && !buildOmitEmbedder {
+		err := os.RemoveAll(outputDirectoryPath(targetOS))
+		fmt.Printf("hover: Cleaning the build directory\n")
+		if err != nil {
+			fmt.Printf("hover: failed to clean output directory %s: %v\n", outputDirectoryPath(targetOS), err)
+			os.Exit(1)
+		}
 	}
 
-	err = os.MkdirAll(outputDirectoryPath(targetOS), 0775)
+	err := os.MkdirAll(outputDirectoryPath(targetOS), 0775)
 	if err != nil {
 		fmt.Printf("hover: failed to create output directory %s: %v\n", outputDirectoryPath(targetOS), err)
 		os.Exit(1)
@@ -102,18 +110,19 @@ func build(projectName string, targetOS string, vmArguments []string) {
 	cmdCheckFlutter := exec.Command(flutterBin, "--version")
 	cmdCheckFlutterOut, err := cmdCheckFlutter.Output()
 	if err != nil {
-		fmt.Printf("hover: failed to check your flutter version: %v\n", err)
+		fmt.Printf("hover: failed to check your flutter channel: %v\n", err)
 	} else {
 		re := regexp.MustCompile("•\\schannel\\s(\\w*)\\s•")
 
 		match := re.FindStringSubmatch(string(cmdCheckFlutterOut))
 		if len(match) >= 2 {
-			if match[1] != "beta" {
+			ignoreWarning := os.Getenv("HOVER_IGNORE_CHANNEL_WARNING")
+			if match[1] != "beta" && ignoreWarning != "true" {
 				fmt.Println("hover: ⚠ The go-flutter project tries to stay compatible with the beta channel of Flutter.")
 				fmt.Println("hover: ⚠     It's advised to use the beta channel. ($ flutter channel beta)")
 			}
 		} else {
-			fmt.Printf("hover: failed to check your flutter version: Unrecognized output format")
+			fmt.Printf("hover: failed to check your flutter channel: Unrecognized output format")
 		}
 	}
 
@@ -130,10 +139,14 @@ func build(projectName string, targetOS string, vmArguments []string) {
 	)
 	cmdFlutterBuild.Stderr = os.Stderr
 	cmdFlutterBuild.Stdout = os.Stdout
-	err = cmdFlutterBuild.Run()
-	if err != nil {
-		fmt.Printf("hover: Flutter build failed: %v\n", err)
-		os.Exit(1)
+
+	if !buildOmitFlutterBundle {
+		fmt.Printf("hover: Bundling flutter app\n")
+		err = cmdFlutterBuild.Run()
+		if err != nil {
+			fmt.Printf("hover: Flutter build failed: %v\n", err)
+			os.Exit(1)
+		}
 	}
 
 	var engineFile string
@@ -173,12 +186,17 @@ func build(projectName string, targetOS string, vmArguments []string) {
 	}
 
 	err = copy.Copy(
-		filepath.Join("desktop", "assets"),
+		filepath.Join(buildPath, "assets"),
 		filepath.Join(outputDirectoryPath(targetOS), "assets"),
 	)
 	if err != nil {
-		fmt.Printf("hover: Failed to copy desktop/assets: %v\n", err)
+		fmt.Printf("hover: Failed to copy %s/assets: %v\n", buildPath, err)
 		os.Exit(1)
+	}
+
+	if buildOmitEmbedder {
+		// Omit the 'go-flutter' build
+		return
 	}
 
 	var cgoLdflags string
@@ -200,33 +218,43 @@ func build(projectName string, targetOS string, vmArguments []string) {
 		os.Exit(1)
 	}
 
-	cmdGoGetU := exec.Command(goBin, "get", "-u", "github.com/go-flutter-desktop/go-flutter"+buildBranch)
-	cmdGoGetU.Dir = filepath.Join(wd, "desktop")
-	cmdGoGetU.Env = append(os.Environ(),
-		"GO111MODULE=on",
-		"CGO_LDFLAGS="+cgoLdflags,
-	)
-	cmdGoGetU.Stderr = os.Stderr
-	cmdGoGetU.Stdout = os.Stdout
+	if buildBranch == "" {
 
-	err = cmdGoGetU.Run()
-	if err != nil {
-		fmt.Printf("hover: Updating go-flutter to latest version failed: %v\n", err)
-		os.Exit(1)
-	}
+		currentTag, err := versioncheck.CurrentGoFlutterTag(filepath.Join(wd, buildPath))
+		if err != nil {
+			fmt.Printf("hover: %v\n", err)
+			os.Exit(1)
+		}
 
-	cmdGoModDownload := exec.Command(goBin, "mod", "download")
-	cmdGoModDownload.Dir = filepath.Join(wd, "desktop")
-	cmdGoModDownload.Env = append(os.Environ(),
-		"GO111MODULE=on",
-	)
-	cmdGoModDownload.Stderr = os.Stderr
-	cmdGoModDownload.Stdout = os.Stdout
+		semver, err := version.NewSemver(currentTag)
+		if err != nil {
+			fmt.Printf("hover: faild to parse 'go-flutter' semver: %v\n", err)
+			os.Exit(1)
+		}
 
-	err = cmdGoModDownload.Run()
-	if err != nil {
-		fmt.Printf("hover: Go mod download failed: %v\n", err)
-		os.Exit(1)
+		if semver.Prerelease() != "" {
+			fmt.Printf("hover: Upgrade 'go-flutter' to the latest release\n")
+			// no buildBranch provided and currentTag isn't a release,
+			// force update. (same behaviour as previous version of hover).
+			err = upgradeGoFlutter(targetOS, engineCachePath)
+			if err != nil {
+				// the upgrade can fail silently
+				fmt.Printf("hover: Upgrade ignored, current 'go-flutter' version: %s\n", currentTag)
+			}
+		} else {
+			// when the buildBranch is empty and the currentTag is a release.
+			// Check if the 'go-flutter' needs updates.
+			versioncheck.CheckFoGoFlutterUpdate(filepath.Join(wd, buildPath), currentTag)
+		}
+
+	} else {
+		fmt.Printf("hover: Downloading 'go-flutter' %s\n", buildBranch)
+
+		// when the buildBranch is set, fetch the go-flutter branch version.
+		err = upgradeGoFlutter(targetOS, engineCachePath)
+		if err != nil {
+			os.Exit(1)
+		}
 	}
 
 	var ldflags []string
@@ -247,7 +275,7 @@ func build(projectName string, targetOS string, vmArguments []string) {
 		fmt.Sprintf("-ldflags=%s", strings.Join(ldflags, " ")),
 		dotSlash+"cmd",
 	)
-	cmdGoBuild.Dir = filepath.Join(wd, "desktop")
+	cmdGoBuild.Dir = filepath.Join(wd, buildPath)
 	cmdGoBuild.Env = append(os.Environ(),
 		"GO111MODULE=on",
 		"CGO_LDFLAGS="+cgoLdflags,
@@ -256,6 +284,7 @@ func build(projectName string, targetOS string, vmArguments []string) {
 	cmdGoBuild.Stderr = os.Stderr
 	cmdGoBuild.Stdout = os.Stdout
 
+	fmt.Printf("hover: Compiling 'go-flutter' and plugins\n")
 	err = cmdGoBuild.Run()
 	if err != nil {
 		fmt.Printf("hover: Go build failed: %v\n", err)

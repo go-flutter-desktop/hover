@@ -10,7 +10,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -252,6 +251,10 @@ func ValidateOrUpdateEngineAtPath(targetOS string, cachePath string) (engineCach
 		os.Exit(1)
 	}
 	req.Header.Set("Accept", "application/vnd.github.v3+json")
+	githubToken := os.Getenv("GITHUB_TOKEN")
+	if githubToken != "" {
+		req.Header.Set("Authorization", fmt.Sprintf("token %s", githubToken))
+	}
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
@@ -293,7 +296,7 @@ func ValidateOrUpdateEngineAtPath(targetOS string, cachePath string) (engineCach
 	case "windows":
 		engineDownloadURL += platform + "-embedder.zip"
 	default:
-		fmt.Printf("hover: cannot run on %s, download engine not implemented.\n", runtime.GOOS)
+		fmt.Printf("hover: cannot run on %s, download engine not implemented.\n", targetOS)
 		os.Exit(1)
 	}
 
