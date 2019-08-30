@@ -35,8 +35,13 @@ func CheckFoGoFlutterUpdate(goDirectoryPath string, currentTag string) {
 	if cachedGoFlutterCheck == "" {
 		err = ioutil.WriteFile(cachedGoFlutterCheckPath, []byte(nowString), 0664)
 		if err != nil {
-			fmt.Printf("hover: Failed to write the update timestamp to file: %v\n", err)
+			fmt.Printf("hover: Failed to write the update timestamp: %v\n", err)
 		}
+
+		// If needed, update the hover's .gitignore file with a new entry.
+		hoverGitignore := filepath.Join(goDirectoryPath, ".gitignore")
+		updateGitignore(hoverGitignore, ".last_goflutter_check")
+
 		return
 	}
 
@@ -73,8 +78,6 @@ func CheckFoGoFlutterUpdate(goDirectoryPath string, currentTag string) {
 			now := time.Now().Add(time.Duration(checkRate) * time.Hour)
 			nowString := strconv.FormatInt(now.Unix(), 10)
 
-			// TODO: add a ".last_goflutter_check" entry to "go/.gitignore" if the
-			// hover project was init before hover#12
 			err = ioutil.WriteFile(cachedGoFlutterCheckPath, []byte(nowString), 0664)
 			if err != nil {
 				fmt.Printf("hover: Failed to write the update timestamp to file: %v\n", err)
@@ -116,4 +119,33 @@ func CurrentGoFlutterTag(goDirectoryPath string) (currentTag string, err error) 
 	}
 	currentTag = match[1]
 	return
+}
+
+// updateGitignore appends a newEntry to a gitignore file if the entry isn't
+// already present.
+func updateGitignore(gitignorePath, newEntry string) {
+	f, err := os.OpenFile(gitignorePath,
+		os.O_RDWR|os.O_APPEND, 0660)
+	if err != nil {
+		fmt.Printf("hover: Failed to open hover gitignore: %v\n", err)
+		return
+	}
+	defer f.Close()
+	content, err := ioutil.ReadAll(f)
+	if err != nil {
+		fmt.Printf("hover: Failed to read hover gitignore: %v\n", err)
+		return
+	}
+	words := make(map[string]struct{})
+	for _, w := range strings.Fields(strings.ToLower(string(content))) {
+		words[w] = struct{}{}
+	}
+	_, ok := words[newEntry]
+	if ok {
+		return
+	}
+	if _, err := f.WriteString(newEntry + "\n"); err != nil {
+		fmt.Printf("hover: Failed to append '%s' to the hover gitignore file: %v\n", newEntry, err)
+		return
+	}
 }
