@@ -40,7 +40,7 @@ func CheckFoGoFlutterUpdate(goDirectoryPath string, currentTag string) {
 
 		// If needed, update the hover's .gitignore file with a new entry.
 		hoverGitignore := filepath.Join(goDirectoryPath, ".gitignore")
-		updateGitignore(hoverGitignore, ".last_goflutter_check")
+		addLineToFile(hoverGitignore, ".last_goflutter_check")
 
 		return
 	}
@@ -121,31 +121,31 @@ func CurrentGoFlutterTag(goDirectoryPath string) (currentTag string, err error) 
 	return
 }
 
-// updateGitignore appends a newEntry to a gitignore file if the entry isn't
+// addLineToFile appends a newLine to a file if the line isn't
 // already present.
-func updateGitignore(gitignorePath, newEntry string) {
-	f, err := os.OpenFile(gitignorePath,
+func addLineToFile(filePath, newLine string) {
+	f, err := os.OpenFile(filePath,
 		os.O_RDWR|os.O_APPEND, 0660)
 	if err != nil {
-		fmt.Printf("hover: Failed to open hover gitignore: %v\n", err)
+		fmt.Printf("hover: Failed to open file %s: %v\n", filePath, err)
 		return
 	}
 	defer f.Close()
 	content, err := ioutil.ReadAll(f)
 	if err != nil {
-		fmt.Printf("hover: Failed to read hover gitignore: %v\n", err)
+		fmt.Printf("hover: Failed to read file %s: %v\n", filePath, err)
 		return
 	}
 	words := make(map[string]struct{})
 	for _, w := range strings.Fields(strings.ToLower(string(content))) {
 		words[w] = struct{}{}
 	}
-	_, ok := words[newEntry]
+	_, ok := words[newLine]
 	if ok {
 		return
 	}
-	if _, err := f.WriteString(newEntry + "\n"); err != nil {
-		fmt.Printf("hover: Failed to append '%s' to the hover gitignore file: %v\n", newEntry, err)
+	if _, err := f.WriteString(newLine + "\n"); err != nil {
+		fmt.Printf("hover: Failed to append '%s' to the file (%s): %v\n", newLine, filePath, err)
 		return
 	}
 }
