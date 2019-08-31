@@ -84,7 +84,7 @@ If you want to integrate go-flutter with VSCode, read this [issue](https://githu
 To create a standalone debug build run this command:
 
 ```bash
-hover build
+hover build linux # or darwin or windows
 ```
 
 The output will be in `go/build/outputs/linux` or windows or darwin depending on your OS. Hover does not yet support cross-compilation.
@@ -97,25 +97,23 @@ To start the binary: (replace `yourApplicationName` with your app name)
 
 It's possible to zip the whole dir `go/build/outputs/linux` and ship it to a different machine.
 
-### Package standalone application
-
-To package the build of your standalone application using for example snapcraft run:
-
+### Packaging
+You can package your application for different packaging formats.  
+First initialize the packaging format:
 ```bash
-hover package snap
+hover init-packaging linux-snap
 ```
-
-To also install the application after packaging it enable the install flag.
-
+Update the configuration files located in `go/packaging/linux-snap/`to your needs.  
+Then create a build and package it using this command:
 ```bash
-hover package snap -i
+hover build linux-snap
 ```
+The packaging output will be located in `go/build/outputs/linux-snap/`
 
-The output will be in `desktop/build/outputs/linux` or windows or darwin depending on your OS.
-
-Currently supported packaging formats are:
-- snap (Linux)
-- deb (Linux)
+To get a list of all available packaging formats run:
+```bash
+hover build --help
+```
 
 ## Fonts
 
