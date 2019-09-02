@@ -97,7 +97,7 @@ func initLinuxSnap(projectName string) {
 	packagingFormat := "linux-snap"
 	assertCorrectOS(packagingFormat)
 	createPackagingFormatDirectory(packagingFormat)
-	snapDirectoryPath := filepath.Join(packagingFormatPath(packagingFormat))
+	snapDirectoryPath := packagingFormatPath(packagingFormat)
 
 	snapLocalDirectoryPath, err := filepath.Abs(filepath.Join(snapDirectoryPath, "snap", "local"))
 	if err != nil {
@@ -229,7 +229,7 @@ func initLinuxSnap(projectName string) {
 func buildLinuxSnap(projectName string) {
 	packagingFormat := "linux-snap"
 	assertCorrectOS(packagingFormat)
-	snapDirectoryPath := filepath.Join(packagingFormatPath(packagingFormat))
+	snapDirectoryPath := packagingFormatPath(packagingFormat)
 	snapcraftBin, err := exec.LookPath("snapcraft")
 	if err != nil {
 		fmt.Println("hover: Failed to lookup `snapcraft` executable. Please install snapcraft.\nhttps://tutorials.ubuntu.com/tutorial/create-your-first-snap#1")
@@ -249,7 +249,7 @@ func buildLinuxSnap(projectName string) {
 	}
 
 	cmdBuildSnap := exec.Command(snapcraftBin)
-	cmdBuildSnap.Dir = filepath.Join(snapDirectoryPath)
+	cmdBuildSnap.Dir = snapDirectoryPath
 	cmdBuildSnap.Stdout = os.Stdout
 	cmdBuildSnap.Stderr = os.Stderr
 	cmdBuildSnap.Stdin = os.Stdin
@@ -281,7 +281,7 @@ func initLinuxDeb(projectName string) {
 		fmt.Printf("hover: Using this username from system instead: %s\n", author)
 	}
 	createPackagingFormatDirectory(packagingFormat)
-	debDirectoryPath := filepath.Join(packagingFormatPath(packagingFormat))
+	debDirectoryPath := packagingFormatPath(packagingFormat)
 	debDebianDirectoryPath, err := filepath.Abs(filepath.Join(debDirectoryPath, "DEBIAN"))
 	if err != nil {
 		fmt.Printf("hover: Failed to resolve absolute path for DEBIAN directory: %v\n", err)
@@ -444,7 +444,7 @@ func initLinuxDeb(projectName string) {
 func buildLinuxDeb(projectName string) {
 	packagingFormat := "linux-deb"
 	assertCorrectOS(packagingFormat)
-	debDirectoryPath := filepath.Join(packagingFormatPath(packagingFormat))
+	debDirectoryPath := packagingFormatPath(packagingFormat)
 	dpkgDebBin, err := exec.LookPath("dpkg-deb")
 	if err != nil {
 		fmt.Println("hover: Failed to lookup `dpkg-deb` executable. Please install dpkg-deb.")
@@ -468,7 +468,7 @@ func buildLinuxDeb(projectName string) {
 	outputFilePath := filepath.Join(outputDirectoryPath("linux-deb"), outputFileName)
 
 	cmdBuildDeb := exec.Command(dpkgDebBin, "--build", ".", outputFileName)
-	cmdBuildDeb.Dir = filepath.Join(debDirectoryPath)
+	cmdBuildDeb.Dir = debDirectoryPath
 	cmdBuildDeb.Stdout = os.Stdout
 	cmdBuildDeb.Stderr = os.Stderr
 	cmdBuildDeb.Stdin = os.Stdin
