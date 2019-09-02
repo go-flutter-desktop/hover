@@ -88,6 +88,11 @@ func escapedProjectName(projectName string) string {
 	return strings.ReplaceAll(strings.ReplaceAll(projectName, "-", ""), "_", "")
 }
 
+func printInitFinished(packagingFormat string) {
+	fmt.Printf("hover: go/packaging/%s has been created. You can modify the configuration files and add it to git.\n", packagingFormat)
+	fmt.Printf("hover: You now can package the %s using `hover build %s`\n", strings.Split(packagingFormat, "-")[0], packagingFormat)
+}
+
 func initLinuxSnap(projectName string) {
 	packagingFormat := "linux-snap"
 	assertCorrectOS(packagingFormat)
@@ -218,7 +223,7 @@ func initLinuxSnap(projectName string) {
 		os.Exit(1)
 	}
 
-	fmt.Printf("hover: You now can package the snap using `hover build %s`\n", packagingFormat)
+	printInitFinished(packagingFormat)
 }
 
 func buildLinuxSnap(projectName string) {
@@ -433,7 +438,7 @@ func initLinuxDeb(projectName string) {
 		os.Exit(1)
 	}
 
-	fmt.Printf("hover: You now can package the snap using `hover build %s`\n", packagingFormat)
+	printInitFinished(packagingFormat)
 }
 
 func buildLinuxDeb(projectName string) {
