@@ -12,7 +12,7 @@ import (
 	"strings"
 )
 
-var desktopPackagingPath = filepath.Join(buildPath, "packaging")
+var packagingPath = filepath.Join(buildPath, "packaging")
 
 func init() {
 	initPackagingCmd.AddCommand(initLinuxSnapCmd)
@@ -50,7 +50,7 @@ var initLinuxDebCmd = &cobra.Command{
 var linuxPackagingDependencies = []string{"libx11-6", "libxrandr2", "libxcursor1", "libxinerama1"}
 
 func packagingFormatPath(packagingFormat string) string {
-	directoryPath, err := filepath.Abs(filepath.Join(desktopPackagingPath, packagingFormat))
+	directoryPath, err := filepath.Abs(filepath.Join(packagingPath, packagingFormat))
 	if err != nil {
 		fmt.Printf("hover: Failed to resolve absolute path for %s directory: %v\n", packagingFormat, err)
 		os.Exit(1)
@@ -84,7 +84,7 @@ func assertCorrectOS(packagingFormat string) {
 	}
 }
 
-func escapedProjectName(projectName string) string {
+func removeDashesAndUnderscores(projectName string) string {
 	return strings.ReplaceAll(strings.ReplaceAll(projectName, "-", ""), "_", "")
 }
 
@@ -122,7 +122,7 @@ func initLinuxSnap(projectName string) {
 		os.Exit(1)
 	}
 	snapcraftFileContent := []string{
-		"name: " + escapedProjectName(projectName),
+		"name: " + removeDashesAndUnderscores(projectName),
 		"base: core18",
 		"version: '" + assertInFlutterProject().Version + "'",
 		"summary: " + assertInFlutterProject().Description,
@@ -131,7 +131,7 @@ func initLinuxSnap(projectName string) {
 		"confinement: devmode",
 		"grade: devel",
 		"apps:",
-		"  " + escapedProjectName(projectName) + ":",
+		"  " + removeDashesAndUnderscores(projectName) + ":",
 		"    command: " + projectName,
 		"    desktop: local/" + projectName + ".desktop",
 		"parts:",
@@ -258,8 +258,8 @@ func buildLinuxSnap(projectName string) {
 		fmt.Printf("hover: Failed to package snap: %v", err)
 		os.Exit(1)
 	}
-	outputFilePath := filepath.Join(outputDirectoryPath("linux-snap"), escapedProjectName(projectName)+"_"+runtime.GOARCH+".snap")
-	err = os.Rename(filepath.Join(snapDirectoryPath, escapedProjectName(projectName)+"_"+assertInFlutterProject().Version+"_"+runtime.GOARCH+".snap"), outputFilePath)
+	outputFilePath := filepath.Join(outputDirectoryPath("linux-snap"), removeDashesAndUnderscores(projectName)+"_"+runtime.GOARCH+".snap")
+	err = os.Rename(filepath.Join(snapDirectoryPath, removeDashesAndUnderscores(projectName)+"_"+assertInFlutterProject().Version+"_"+runtime.GOARCH+".snap"), outputFilePath)
 	if err != nil {
 		fmt.Printf("hover: Could not move snap file: %v\n", err)
 		os.Exit(1)
@@ -272,12 +272,12 @@ func initLinuxDeb(projectName string) {
 	author := assertInFlutterProject().Author
 	if author == "" {
 		fmt.Println("hover: Missing author field in pubspec.yaml")
-		user, err := user.Current()
+		u, err := user.Current()
 		if err != nil {
 			fmt.Printf("hover: Couldn't get current user: %v\n", err)
 			os.Exit(1)
 		}
-		author = user.Username
+		author = u.Username
 		fmt.Printf("hover: Using this username from system instead: %s\n", author)
 	}
 	createPackagingFormatDirectory(packagingFormat)
@@ -326,7 +326,7 @@ func initLinuxDeb(projectName string) {
 		os.Exit(1)
 	}
 	controlFileContent := []string{
-		"Package: " + escapedProjectName(projectName),
+		"Package: " + removeDashesAndUnderscores(projectName),
 		"Architecture: " + runtime.GOARCH,
 		"Maintainer: @" + assertInFlutterProject().Author,
 		"Priority: optional",
@@ -347,7 +347,7 @@ func initLinuxDeb(projectName string) {
 		os.Exit(1)
 	}
 
-	binFilePath, err := filepath.Abs(filepath.Join(binDirectoryPath, escapedProjectName(projectName)))
+	binFilePath, err := filepath.Abs(filepath.Join(binDirectoryPath, removeDashesAndUnderscores(projectName)))
 	if err != nil {
 		fmt.Printf("hover: Failed to resolve absolute path for bin file %s: %v\n", binFilePath, err)
 		os.Exit(1)
@@ -360,7 +360,7 @@ func initLinuxDeb(projectName string) {
 	}
 	binFileContent := []string{
 		"#!/bin/sh",
-		"/usr/bin/" + escapedProjectName(projectName) + "files/" + projectName,
+		"/usr/bin/" + removeDashesAndUnderscores(projectName) + "files/" + projectName,
 	}
 	for _, line := range binFileContent {
 		if _, err := binFile.WriteString(line + "\n"); err != nil {
@@ -395,9 +395,9 @@ func initLinuxDeb(projectName string) {
 		"Version=" + assertInFlutterProject().Version,
 		"Type=Application",
 		"Terminal=false",
-		"Exec=/usr/bin/" + escapedProjectName(projectName),
+		"Exec=/usr/bin/" + removeDashesAndUnderscores(projectName),
 		"Name=" + projectName,
-		"Icon=/usr/bin/" + escapedProjectName(projectName) + "files/assets/icon.png",
+		"Icon=/usr/bin/" + removeDashesAndUnderscores(projectName) + "files/assets/icon.png",
 	}
 	for _, line := range desktopFileContent {
 		if _, err := desktopFile.WriteString(line + "\n"); err != nil {
@@ -422,7 +422,7 @@ func initLinuxDeb(projectName string) {
 		os.Exit(1)
 	}
 	gitignoreFileContent := []string{
-		"usr/bin/" + escapedProjectName(projectName) + "files",
+		"usr/bin/" + removeDashesAndUnderscores(projectName) + "files",
 		"*.deb",
 	}
 
@@ -459,12 +459,12 @@ func buildLinuxDeb(projectName string) {
 		fmt.Printf("hover: Failed to resolve absolute path for bin directory: %v\n", err)
 		os.Exit(1)
 	}
-	err = copy.Copy(outputDirectoryPath("linux"), filepath.Join(binDirectoryPath, escapedProjectName(projectName)+"files"))
+	err = copy.Copy(outputDirectoryPath("linux"), filepath.Join(binDirectoryPath, removeDashesAndUnderscores(projectName)+"files"))
 	if err != nil {
 		fmt.Printf("hover: Could not copy build folder: %v", err)
 		os.Exit(1)
 	}
-	outputFileName := escapedProjectName(projectName) + "_" + runtime.GOARCH + ".deb"
+	outputFileName := removeDashesAndUnderscores(projectName) + "_" + runtime.GOARCH + ".deb"
 	outputFilePath := filepath.Join(outputDirectoryPath("linux-deb"), outputFileName)
 
 	cmdBuildDeb := exec.Command(dpkgDebBin, "--build", ".", outputFileName)
