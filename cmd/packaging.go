@@ -6,6 +6,7 @@ import (
 	"github.com/spf13/cobra"
 	"os"
 	"os/exec"
+	"os/user"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -263,9 +264,16 @@ func buildLinuxSnap(projectName string) {
 func initLinuxDeb(projectName string) {
 	packagingFormat := "linux-deb"
 	assertCorrectOS(packagingFormat)
-	if assertInFlutterProject().Author == "" {
+	author := assertInFlutterProject().Author
+	if author == "" {
 		fmt.Println("hover: Missing author field in pubspec.yaml")
-		os.Exit(1)
+		user, err := user.Current()
+		if err != nil {
+			fmt.Printf("hover: Couldn't get current user: %v\n", err)
+			os.Exit(1)
+		}
+		author = user.Username
+		fmt.Printf("hover: Using this username from system instead: %s\n", author)
 	}
 	createPackagingFormatDirectory(packagingFormat)
 	debDirectoryPath := filepath.Join(packagingFormatPath(packagingFormat))
