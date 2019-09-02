@@ -2,14 +2,15 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/otiai10/copy"
-	"github.com/spf13/cobra"
 	"os"
 	"os/exec"
 	"os/user"
 	"path/filepath"
 	"runtime"
 	"strings"
+
+	"github.com/otiai10/copy"
+	"github.com/spf13/cobra"
 )
 
 var packagingPath = filepath.Join(buildPath, "packaging")
