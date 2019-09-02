@@ -54,7 +54,7 @@ var buildLinuxCmd = &cobra.Command{
 	Use:   "linux",
 	Short: "Build a desktop release for linux",
 	Run: func(cmd *cobra.Command, args []string) {
-		projectName := assertInFlutterProject().Name
+		projectName := getPubSpec().Name
 		assertHoverInitialized()
 
 		build(projectName, "linux", nil)
@@ -65,7 +65,7 @@ var buildLinuxSnapCmd = &cobra.Command{
 	Use:   "linux-snap",
 	Short: "Build a desktop release for linux and package it for snap",
 	Run: func(cmd *cobra.Command, args []string) {
-		projectName := assertInFlutterProject().Name
+		projectName := getPubSpec().Name
 		assertHoverInitialized()
 		assertPackagingFormatInitialized("linux-snap")
 
@@ -78,7 +78,7 @@ var buildLinuxDebCmd = &cobra.Command{
 	Use:   "linux-deb",
 	Short: "Build a desktop release for linux and package it for deb",
 	Run: func(cmd *cobra.Command, args []string) {
-		projectName := assertInFlutterProject().Name
+		projectName := getPubSpec().Name
 		assertHoverInitialized()
 		assertPackagingFormatInitialized("linux-deb")
 
@@ -91,7 +91,7 @@ var buildDarwinCmd = &cobra.Command{
 	Use:   "darwin",
 	Short: "Build a desktop release for darwin",
 	Run: func(cmd *cobra.Command, args []string) {
-		projectName := assertInFlutterProject().Name
+		projectName := getPubSpec().Name
 		assertHoverInitialized()
 
 		build(projectName, "darwin", nil)
@@ -102,7 +102,7 @@ var buildWindowsCmd = &cobra.Command{
 	Use:   "windows",
 	Short: "Build a desktop release for windows",
 	Run: func(cmd *cobra.Command, args []string) {
-		projectName := assertInFlutterProject().Name
+		projectName := getPubSpec().Name
 		assertHoverInitialized()
 
 		build(projectName, "windows", nil)

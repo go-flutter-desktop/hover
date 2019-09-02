@@ -29,7 +29,7 @@ var initLinuxSnapCmd = &cobra.Command{
 	Use:   "linux-snap",
 	Short: "Create configuration files for snap packaging",
 	Run: func(cmd *cobra.Command, args []string) {
-		projectName := assertInFlutterProject().Name
+		projectName := getPubSpec().Name
 		assertHoverInitialized()
 
 		initLinuxSnap(projectName)
@@ -40,7 +40,7 @@ var initLinuxDebCmd = &cobra.Command{
 	Use:   "linux-deb",
 	Short: "Create configuration files for deb packaging",
 	Run: func(cmd *cobra.Command, args []string) {
-		projectName := assertInFlutterProject().Name
+		projectName := getPubSpec().Name
 		assertHoverInitialized()
 
 		initLinuxDeb(projectName)
@@ -124,10 +124,10 @@ func initLinuxSnap(projectName string) {
 	snapcraftFileContent := []string{
 		"name: " + removeDashesAndUnderscores(projectName),
 		"base: core18",
-		"version: '" + assertInFlutterProject().Version + "'",
-		"summary: " + assertInFlutterProject().Description,
+		"version: '" + getPubSpec().Version + "'",
+		"summary: " + getPubSpec().Description,
 		"description: |",
-		"  " + assertInFlutterProject().Description,
+		"  " + getPubSpec().Description,
 		"confinement: devmode",
 		"grade: devel",
 		"apps:",
@@ -175,7 +175,7 @@ func initLinuxSnap(projectName string) {
 	desktopFileContent := []string{
 		"[Desktop Entry]",
 		"Encoding=UTF-8",
-		"Version=" + assertInFlutterProject().Version,
+		"Version=" + getPubSpec().Version,
 		"Type=Application",
 		"Terminal=false",
 		"Exec=/" + projectName,
@@ -259,7 +259,7 @@ func buildLinuxSnap(projectName string) {
 		os.Exit(1)
 	}
 	outputFilePath := filepath.Join(outputDirectoryPath("linux-snap"), removeDashesAndUnderscores(projectName)+"_"+runtime.GOARCH+".snap")
-	err = os.Rename(filepath.Join(snapDirectoryPath, removeDashesAndUnderscores(projectName)+"_"+assertInFlutterProject().Version+"_"+runtime.GOARCH+".snap"), outputFilePath)
+	err = os.Rename(filepath.Join(snapDirectoryPath, removeDashesAndUnderscores(projectName)+"_"+getPubSpec().Version+"_"+runtime.GOARCH+".snap"), outputFilePath)
 	if err != nil {
 		fmt.Printf("hover: Could not move snap file: %v\n", err)
 		os.Exit(1)
@@ -269,7 +269,7 @@ func buildLinuxSnap(projectName string) {
 func initLinuxDeb(projectName string) {
 	packagingFormat := "linux-deb"
 	assertCorrectOS(packagingFormat)
-	author := assertInFlutterProject().Author
+	author := getPubSpec().Author
 	if author == "" {
 		fmt.Println("hover: Missing author field in pubspec.yaml")
 		u, err := user.Current()
@@ -328,10 +328,10 @@ func initLinuxDeb(projectName string) {
 	controlFileContent := []string{
 		"Package: " + removeDashesAndUnderscores(projectName),
 		"Architecture: " + runtime.GOARCH,
-		"Maintainer: @" + assertInFlutterProject().Author,
+		"Maintainer: @" + getPubSpec().Author,
 		"Priority: optional",
-		"Version: " + assertInFlutterProject().Version,
-		"Description: " + assertInFlutterProject().Description,
+		"Version: " + getPubSpec().Version,
+		"Description: " + getPubSpec().Description,
 		"Depends: " + strings.Join(linuxPackagingDependencies, ","),
 	}
 
@@ -392,7 +392,7 @@ func initLinuxDeb(projectName string) {
 	desktopFileContent := []string{
 		"[Desktop Entry]",
 		"Encoding=UTF-8",
-		"Version=" + assertInFlutterProject().Version,
+		"Version=" + getPubSpec().Version,
 		"Type=Application",
 		"Terminal=false",
 		"Exec=/usr/bin/" + removeDashesAndUnderscores(projectName),

@@ -30,7 +30,7 @@ var runCmd = &cobra.Command{
 	Use:   "run",
 	Short: "Build and start a desktop release, with hot-reload support",
 	Run: func(cmd *cobra.Command, args []string) {
-		projectName := assertInFlutterProject().Name
+		projectName := getPubSpec().Name
 		assertHoverInitialized()
 
 		// ensure we have something to build
