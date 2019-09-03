@@ -209,6 +209,10 @@ func initLinuxSnap(projectName string) {
 	gitignoreFileContent := []string{
 		"assets",
 		"build",
+		"parts",
+		"prime",
+		"snap/.snapcraft",
+		"stage",
 		"*.snap",
 	}
 
