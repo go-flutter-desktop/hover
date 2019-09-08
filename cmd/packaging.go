@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"os/user"
@@ -92,6 +93,15 @@ func removeDashesAndUnderscores(projectName string) string {
 func printInitFinished(packagingFormat string) {
 	fmt.Printf("hover: go/packaging/%s has been created. You can modify the configuration files and add it to git.\n", packagingFormat)
 	fmt.Printf("hover: You now can package the %s using `hover build %s`\n", strings.Split(packagingFormat, "-")[0], packagingFormat)
+}
+
+func getTemporaryBuildDirectory(projectName string, packagingFormat string) string {
+	tmpPath, err := ioutil.TempDir("", "hover-build-"+projectName+"-"+packagingFormat)
+	if err != nil {
+		fmt.Printf("hover: Couldn't get temporary build directory: %v\n", err)
+		os.Exit(1)
+	}
+	return tmpPath
 }
 
 func initLinuxSnap(projectName string) {
@@ -192,39 +202,7 @@ func initLinuxSnap(projectName string) {
 	}
 	err = desktopFile.Close()
 	if err != nil {
-		fmt.Printf("hover: Could not close %s.desktop: %v", projectName, err)
-		os.Exit(1)
-	}
-
-	gitignoreFilePath, err := filepath.Abs(filepath.Join(snapDirectoryPath, ".gitignore"))
-	if err != nil {
-		fmt.Printf("hover: Failed to resolve absolute path for .gitignore file %s: %v\n", gitignoreFilePath, err)
-		os.Exit(1)
-	}
-	gitignoreFile, err := os.Create(gitignoreFilePath)
-	if err != nil {
-		fmt.Printf("hover: Failed to create .gitignore file %s: %v\n", gitignoreFilePath, err)
-		os.Exit(1)
-	}
-	gitignoreFileContent := []string{
-		"assets",
-		"build",
-		"parts",
-		"prime",
-		"snap/.snapcraft",
-		"stage",
-		"*.snap",
-	}
-
-	for _, line := range gitignoreFileContent {
-		if _, err := gitignoreFile.WriteString(line + "\n"); err != nil {
-			fmt.Printf("hover: Could not write .gitignore: %v\n", err)
-			os.Exit(1)
-		}
-	}
-	err = gitignoreFile.Close()
-	if err != nil {
-		fmt.Printf("hover: Could not close .gitignore: %v", err)
+		fmt.Printf("hover: Could not close %s.desktop: %v\n", projectName, err)
 		os.Exit(1)
 	}
 
@@ -234,39 +212,49 @@ func initLinuxSnap(projectName string) {
 func buildLinuxSnap(projectName string) {
 	packagingFormat := "linux-snap"
 	assertCorrectOS(packagingFormat)
-	snapDirectoryPath := packagingFormatPath(packagingFormat)
 	snapcraftBin, err := exec.LookPath("snapcraft")
 	if err != nil {
 		fmt.Println("hover: Failed to lookup `snapcraft` executable. Please install snapcraft.\nhttps://tutorials.ubuntu.com/tutorial/create-your-first-snap#1")
 		os.Exit(1)
 	}
-	fmt.Println("hover: Packaging snap...")
+	tmpPath := getTemporaryBuildDirectory(projectName, packagingFormat)
+	fmt.Printf("hover: Packaging snap in %s\n", tmpPath)
 
-	err = copy.Copy(filepath.Join(buildPath, "assets"), filepath.Join(packagingFormatPath(packagingFormat), "assets"))
+	err = copy.Copy(filepath.Join(buildPath, "assets"), filepath.Join(tmpPath, "assets"))
 	if err != nil {
-		fmt.Printf("hover: Could not copy assets folder: %v", err)
+		fmt.Printf("hover: Could not copy assets folder: %v\n", err)
 		os.Exit(1)
 	}
-	err = copy.Copy(outputDirectoryPath("linux"), filepath.Join(packagingFormatPath(packagingFormat), "build"))
+	err = copy.Copy(outputDirectoryPath("linux"), filepath.Join(tmpPath, "build"))
 	if err != nil {
-		fmt.Printf("hover: Could not copy build folder: %v", err)
+		fmt.Printf("hover: Could not copy build folder: %v\n", err)
+		os.Exit(1)
+	}
+	err = copy.Copy(packagingFormatPath(packagingFormat), filepath.Join(tmpPath))
+	if err != nil {
+		fmt.Printf("hover: Could not copy packaging configuration folder: %v\n", err)
 		os.Exit(1)
 	}
 
 	cmdBuildSnap := exec.Command(snapcraftBin)
-	cmdBuildSnap.Dir = snapDirectoryPath
+	cmdBuildSnap.Dir = tmpPath
 	cmdBuildSnap.Stdout = os.Stdout
 	cmdBuildSnap.Stderr = os.Stderr
 	cmdBuildSnap.Stdin = os.Stdin
 	err = cmdBuildSnap.Run()
 	if err != nil {
-		fmt.Printf("hover: Failed to package snap: %v", err)
+		fmt.Printf("hover: Failed to package snap: %v\n", err)
 		os.Exit(1)
 	}
 	outputFilePath := filepath.Join(outputDirectoryPath("linux-snap"), removeDashesAndUnderscores(projectName)+"_"+runtime.GOARCH+".snap")
-	err = os.Rename(filepath.Join(snapDirectoryPath, removeDashesAndUnderscores(projectName)+"_"+getPubSpec().Version+"_"+runtime.GOARCH+".snap"), outputFilePath)
+	err = os.Rename(filepath.Join(tmpPath, removeDashesAndUnderscores(projectName)+"_"+getPubSpec().Version+"_"+runtime.GOARCH+".snap"), outputFilePath)
 	if err != nil {
 		fmt.Printf("hover: Could not move snap file: %v\n", err)
+		os.Exit(1)
+	}
+	err = os.RemoveAll(tmpPath)
+	if err != nil {
+		fmt.Printf("hover: Could not remove packaging configuration folder: %v\n", err)
 		os.Exit(1)
 	}
 }
@@ -348,7 +336,7 @@ func initLinuxDeb(projectName string) {
 	}
 	err = controlFile.Close()
 	if err != nil {
-		fmt.Printf("hover: Could not close control file: %v", err)
+		fmt.Printf("hover: Could not close control file: %v\n", err)
 		os.Exit(1)
 	}
 
@@ -375,7 +363,7 @@ func initLinuxDeb(projectName string) {
 	}
 	err = binFile.Close()
 	if err != nil {
-		fmt.Printf("hover: Could not close bin file: %v", err)
+		fmt.Printf("hover: Could not close bin file: %v\n", err)
 		os.Exit(1)
 	}
 	err = os.Chmod(binFilePath, 0777)
@@ -412,34 +400,7 @@ func initLinuxDeb(projectName string) {
 	}
 	err = desktopFile.Close()
 	if err != nil {
-		fmt.Printf("hover: Could not close %s.desktop file: %v", projectName, err)
-		os.Exit(1)
-	}
-
-	gitignoreFilePath, err := filepath.Abs(filepath.Join(debDirectoryPath, ".gitignore"))
-	if err != nil {
-		fmt.Printf("hover: Failed to resolve absolute path for .gitignore file %s: %v\n", gitignoreFilePath, err)
-		os.Exit(1)
-	}
-	gitignoreFile, err := os.Create(gitignoreFilePath)
-	if err != nil {
-		fmt.Printf("hover: Failed to create .gitignore file %s: %v\n", gitignoreFilePath, err)
-		os.Exit(1)
-	}
-	gitignoreFileContent := []string{
-		"usr/bin/" + removeDashesAndUnderscores(projectName) + "files",
-		"*.deb",
-	}
-
-	for _, line := range gitignoreFileContent {
-		if _, err := gitignoreFile.WriteString(line + "\n"); err != nil {
-			fmt.Printf("hover: Could not write .gitignore: %v\n", err)
-			os.Exit(1)
-		}
-	}
-	err = gitignoreFile.Close()
-	if err != nil {
-		fmt.Printf("hover: Could not close .gitignore: %v", err)
+		fmt.Printf("hover: Could not close %s.desktop file: %v\n", projectName, err)
 		os.Exit(1)
 	}
 
@@ -449,42 +410,50 @@ func initLinuxDeb(projectName string) {
 func buildLinuxDeb(projectName string) {
 	packagingFormat := "linux-deb"
 	assertCorrectOS(packagingFormat)
-	debDirectoryPath := packagingFormatPath(packagingFormat)
 	dpkgDebBin, err := exec.LookPath("dpkg-deb")
 	if err != nil {
 		fmt.Println("hover: Failed to lookup `dpkg-deb` executable. Please install dpkg-deb.")
 		os.Exit(1)
 	}
-	fmt.Println("hover: Packaging deb...")
-	fmt.Println(debDirectoryPath)
-	fmt.Println(dpkgDebBin)
+	tmpPath := getTemporaryBuildDirectory(projectName, packagingFormat)
+	fmt.Printf("hover: Packaging deb in %s\n", tmpPath)
 
-	binDirectoryPath, err := filepath.Abs(filepath.Join(debDirectoryPath, "usr", "bin"))
+	binDirectoryPath, err := filepath.Abs(filepath.Join(tmpPath, "usr", "bin"))
 	if err != nil {
 		fmt.Printf("hover: Failed to resolve absolute path for bin directory: %v\n", err)
 		os.Exit(1)
 	}
 	err = copy.Copy(outputDirectoryPath("linux"), filepath.Join(binDirectoryPath, removeDashesAndUnderscores(projectName)+"files"))
 	if err != nil {
-		fmt.Printf("hover: Could not copy build folder: %v", err)
+		fmt.Printf("hover: Could not copy build folder: %v\n", err)
+		os.Exit(1)
+	}
+	err = copy.Copy(packagingFormatPath(packagingFormat), filepath.Join(tmpPath))
+	if err != nil {
+		fmt.Printf("hover: Could not copy packaging configuration folder: %v\n", err)
 		os.Exit(1)
 	}
 	outputFileName := removeDashesAndUnderscores(projectName) + "_" + runtime.GOARCH + ".deb"
 	outputFilePath := filepath.Join(outputDirectoryPath("linux-deb"), outputFileName)
 
 	cmdBuildDeb := exec.Command(dpkgDebBin, "--build", ".", outputFileName)
-	cmdBuildDeb.Dir = debDirectoryPath
+	cmdBuildDeb.Dir = tmpPath
 	cmdBuildDeb.Stdout = os.Stdout
 	cmdBuildDeb.Stderr = os.Stderr
 	cmdBuildDeb.Stdin = os.Stdin
 	err = cmdBuildDeb.Run()
 	if err != nil {
-		fmt.Printf("hover: Failed to package deb: %v", err)
+		fmt.Printf("hover: Failed to package deb: %v\n", err)
 		os.Exit(1)
 	}
-	err = os.Rename(filepath.Join(debDirectoryPath, outputFileName), outputFilePath)
+	err = os.Rename(filepath.Join(tmpPath, outputFileName), outputFilePath)
 	if err != nil {
 		fmt.Printf("hover: Could not move deb file: %v\n", err)
+		os.Exit(1)
+	}
+	err = os.RemoveAll(tmpPath)
+	if err != nil {
+		fmt.Printf("hover: Could not remove packaging configuration folder: %v\n", err)
 		os.Exit(1)
 	}
 }
