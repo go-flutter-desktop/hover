@@ -353,7 +353,7 @@ func initLinuxDeb(projectName string) {
 	}
 	binFileContent := []string{
 		"#!/bin/sh",
-		"/usr/bin/" + removeDashesAndUnderscores(projectName) + "files/" + projectName,
+		"/usr/lib/" + projectName + "/" + projectName,
 	}
 	for _, line := range binFileContent {
 		if _, err := binFile.WriteString(line + "\n"); err != nil {
@@ -388,9 +388,9 @@ func initLinuxDeb(projectName string) {
 		"Version=" + getPubSpec().Version,
 		"Type=Application",
 		"Terminal=false",
-		"Exec=/usr/bin/" + removeDashesAndUnderscores(projectName),
+		"Exec=/usr/bin/" + projectName,
 		"Name=" + projectName,
-		"Icon=/usr/bin/" + removeDashesAndUnderscores(projectName) + "files/assets/icon.png",
+		"Icon=/usr/lib/" + projectName + "/assets/icon.png",
 	}
 	for _, line := range desktopFileContent {
 		if _, err := desktopFile.WriteString(line + "\n"); err != nil {
@@ -418,12 +418,12 @@ func buildLinuxDeb(projectName string) {
 	tmpPath := getTemporaryBuildDirectory(projectName, packagingFormat)
 	fmt.Printf("hover: Packaging deb in %s\n", tmpPath)
 
-	binDirectoryPath, err := filepath.Abs(filepath.Join(tmpPath, "usr", "bin"))
+	libDirectoryPath, err := filepath.Abs(filepath.Join(tmpPath, "usr", "lib"))
 	if err != nil {
 		fmt.Printf("hover: Failed to resolve absolute path for bin directory: %v\n", err)
 		os.Exit(1)
 	}
-	err = copy.Copy(outputDirectoryPath("linux"), filepath.Join(binDirectoryPath, removeDashesAndUnderscores(projectName)+"files"))
+	err = copy.Copy(outputDirectoryPath("linux"), filepath.Join(libDirectoryPath, projectName))
 	if err != nil {
 		fmt.Printf("hover: Could not copy build folder: %v\n", err)
 		os.Exit(1)
