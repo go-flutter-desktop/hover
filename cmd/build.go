@@ -9,7 +9,7 @@ import (
 	"runtime"
 	"strings"
 
-	version "github.com/hashicorp/go-version"
+	"github.com/hashicorp/go-version"
 	"github.com/otiai10/copy"
 	"github.com/spf13/cobra"
 
@@ -32,35 +32,100 @@ var (
 const buildPath = "go"
 
 func init() {
-	buildCmd.Flags().StringVarP(&buildTarget, "target", "t", "lib/main_desktop.dart", "The main entry-point file of the application.")
-	buildCmd.Flags().StringVarP(&buildManifest, "manifest", "m", "pubspec.yaml", "Flutter manifest file of the application.")
-	buildCmd.Flags().StringVarP(&buildBranch, "branch", "b", "", "The 'go-flutter' version to use. (@master or @v0.20.0 for example)")
-	buildCmd.Flags().BoolVar(&buildDebug, "debug", false, "Build a debug version of the app.")
-	buildCmd.Flags().StringVarP(&buildCachePath, "cache-path", "", "", "The path that hover uses to cache dependencies such as the Flutter engine .so/.dll (defaults to the standard user cache directory)")
+	buildCmd.PersistentFlags().StringVarP(&buildTarget, "target", "t", "lib/main_desktop.dart", "The main entry-point file of the application.")
+	buildCmd.PersistentFlags().StringVarP(&buildManifest, "manifest", "m", "pubspec.yaml", "Flutter manifest file of the application.")
+	buildCmd.PersistentFlags().StringVarP(&buildBranch, "branch", "b", "", "The 'go-flutter' version to use. (@master or @v0.20.0 for example)")
+	buildCmd.PersistentFlags().BoolVar(&buildDebug, "debug", false, "Build a debug version of the app.")
+	buildCmd.PersistentFlags().StringVarP(&buildCachePath, "cache-path", "", "", "The path that hover uses to cache dependencies such as the Flutter engine .so/.dll (defaults to the standard user cache directory)")
+	buildCmd.AddCommand(buildLinuxCmd)
+	buildCmd.AddCommand(buildLinuxSnapCmd)
+	buildCmd.AddCommand(buildLinuxDebCmd)
+	buildCmd.AddCommand(buildDarwinCmd)
+	buildCmd.AddCommand(buildWindowsCmd)
 	rootCmd.AddCommand(buildCmd)
 }
 
 var buildCmd = &cobra.Command{
 	Use:   "build",
 	Short: "Build a desktop release",
+}
+
+var buildLinuxCmd = &cobra.Command{
+	Use:   "linux",
+	Short: "Build a desktop release for linux",
 	Run: func(cmd *cobra.Command, args []string) {
-		projectName := assertInFlutterProject()
+		projectName := getPubSpec().Name
 		assertHoverInitialized()
 
-		// Hardcode target to the current OS (no cross-compile support yet)
-		targetOS := runtime.GOOS
-
-		build(projectName, targetOS, nil)
+		build(projectName, "linux", nil)
 	},
 }
 
-func build(projectName string, targetOS string, vmArguments []string) {
+var buildLinuxSnapCmd = &cobra.Command{
+	Use:   "linux-snap",
+	Short: "Build a desktop release for linux and package it for snap",
+	Run: func(cmd *cobra.Command, args []string) {
+		projectName := getPubSpec().Name
+		assertHoverInitialized()
+		assertPackagingFormatInitialized("linux-snap")
+
+		build(projectName, "linux", nil)
+		buildLinuxSnap(projectName)
+	},
+}
+
+var buildLinuxDebCmd = &cobra.Command{
+	Use:   "linux-deb",
+	Short: "Build a desktop release for linux and package it for deb",
+	Run: func(cmd *cobra.Command, args []string) {
+		projectName := getPubSpec().Name
+		assertHoverInitialized()
+		assertPackagingFormatInitialized("linux-deb")
+
+		build(projectName, "linux", nil)
+		buildLinuxDeb(projectName)
+	},
+}
+
+var buildDarwinCmd = &cobra.Command{
+	Use:   "darwin",
+	Short: "Build a desktop release for darwin",
+	Run: func(cmd *cobra.Command, args []string) {
+		projectName := getPubSpec().Name
+		assertHoverInitialized()
+
+		build(projectName, "darwin", nil)
+	},
+}
+
+var buildWindowsCmd = &cobra.Command{
+	Use:   "windows",
+	Short: "Build a desktop release for windows",
+	Run: func(cmd *cobra.Command, args []string) {
+		projectName := getPubSpec().Name
+		assertHoverInitialized()
+
+		build(projectName, "windows", nil)
+	},
+}
+
+func outputDirectoryPath(targetOS string) string {
 	outputDirectoryPath, err := filepath.Abs(filepath.Join(buildPath, "build", "outputs", targetOS))
 	if err != nil {
 		fmt.Printf("hover: Failed to resolve absolute path for output directory: %v\n", err)
 		os.Exit(1)
 	}
+	if _, err := os.Stat(outputDirectoryPath); os.IsNotExist(err) {
+		err = os.MkdirAll(outputDirectoryPath, 0775)
+		if err != nil {
+			fmt.Printf("hover: Failed to create output directory %s: %v\n", outputDirectoryPath, err)
+			os.Exit(1)
+		}
+	}
+	return outputDirectoryPath
+}
 
+func outputBinaryName(projectName string, targetOS string) string {
 	var outputBinaryName = projectName
 	switch targetOS {
 	case "darwin":
@@ -73,8 +138,19 @@ func build(projectName string, targetOS string, vmArguments []string) {
 		fmt.Printf("hover: Target platform %s is not supported.\n", targetOS)
 		os.Exit(1)
 	}
-	outputBinaryPath := filepath.Join(outputDirectoryPath, outputBinaryName)
+	return outputBinaryName
+}
 
+func outputBinaryPath(projectName string, targetOS string) string {
+	outputBinaryPath := filepath.Join(outputDirectoryPath(targetOS), outputBinaryName(projectName, targetOS))
+	return outputBinaryPath
+}
+
+func build(projectName string, targetOS string, vmArguments []string) {
+	if targetOS != runtime.GOOS {
+		fmt.Println("hover: Cross-compiling is currently not supported")
+		os.Exit(1)
+	}
 	var engineCachePath string
 	if buildCachePath != "" {
 		engineCachePath = enginecache.ValidateOrUpdateEngineAtPath(targetOS, buildCachePath)
@@ -83,17 +159,17 @@ func build(projectName string, targetOS string, vmArguments []string) {
 	}
 
 	if !buildOmitFlutterBundle && !buildOmitEmbedder {
-		err = os.RemoveAll(outputDirectoryPath)
+		err := os.RemoveAll(outputDirectoryPath(targetOS))
 		fmt.Printf("hover: Cleaning the build directory\n")
 		if err != nil {
-			fmt.Printf("hover: failed to clean output directory %s: %v\n", outputDirectoryPath, err)
+			fmt.Printf("hover: failed to clean output directory %s: %v\n", outputDirectoryPath(targetOS), err)
 			os.Exit(1)
 		}
 	}
 
-	err = os.MkdirAll(outputDirectoryPath, 0775)
+	err := os.MkdirAll(outputDirectoryPath(targetOS), 0775)
 	if err != nil {
-		fmt.Printf("hover: failed to create output directory %s: %v\n", outputDirectoryPath, err)
+		fmt.Printf("hover: failed to create output directory %s: %v\n", outputDirectoryPath(targetOS), err)
 		os.Exit(1)
 	}
 
@@ -122,7 +198,7 @@ func build(projectName string, targetOS string, vmArguments []string) {
 	}
 
 	cmdFlutterBuild := exec.Command(flutterBin, "build", "bundle",
-		"--asset-dir", filepath.Join(outputDirectoryPath, "flutter_assets"),
+		"--asset-dir", filepath.Join(outputDirectoryPath(targetOS), "flutter_assets"),
 		"--target", buildTarget,
 		"--manifest", buildManifest,
 		trackWidgetCreation,
@@ -149,7 +225,7 @@ func build(projectName string, targetOS string, vmArguments []string) {
 		engineFile = "flutter_engine.dll"
 	}
 
-	outputEngineFile := filepath.Join(outputDirectoryPath, engineFile)
+	outputEngineFile := filepath.Join(outputDirectoryPath(targetOS), engineFile)
 	err = copy.Copy(
 		filepath.Join(engineCachePath, engineFile),
 		outputEngineFile,
@@ -168,7 +244,7 @@ func build(projectName string, targetOS string, vmArguments []string) {
 
 	err = copy.Copy(
 		filepath.Join(engineCachePath, "artifacts", "icudtl.dat"),
-		filepath.Join(outputDirectoryPath, "icudtl.dat"),
+		filepath.Join(outputDirectoryPath(targetOS), "icudtl.dat"),
 	)
 	if err != nil {
 		fmt.Printf("hover: Failed to copy icudtl.dat: %v\n", err)
@@ -177,7 +253,7 @@ func build(projectName string, targetOS string, vmArguments []string) {
 
 	err = copy.Copy(
 		filepath.Join(buildPath, "assets"),
-		filepath.Join(outputDirectoryPath, "assets"),
+		filepath.Join(outputDirectoryPath(targetOS), "assets"),
 	)
 	if err != nil {
 		fmt.Printf("hover: Failed to copy %s/assets: %v\n", buildPath, err)
@@ -261,7 +337,7 @@ func build(projectName string, targetOS string, vmArguments []string) {
 	ldflags = append(ldflags, fmt.Sprintf("-X main.vmArguments=%s", strings.Join(vmArguments, ";")))
 
 	cmdGoBuild := exec.Command(goBin, "build",
-		"-o", outputBinaryPath,
+		"-o", outputBinaryPath(projectName, targetOS),
 		fmt.Sprintf("-ldflags=%s", strings.Join(ldflags, " ")),
 		dotSlash+"cmd",
 	)
