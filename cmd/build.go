@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -30,6 +31,14 @@ var (
 )
 
 const buildPath = "go"
+
+const mingwGccBinName = "x86_64-w64-mingw32-gcc"
+const mingwGppBinName = "x86_64-w64-mingw32-g++"
+const clangBinName = "o32-clang"
+
+var crossCompile = false
+var windowsCrossCompileToolsAvailable = false
+var darwinCrossCompileToolsAvailable = false
 
 func init() {
 	buildCmd.PersistentFlags().StringVarP(&buildTarget, "target", "t", "lib/main_desktop.dart", "The main entry-point file of the application.")
@@ -146,10 +155,107 @@ func outputBinaryPath(projectName string, targetOS string) string {
 	return outputBinaryPath
 }
 
-func build(projectName string, targetOS string, vmArguments []string) {
-	if targetOS != runtime.GOOS {
-		fmt.Println("hover: Cross-compiling is currently not supported")
+func dockerBuild(projectName string, targetOS string, vmArguments []string) {
+	dockerBin, err := exec.LookPath("docker")
+	if err != nil {
+		fmt.Printf("hover: Failed to lookup `docker` executable. Please install Docker.\nhttps://docs.docker.com/install/")
 		os.Exit(1)
+	}
+	tmpDir, err := ioutil.TempDir("", "hover-build-cc")
+	userCacheDir, err := os.UserCacheDir()
+	if err != nil {
+		fmt.Printf("Cannot get the path for the system cache directory %s", err)
+		os.Exit(1)
+	}
+	goPath := filepath.Join(userCacheDir, "hover-cc")
+	err = os.MkdirAll(goPath, 0755)
+	if err != nil {
+		fmt.Printf("Cannot create the hover-cc GOPATH under the system cache directory %s", err)
+		os.Exit(1)
+	}
+	pkgRootDir, err := filepath.Abs(buildPath)
+	if err != nil {
+		fmt.Printf("Cannot get the path for current directory %s", err)
+		os.Exit(1)
+	}
+	var engineCachePath string
+	if buildCachePath != "" {
+		engineCachePath = enginecache.ValidateOrUpdateEngineAtPath(targetOS, buildCachePath)
+	} else {
+		engineCachePath = enginecache.ValidateOrUpdateEngine(targetOS)
+	}
+	dockerFilePath, err := filepath.Abs(filepath.Join(tmpDir, "Dockerfile"))
+	if err != nil {
+		fmt.Printf("hover: Failed to resolve absolute path for Dockerfile %s: %v\n", dockerFilePath, err)
+		os.Exit(1)
+	}
+
+	dockerFile, err := os.Create(dockerFilePath)
+	if err != nil {
+		fmt.Printf("hover: Failed to create Dockerfile %s: %v\n", dockerFilePath, err)
+		os.Exit(1)
+	}
+	dockerFileContent := []string{
+		"FROM dockercore/golang-cross",
+		"WORKDIR /app",
+		"CMD " + strings.Join(buildCommand(targetOS, vmArguments, "build/outputs/"+targetOS+"/"+outputBinaryName(projectName, targetOS)), " "),
+	}
+	for _, env := range buildEnv(targetOS, "/engine") {
+		dockerFileContent = append(dockerFileContent, "ENV "+env)
+	}
+
+	for _, line := range dockerFileContent {
+		if _, err := dockerFile.WriteString(line + "\n"); err != nil {
+			fmt.Printf("hover: Could not write Dockerfile: %v\n", err)
+			os.Exit(1)
+		}
+	}
+	err = dockerFile.Close()
+	if err != nil {
+		fmt.Printf("hover: Could not close Dockerfile: %v\n", err)
+		os.Exit(1)
+	}
+	dockerBuildCmd := exec.Command(dockerBin, "build", "-t", "hover-build-cc", ".")
+	dockerBuildCmd.Stderr = os.Stderr
+	dockerBuildCmd.Dir = tmpDir
+	err = dockerBuildCmd.Run()
+	if err != nil {
+		fmt.Printf("hover: Docker build failed: %v\n", err)
+		os.Exit(1)
+	}
+
+	fmt.Println("hover: Cross-Compiling 'go-flutter' and plugins using docker")
+
+	outputPath, err := filepath.Abs(filepath.Join(buildPath, "build", "outputs"))
+	dockerRunCmd := exec.Command(dockerBin, "run", "-e", "USERID=$UID", "-v", goPath+":/go", "-v", pkgRootDir+":/app", "-v", engineCachePath+":/engine", "-v", outputPath+":/app/build/outputs", "hover-build-cc")
+	dockerRunCmd.Stderr = os.Stderr
+	dockerRunCmd.Stdout = os.Stdout
+	dockerRunCmd.Dir = tmpDir
+	err = dockerRunCmd.Run()
+	if err != nil {
+		fmt.Printf("hover: Docker run failed: %v\n", err)
+		os.Exit(1)
+	}
+	err = os.RemoveAll(tmpDir)
+	if err != nil {
+		fmt.Printf("hover: Could not remove temporary build folder: %v\n", err)
+		os.Exit(1)
+	}
+}
+
+func build(projectName string, targetOS string, vmArguments []string) {
+	mingwGccBin, err := exec.LookPath(mingwGccBinName)
+	mingwGppBin, err := exec.LookPath(mingwGppBinName)
+	clangBin, err := exec.LookPath(clangBinName)
+	crossCompile = targetOS != runtime.GOOS
+	if crossCompile {
+		fmt.Printf("hover: Cross-compiling for %s using docker is very experimental\n", targetOS)
+		if mingwGccBin != "" && mingwGppBin != "" {
+			windowsCrossCompileToolsAvailable = true
+		}
+		if clangBin != "" {
+			darwinCrossCompileToolsAvailable = true
+		}
 	}
 	var engineCachePath string
 	if buildCachePath != "" {
@@ -167,7 +273,7 @@ func build(projectName string, targetOS string, vmArguments []string) {
 		}
 	}
 
-	err := os.MkdirAll(outputDirectoryPath(targetOS), 0775)
+	err = os.MkdirAll(outputDirectoryPath(targetOS), 0775)
 	if err != nil {
 		fmt.Printf("hover: failed to create output directory %s: %v\n", outputDirectoryPath(targetOS), err)
 		os.Exit(1)
@@ -265,19 +371,6 @@ func build(projectName string, targetOS string, vmArguments []string) {
 		return
 	}
 
-	var cgoLdflags string
-	switch targetOS {
-	case "darwin":
-		cgoLdflags = fmt.Sprintf("-F%s -Wl,-rpath,@executable_path", engineCachePath)
-	case "linux":
-		cgoLdflags = fmt.Sprintf("-L%s", engineCachePath)
-	case "windows":
-		cgoLdflags = fmt.Sprintf("-L%s", engineCachePath)
-	default:
-		fmt.Printf("hover: Target platform %s is not supported, cgo_ldflags not implemented.\n", targetOS)
-		os.Exit(1)
-	}
-
 	wd, err := os.Getwd()
 	if err != nil {
 		fmt.Printf("hover: Failed to get working dir: %v\n", err)
@@ -323,6 +416,75 @@ func build(projectName string, targetOS string, vmArguments []string) {
 		}
 	}
 
+	if crossCompile {
+		dockerBuild(projectName, targetOS, vmArguments)
+		return
+	}
+
+	buildCommandString := buildCommand(targetOS, vmArguments, outputBinaryPath(projectName, targetOS))
+	cmdGoBuild := exec.Command(buildCommandString[0], buildCommandString[1:]...)
+	cmdGoBuild.Dir = filepath.Join(wd, buildPath)
+	cmdGoBuild.Env = append(os.Environ(),
+		buildEnv(targetOS, engineCachePath)...,
+	)
+
+	cmdGoBuild.Stderr = os.Stderr
+	cmdGoBuild.Stdout = os.Stdout
+
+	fmt.Printf("hover: Compiling 'go-flutter' and plugins\n")
+	err = cmdGoBuild.Run()
+	if err != nil {
+		fmt.Printf("hover: Go build failed: %v\n", err)
+		os.Exit(1)
+	}
+}
+
+func buildEnv(targetOS string, engineCachePath string) []string {
+	var cgoLdflags string
+	switch targetOS {
+	case "darwin":
+		cgoLdflags = fmt.Sprintf("-F%s -Wl,-rpath,@executable_path", engineCachePath)
+	case "linux":
+		cgoLdflags = fmt.Sprintf("-L%s", engineCachePath)
+	case "windows":
+		cgoLdflags = fmt.Sprintf("-L%s", engineCachePath)
+	default:
+		fmt.Printf("hover: Target platform %s is not supported, cgo_ldflags not implemented.\n", targetOS)
+		os.Exit(1)
+	}
+	cgoLdflagsString := ""
+	if crossCompile {
+		cgoLdflagsString = "\""
+	}
+	cgoLdflagsString = cgoLdflagsString + cgoLdflags
+	if crossCompile {
+		cgoLdflagsString = cgoLdflagsString + "\""
+	}
+	env := []string{
+		"GO111MODULE=on",
+		"CGO_LDFLAGS=" + cgoLdflagsString,
+		"GOOS=" + targetOS,
+		"GOARCH=amd64",
+		"CGO_ENABLED=1",
+	}
+	if crossCompile {
+		if targetOS == "windows" {
+			env = append(env,
+				"CC="+mingwGccBinName,
+				"CXX="+mingwGppBinName,
+			)
+		}
+		if targetOS == "darwin" {
+			env = append(env,
+				"CC="+clangBinName,
+				"CXX="+clangBinName,
+			)
+		}
+	}
+	return env
+}
+
+func buildCommand(targetOS string, vmArguments []string, outputBinaryPath string) []string {
 	var ldflags []string
 	if !buildDebug {
 		vmArguments = append(vmArguments, "--disable-dart-asserts")
@@ -335,25 +497,16 @@ func build(projectName string, targetOS string, vmArguments []string) {
 		ldflags = append(ldflags, "-w")
 	}
 	ldflags = append(ldflags, fmt.Sprintf("-X main.vmArguments=%s", strings.Join(vmArguments, ";")))
-
-	cmdGoBuild := exec.Command(goBin, "build",
-		"-o", outputBinaryPath(projectName, targetOS),
-		fmt.Sprintf("-ldflags=%s", strings.Join(ldflags, " ")),
-		dotSlash+"cmd",
-	)
-	cmdGoBuild.Dir = filepath.Join(wd, buildPath)
-	cmdGoBuild.Env = append(os.Environ(),
-		"GO111MODULE=on",
-		"CGO_LDFLAGS="+cgoLdflags,
-	)
-
-	cmdGoBuild.Stderr = os.Stderr
-	cmdGoBuild.Stdout = os.Stdout
-
-	fmt.Printf("hover: Compiling 'go-flutter' and plugins\n")
-	err = cmdGoBuild.Run()
-	if err != nil {
-		fmt.Printf("hover: Go build failed: %v\n", err)
-		os.Exit(1)
+	outputCommand := []string{
+		"go",
+		"build",
+		"-o", outputBinaryPath,
 	}
+	if crossCompile {
+		outputCommand = append(outputCommand, fmt.Sprintf("-ldflags=\"%s\"", strings.Join(ldflags, " ")))
+	} else {
+		outputCommand = append(outputCommand, fmt.Sprintf("-ldflags=%s", strings.Join(ldflags, " ")))
+	}
+	outputCommand = append(outputCommand, dotSlash+"cmd")
+	return outputCommand
 }
