@@ -50,7 +50,7 @@ The first time you use hover for a project, you'll need to initialize the projec
 hover init github.com/my-organization/simpleApplication
 ```
 
-This creates the directory `desktop` and adds boilerplate files such as Go code and a default logo.
+This creates the directory `go` and adds boilerplate files such as Go code and a default logo.
 
 Make sure you have the following
 [main_desktop.dart](https://github.com/go-flutter-desktop/examples/blob/5508a59ff4916fca9c05dfde4929d8848fd2a947/pointer_demo/lib/main_desktop.dart)
