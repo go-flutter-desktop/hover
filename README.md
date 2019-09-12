@@ -44,8 +44,10 @@ cd into a flutter project.
 cd projects/simpleApplication
 ```
 
+The first time you use hover for a project, you'll need to initialize the project for desktop. An argument can be passed to `hover init` to set the project path. This is usually the path for your project on github or a self-hosted git service. _If you are unsure, use `hover init`, the generated path can always be changed later._
+
 ```bash
-hover init
+hover init github.com/my-organization/simpleApplication
 ```
 
 This creates the directory `go` and adds boilerplate files such as Go code and a default logo.

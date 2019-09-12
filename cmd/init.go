@@ -1,11 +1,11 @@
 package cmd
 
 import (
+	"errors"
 	"fmt"
 	"io"
 	"os"
 	"os/exec"
-	"os/user"
 	"path/filepath"
 
 	"github.com/spf13/cobra"
@@ -18,20 +18,21 @@ func init() {
 var initCmd = &cobra.Command{
 	Use:   "init [project]",
 	Short: "Initialize a flutter project to use go-flutter",
+	Args: func(cmd *cobra.Command, args []string) error {
+		if len(args) > 1 {
+			return errors.New("allows only one argument, the project path. e.g.: github.com/my-organization/my-app")
+		}
+		return nil
+	},
 	Run: func(cmd *cobra.Command, args []string) {
+		assertInFlutterProject()
+
 		var projectPath string
 		if len(args) == 0 || args[0] == "." {
-			projectName := getPubSpec().Name
-			u, err := user.Current()
-			if err != nil {
-				fmt.Printf("hover: Couldn't get current user: %v\n", err)
-			}
-			projectPath = "github.com/" + u.Username + "/" + projectName
+			projectPath = getPubSpec().Name
 		} else {
 			projectPath = args[0]
 		}
-
-		assertInFlutterProject()
 
 		err := os.Mkdir(buildPath, 0775)
 		if err != nil {
