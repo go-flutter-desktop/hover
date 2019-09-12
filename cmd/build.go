@@ -227,7 +227,7 @@ func dockerBuild(projectName string, targetOS string, vmArguments []string) {
 	fmt.Println("hover: Cross-Compiling 'go-flutter' and plugins using docker")
 
 	outputPath, err := filepath.Abs(filepath.Join(buildPath, "build", "outputs"))
-	dockerRunCmd := exec.Command(dockerBin, "run", "-e", "USERID=$UID", "-v", goPath+":/go", "-v", pkgRootDir+":/app", "-v", engineCachePath+":/engine", "-v", outputPath+":/app/build/outputs", "hover-build-cc")
+	dockerRunCmd := exec.Command(dockerBin, "run", "-e", "USERID=$UID", "-v", goPath+":/go", "-v", pkgRootDir+":/app", "-v", engineCachePath+":/engine", "-v", outputPath+":/app/build/outputs", "-v", filepath.Join(userCacheDir, "go-build")+":/cache", "hover-build-cc")
 	dockerRunCmd.Stderr = os.Stderr
 	dockerRunCmd.Stdout = os.Stdout
 	dockerRunCmd.Dir = tmpDir
@@ -468,6 +468,9 @@ func buildEnv(targetOS string, engineCachePath string) []string {
 		"CGO_ENABLED=1",
 	}
 	if crossCompile {
+		env = append(env,
+			"GOCACHE=/cache",
+		)
 		if targetOS == "windows" {
 			env = append(env,
 				"CC="+mingwGccBinName,
@@ -501,6 +504,7 @@ func buildCommand(targetOS string, vmArguments []string, outputBinaryPath string
 		"go",
 		"build",
 		"-o", outputBinaryPath,
+		"-v",
 	}
 	if crossCompile {
 		outputCommand = append(outputCommand, fmt.Sprintf("-ldflags=\"%s\"", strings.Join(ldflags, " ")))
