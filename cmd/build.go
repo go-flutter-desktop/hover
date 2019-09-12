@@ -197,6 +197,7 @@ func dockerBuild(projectName string, targetOS string, vmArguments []string) {
 	}
 	dockerFileContent := []string{
 		"FROM dockercore/golang-cross",
+		"RUN apt-get install libgl1-mesa-dev xorg-dev -y",
 		"WORKDIR /app",
 		"CMD " + strings.Join(buildCommand(targetOS, vmArguments, "build/outputs/"+targetOS+"/"+outputBinaryName(projectName, targetOS)), " "),
 	}
@@ -217,6 +218,7 @@ func dockerBuild(projectName string, targetOS string, vmArguments []string) {
 	}
 	dockerBuildCmd := exec.Command(dockerBin, "build", "-t", "hover-build-cc", ".")
 	dockerBuildCmd.Stderr = os.Stderr
+	dockerBuildCmd.Stdout = os.Stdout
 	dockerBuildCmd.Dir = tmpDir
 	err = dockerBuildCmd.Run()
 	if err != nil {
