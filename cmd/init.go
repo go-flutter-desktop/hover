@@ -2,7 +2,7 @@ package cmd
 
 import (
 	"errors"
-	"fmt"
+	"github.com/go-flutter-desktop/hover/internal/log"
 	"io"
 	"os"
 	"os/exec"
@@ -37,7 +37,7 @@ var initCmd = &cobra.Command{
 		err := os.Mkdir(buildPath, 0775)
 		if err != nil {
 			if os.IsExist(err) {
-				fmt.Println("hover: A file or directory named `" + buildPath + "` already exists. Cannot continue init.")
+				log.Fatal("A file or directory named `" + buildPath + "` already exists. Cannot continue init.")
 				os.Exit(1)
 			}
 		}
@@ -45,14 +45,14 @@ var initCmd = &cobra.Command{
 		desktopCmdPath := filepath.Join(buildPath, "cmd")
 		err = os.Mkdir(desktopCmdPath, 0775)
 		if err != nil {
-			fmt.Printf("hover: Failed to create `%s`: %v\n", desktopCmdPath, err)
+			log.Fatal("Failed to create `%s`: %v", desktopCmdPath, err)
 			os.Exit(1)
 		}
 
 		desktopAssetsPath := filepath.Join(buildPath, "assets")
 		err = os.Mkdir(desktopAssetsPath, 0775)
 		if err != nil {
-			fmt.Printf("hover: Failed to create `%s`: %v\n", desktopAssetsPath, err)
+			log.Fatal("Failed to create `%s`: %v", desktopAssetsPath, err)
 			os.Exit(1)
 		}
 
@@ -63,7 +63,7 @@ var initCmd = &cobra.Command{
 
 		wd, err := os.Getwd()
 		if err != nil {
-			fmt.Printf("hover: Failed to get working dir: %v\n", err)
+			log.Fatal("Failed to get working dir: %v", err)
 			os.Exit(1)
 		}
 
@@ -76,13 +76,13 @@ var initCmd = &cobra.Command{
 		cmdGoModInit.Stdout = os.Stdout
 		err = cmdGoModInit.Run()
 		if err != nil {
-			fmt.Printf("hover: Go mod init failed: %v\n", err)
+			log.Fatal("Go mod init failed: %v", err)
 			os.Exit(1)
 		}
 
 		cmdGoModTidy := exec.Command(goBin, "mod", "tidy")
 		cmdGoModTidy.Dir = filepath.Join(wd, buildPath)
-		fmt.Println(cmdGoModTidy.Dir)
+		log.Print(cmdGoModTidy.Dir)
 		cmdGoModTidy.Env = append(os.Environ(),
 			"GO111MODULE=on",
 		)
@@ -90,7 +90,7 @@ var initCmd = &cobra.Command{
 		cmdGoModTidy.Stdout = os.Stdout
 		err = cmdGoModTidy.Run()
 		if err != nil {
-			fmt.Printf("hover: Go mod tidy failed: %v\n", err)
+			log.Fatal("Go mod tidy failed: %v", err)
 			os.Exit(1)
 		}
 	},
@@ -99,19 +99,19 @@ var initCmd = &cobra.Command{
 func copyAsset(boxed, to string) {
 	file, err := os.Create(to)
 	if err != nil {
-		fmt.Printf("hover: Failed to create %s: %v\n", to, err)
+		log.Fatal("Failed to create %s: %v", to, err)
 		os.Exit(1)
 	}
 	defer file.Close()
 	boxedFile, err := assetsBox.Open(boxed)
 	if err != nil {
-		fmt.Printf("hover: Failed to find boxed file %s: %v\n", boxed, err)
+		log.Fatal("Failed to find boxed file %s: %v", boxed, err)
 		os.Exit(1)
 	}
 	defer boxedFile.Close()
 	_, err = io.Copy(file, boxedFile)
 	if err != nil {
-		fmt.Printf("hover: Failed to write file %s: %v\n", to, err)
+		log.Fatal("Failed to write file %s: %v", to, err)
 		os.Exit(1)
 	}
 }

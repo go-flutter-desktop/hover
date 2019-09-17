@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"io"
 	"io/ioutil"
-	"log"
 	"net/http"
 	"os"
 	"path/filepath"
@@ -15,6 +14,8 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
+
+	"github.com/go-flutter-desktop/hover/internal/log"
 )
 
 func createSymLink(oldname, newname string) error {
@@ -93,7 +94,7 @@ func printDownloadPercent(done chan chan struct{}, path string, expectedSize int
 	for {
 		fi, err := os.Stat(path)
 		if err != nil {
-			log.Fatal(err)
+			log.Warn("%v", err)
 		}
 
 		size := fi.Size()
@@ -105,7 +106,7 @@ func printDownloadPercent(done chan chan struct{}, path string, expectedSize int
 		var percent = float64(size) / float64(expectedSize) * 100
 
 		// We use `\033[2K\r` to avoid carriage return, it will print above previous.
-		fmt.Printf("\033[2K\r %.0f %% / 100 %%", percent)
+		log.Print("\033[2K\r %.0f %% / 100 %%", percent)
 
 		if completedCh != nil {
 			close(completedCh)
@@ -152,7 +153,7 @@ func moveFile(srcPath, destPath string) error {
 // Function to download file with given path and url.
 func downloadFile(filepath string, url string) error {
 	// // Print download url in case user needs it.
-	// fmt.Printf("Downloading file from\n '%s'\n to '%s'\n\n", url, filepath)
+	// log.Print("Downloading file from\n '%s'\n to '%s'", url, filepath)
 
 	start := time.Now()
 
@@ -189,7 +190,7 @@ func downloadFile(filepath string, url string) error {
 	<-doneCompletedCh         // wait for signal that printing has completed
 
 	elapsed := time.Since(start)
-	log.Printf("\033[2K\rhover: Download completed in %.2fs\n", elapsed.Seconds())
+	log.Print("\033[2K\rDownload completed in %.2fs", elapsed.Seconds())
 	return nil
 }
 
@@ -200,17 +201,17 @@ func ValidateOrUpdateEngineAtPath(targetOS string, cachePath string) (engineCach
 	engineCachePath = filepath.Join(cachePath, "hover", "engine", targetOS)
 
 	if strings.Contains(engineCachePath, " ") {
-		fmt.Printf("hover: Cannot save the engine to '%s', engine cache is not compatible with path containing spaces.\n", cachePath)
-		fmt.Printf("       Please run hover with a another engine cache path. Example:\n")
-		fmt.Printf("              hover run --cache-path \"C:\\cache\"\n\n")
-		fmt.Printf("       The --cache-path flag will have to be provided to every build and run command.")
+		log.Fatal("Cannot save the engine to '%s', engine cache is not compatible with path containing spaces.", cachePath)
+		log.Fatal("       Please run hover with a another engine cache path. Example:")
+		log.Fatal("              hover run --cache-path \"C:\\cache\"")
+		log.Fatal("       The --cache-path flag will have to be provided to every build and run command.")
 		os.Exit(1)
 	}
 
 	cachedEngineVersionPath := filepath.Join(engineCachePath, "version")
 	cachedEngineVersionBytes, err := ioutil.ReadFile(cachedEngineVersionPath)
 	if err != nil && !os.IsNotExist(err) {
-		fmt.Printf("hover: Failed to read cached engine version: %v\n", err)
+		log.Fatal("Failed to read cached engine version: %v", err)
 		os.Exit(1)
 	}
 	cachedEngineVersion := string(cachedEngineVersionBytes)
@@ -218,7 +219,7 @@ func ValidateOrUpdateEngineAtPath(targetOS string, cachePath string) (engineCach
 
 	if cachedEngineVersion != "" {
 		if cachedEngineVersion == requiredEngineVersion {
-			fmt.Println("hover: Using engine from cache")
+			log.Print("Using engine from cache")
 			return
 		}
 
@@ -226,14 +227,14 @@ func ValidateOrUpdateEngineAtPath(targetOS string, cachePath string) (engineCach
 		// the new engine.
 		err = os.RemoveAll(engineCachePath)
 		if err != nil {
-			fmt.Printf("hover: Failed to remove outdated engine: %v\n", err)
+			log.Fatal("Failed to remove outdated engine: %v", err)
 			os.Exit(1)
 		}
 	}
 
 	err = os.MkdirAll(engineCachePath, 0775)
 	if err != nil {
-		fmt.Printf("hover: Failed to create engine cache directory: %v\n", err)
+		log.Fatal("Failed to create engine cache directory: %v", err)
 		os.Exit(1)
 	}
 
@@ -247,7 +248,7 @@ func ValidateOrUpdateEngineAtPath(targetOS string, cachePath string) (engineCach
 	url := fmt.Sprintf("https://api.github.com/repos/flutter/engine/commits/%s", requiredEngineVersion)
 	req, err := http.NewRequest("GET", os.ExpandEnv(url), nil)
 	if err != nil {
-		fmt.Printf("hover: Failed to create http request: %v\n", err)
+		log.Fatal("Failed to create http request: %v", err)
 		os.Exit(1)
 	}
 	req.Header.Set("Accept", "application/vnd.github.v3+json")
@@ -258,13 +259,13 @@ func ValidateOrUpdateEngineAtPath(targetOS string, cachePath string) (engineCach
 
 	resp, err := http.DefaultClient.Do(req)
 	if err != nil {
-		fmt.Printf("hover: Failed to find engine version on github: %v\n", err)
+		log.Fatal("Failed to find engine version on github: %v", err)
 		os.Exit(1)
 	}
 	body, err := ioutil.ReadAll(resp.Body)
 	resp.Body.Close()
 	if err != nil {
-		fmt.Printf("hover: Failed to read response body from github: %v\n", err)
+		log.Fatal("Failed to read response body from github: %v", err)
 		os.Exit(1)
 	}
 
@@ -274,11 +275,11 @@ func ValidateOrUpdateEngineAtPath(targetOS string, cachePath string) (engineCach
 	}
 	err = json.Unmarshal(body, &apiResponse)
 	if err != nil {
-		fmt.Printf("hover: Failed to unmarshall reply github: %v\n", err)
+		log.Fatal("Failed to unmarshall reply github: %v", err)
 		os.Exit(1)
 	}
 	if apiResponse.Sha == "" {
-		fmt.Printf("hover: Failed to fetch full sha for engine version %s from GitHub\n", requiredEngineVersion)
+		log.Fatal("Failed to fetch full sha for engine version %s from GitHub", requiredEngineVersion)
 		os.Exit(1)
 	}
 	var requiredEngineVersionFullHash = apiResponse.Sha
@@ -296,7 +297,7 @@ func ValidateOrUpdateEngineAtPath(targetOS string, cachePath string) (engineCach
 	case "windows":
 		engineDownloadURL += platform + "-embedder.zip"
 	default:
-		fmt.Printf("hover: cannot run on %s, download engine not implemented.\n", targetOS)
+		log.Fatal("Cannot run on %s, download engine not implemented.", targetOS)
 		os.Exit(1)
 	}
 
@@ -304,45 +305,45 @@ func ValidateOrUpdateEngineAtPath(targetOS string, cachePath string) (engineCach
 
 	dir, err := ioutil.TempDir("", "hover-engine-download")
 	if err != nil {
-		fmt.Printf("hover: Failed to create tmp dir for engine download: %v\n", err)
+		log.Fatal("Failed to create tmp dir for engine download: %v", err)
 		os.Exit(1)
 	}
 	defer os.RemoveAll(dir)
 
 	err = os.MkdirAll(dir, 0700)
 	if err != nil {
-		log.Fatal(err)
+		log.Warn("%v", err)
 	}
 
 	engineZipPath := filepath.Join(dir, "engine.zip")
 	engineExtractPath := filepath.Join(dir, "engine")
 	artifactsZipPath := filepath.Join(dir, "artifacts.zip")
 
-	fmt.Printf("hover: Downloading engine for platform %s at version %s...\n", platform, requiredEngineVersion)
+	log.Print("Downloading engine for platform %s at version %s...", platform, requiredEngineVersion)
 	err = downloadFile(engineZipPath, engineDownloadURL)
 	if err != nil {
-		fmt.Printf("hover: Failed to download engine: %v\n", err)
+		log.Fatal("Failed to download engine: %v", err)
 		os.Exit(1)
 	}
 
 	// TODO: make artifacts download a separate function, it doesn't need to be
 	// downloaded with engine because it's OS independent.
-	fmt.Printf("hover: Downloading artifacts at version %s...\n", requiredEngineVersion)
+	log.Print("Downloading artifacts at version %s...", requiredEngineVersion)
 	err = downloadFile(artifactsZipPath, icudtlDownloadURL)
 	if err != nil {
-		fmt.Printf("hover: Failed to download artifacts: %v\n", err)
+		log.Fatal("Failed to download artifacts: %v", err)
 		os.Exit(1)
 	}
 
 	_, err = unzip(engineZipPath, engineExtractPath) // engineCachePath)
 	if err != nil {
-		log.Fatal(err)
+		log.Warn("%v", err)
 	}
 
 	artifactsCachePath := filepath.Join(engineCachePath, "artifacts")
 	_, err = unzip(artifactsZipPath, artifactsCachePath) // filepath.Join(engineCachePath, "artifacts"))
 	if err != nil {
-		log.Fatal(err)
+		log.Warn("%v", err)
 	}
 
 	switch platform {
@@ -351,7 +352,7 @@ func ValidateOrUpdateEngineAtPath(targetOS string, cachePath string) (engineCach
 		frameworkDestPath := filepath.Join(engineCachePath, "FlutterEmbedder.framework")
 		_, err = unzip(frameworkZipPath, frameworkDestPath)
 		if err != nil {
-			fmt.Printf("hover: Failed to unzip engine framework: %v\n", err)
+			log.Fatal("Failed to unzip engine framework: %v", err)
 			os.Exit(1)
 		}
 
@@ -367,7 +368,7 @@ func ValidateOrUpdateEngineAtPath(targetOS string, cachePath string) (engineCach
 			filepath.Join(engineCachePath, "/libflutter_engine.so"),
 		)
 		if err != nil {
-			fmt.Printf("hover: Failed to move downloaded libflutter_engine.so: %v\n", err)
+			log.Fatal("Failed to move downloaded libflutter_engine.so: %v", err)
 			os.Exit(1)
 		}
 
@@ -377,14 +378,14 @@ func ValidateOrUpdateEngineAtPath(targetOS string, cachePath string) (engineCach
 			filepath.Join(engineCachePath, "/flutter_engine.dll"),
 		)
 		if err != nil {
-			fmt.Printf("hover: Failed to move downloaded flutter_engine.dll: %v\n", err)
+			log.Fatal("Failed to move downloaded flutter_engine.dll: %v", err)
 			os.Exit(1)
 		}
 	}
 
 	err = ioutil.WriteFile(cachedEngineVersionPath, []byte(requiredEngineVersion), 0664)
 	if err != nil {
-		fmt.Printf("hover: Failed to write version file: %v\n", err)
+		log.Fatal("Failed to write version file: %v", err)
 		os.Exit(1)
 	}
 
