@@ -81,7 +81,7 @@ If you want to integrate go-flutter with VSCode, read this [issue](https://githu
 
 ### Build standalone application
 
-To create a standalone release build run this command:
+To create a standalone release (JIT mode) build run this command:
 
 ```bash
 hover build linux # or darwin or windows
