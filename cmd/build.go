@@ -212,7 +212,7 @@ func dockerBuild(projectName string, targetOS string, vmArguments []string) {
 			fmt.Printf("hover: Could not close Dockerfile: %v\n", err)
 			os.Exit(1)
 		}
-		fmt.Printf("hover: A Dockerfile for cross-compiling for %s has bee created at %s. You can add it to git.\n", targetOS, filepath.Join(buildPath, "cross-compiling", targetOS))
+		fmt.Printf("hover: A Dockerfile for cross-compiling for %s has been created at %s. You can add it to git.\n", targetOS, filepath.Join(buildPath, "cross-compiling", targetOS))
 	}
 	dockerBuildCmd := exec.Command(dockerBin, "build", "-t", "hover-build-cc-"+targetOS, ".")
 	dockerBuildCmd.Stderr = os.Stderr
@@ -235,7 +235,7 @@ func dockerBuild(projectName string, targetOS string, vmArguments []string) {
 		fmt.Printf("hover: Docker run failed: %v\n", err)
 		os.Exit(1)
 	}
-	fmt.Println("hover: Finished cross-compiling for " + targetOS)
+	fmt.Println("hover: Successfully cross-compiled for " + targetOS)
 }
 
 func build(projectName string, targetOS string, vmArguments []string) {
@@ -421,7 +421,7 @@ func build(projectName string, targetOS string, vmArguments []string) {
 		fmt.Printf("hover: Go build failed: %v\n", err)
 		os.Exit(1)
 	}
-	fmt.Println("hover: Finished compiling")
+	fmt.Println("hover: Successfully compiled")
 }
 
 func buildEnv(targetOS string, engineCachePath string) []string {
