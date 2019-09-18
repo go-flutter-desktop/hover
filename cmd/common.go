@@ -2,12 +2,16 @@ package cmd
 
 import (
 	"bufio"
+	"encoding/xml"
 	"fmt"
+	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
 
+	"github.com/go-flutter-desktop/hover/internal/versioncheck"
+	version "github.com/hashicorp/go-version"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
 )
@@ -140,4 +144,110 @@ func askForConfirmation() bool {
 		return true
 	}
 	return false
+}
+
+// AndroidManifest is a file that describes the essential information about
+// an android app.
+type AndroidManifest struct {
+	Package string `xml:"package,attr"`
+}
+
+func addBuildConstantSourceFile() {
+	currentEmbedderTag, err := versioncheck.CurrentGoFlutterTag(buildPath)
+	if err != nil {
+		fmt.Printf("hover: %v\n", err)
+		os.Exit(1)
+	}
+
+	semver, err := version.NewSemver(currentEmbedderTag)
+	if err != nil {
+		fmt.Printf("hover: faild to parse 'go-flutter' semver: %v\n", err)
+		os.Exit(1)
+	}
+
+	minimumGoFlutterRelease, _ := version.NewSemver("0.30.0")
+	if semver.LessThan(minimumGoFlutterRelease) {
+		return
+	}
+
+	buildVersionPath := filepath.Join(buildPath, "cmd", "version.go")
+	if _, err := os.Stat(buildVersionPath); err == nil {
+		// file exist
+		err := os.Remove(buildVersionPath)
+		if err != nil {
+			fmt.Printf("hover: Failed to delete %s: %v\n", buildVersionPath, err)
+			os.Exit(1)
+		}
+	}
+
+	buildVersionFile, err := os.Create(buildVersionPath)
+	if err != nil {
+		fmt.Printf("hover: Failed to create %s: %v\n", buildVersionPath, err)
+		os.Exit(1)
+	}
+
+	// Default value
+	androidManifestFile := "android/app/src/main/AndroidManifest.xml"
+
+	// Open AndroidManifest file
+	xmlFile, err := os.Open(androidManifestFile)
+	if err != nil {
+		fmt.Printf("hover: Failed to retrieve the organization name: %v\n", err)
+		writeVersionFle(currentEmbedderTag, "com.example", buildVersionFile)
+		return
+	}
+	defer xmlFile.Close()
+
+	byteXMLValue, err := ioutil.ReadAll(xmlFile)
+	if err != nil {
+		fmt.Printf("hover: Failed to retrieve the organization name: %v\n", err)
+		writeVersionFle(currentEmbedderTag, "com.example", buildVersionFile)
+		return
+	}
+
+	var androidManifest AndroidManifest
+	err = xml.Unmarshal(byteXMLValue, &androidManifest)
+	if err != nil {
+		fmt.Printf("hover: Failed to retrieve the organization name: %v\n", err)
+		writeVersionFle(currentEmbedderTag, "com.example", buildVersionFile)
+		return
+	}
+	javaPackage := strings.Split(androidManifest.Package, ".")
+	orgName := strings.Join(javaPackage[:len(javaPackage)-1], ".")
+	if orgName == "" {
+		writeVersionFle(currentEmbedderTag, "com.example", buildVersionFile)
+		return
+	}
+
+	writeVersionFle(currentEmbedderTag, orgName, buildVersionFile)
+}
+
+func writeVersionFle(currentEmbedderTag string, organizationName string, buildVersionFile *os.File) {
+	buildVersionFileContent := []string{
+		"package main",
+		"",
+		"import (",
+		"	\"github.com/go-flutter-desktop/go-flutter\"",
+		")",
+		"",
+		"func init() {",
+		"	// DO NOT EDIT, may be set by hover at compile-time",
+		"	flutter.SetPlatformVersion(\"" + currentEmbedderTag + "\")",
+		"	flutter.SetProjectVersion(\"" + getPubSpec().Version + "\")",
+		"	flutter.SetAppName(\"" + getPubSpec().Name + "\")",
+		"	flutter.SetOrganizationName(\"" + organizationName + "\")",
+		"}",
+	}
+
+	for _, line := range buildVersionFileContent {
+		if _, err := buildVersionFile.WriteString(line + "\n"); err != nil {
+			fmt.Printf("hover: Could not write version.go file: %v\n", err)
+			os.Exit(1)
+		}
+	}
+	err := buildVersionFile.Close()
+	if err != nil {
+		fmt.Printf("hover: Could not close version.go file: %v\n", err)
+		os.Exit(1)
+	}
 }

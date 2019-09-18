@@ -264,6 +264,7 @@ func build(projectName string, targetOS string, vmArguments []string) {
 		// Omit the 'go-flutter' build
 		return
 	}
+	addBuildConstantSourceFile()
 
 	var cgoLdflags string
 	switch targetOS {
