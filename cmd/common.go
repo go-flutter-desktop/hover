@@ -35,6 +35,7 @@ func initBinaries() {
 	}
 }
 
+// PubSpec  basic model pubspec
 type PubSpec struct {
 	Name         string
 	Description  string
