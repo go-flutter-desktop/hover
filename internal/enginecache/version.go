@@ -1,18 +1,17 @@
 package enginecache
 
 import (
-	"github.com/logrusorgru/aurora"
 	"os"
 	"os/exec"
 	"regexp"
 
-	"github.com/go-flutter-desktop/hover/internal/log"
+	log "github.com/go-flutter-desktop/hover/internal/log"
 )
 
 func flutterRequiredEngineVersion() string {
 	out, err := exec.Command("flutter", "--version").Output()
 	if err != nil {
-		log.Fatal("Failed to run `%s`: %v", aurora.Magenta("flutter --version"), err)
+		log.Fatal("Failed to run %s: %v", log.Au.Magenta("flutter --version"), err)
 		os.Exit(1)
 	}
 

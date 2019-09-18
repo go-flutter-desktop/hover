@@ -63,7 +63,7 @@ func packagingFormatPath(packagingFormat string) string {
 
 func createPackagingFormatDirectory(packagingFormat string) {
 	if _, err := os.Stat(packagingFormatPath(packagingFormat)); !os.IsNotExist(err) {
-		log.Fatal("A file or directory named `%s` already exists. Cannot continue packaging init for %s.", packagingFormat, packagingFormat)
+		log.Fatal("A file or directory named '%s' already exists. Cannot continue packaging init for %s.", packagingFormat, packagingFormat)
 		os.Exit(1)
 	}
 	err := os.MkdirAll(packagingFormatPath(packagingFormat), 0775)
@@ -75,7 +75,7 @@ func createPackagingFormatDirectory(packagingFormat string) {
 
 func assertPackagingFormatInitialized(packagingFormat string) {
 	if _, err := os.Stat(packagingFormatPath(packagingFormat)); os.IsNotExist(err) {
-		log.Fatal("%s is not initialized for packaging. Please run `hover init-packaging %s` first.", packagingFormat, packagingFormat)
+		log.Fatal("%s is not initialized for packaging. Please init packaging for %s first: %s", packagingFormat, packagingFormat, log.Au.Magenta(fmt.Sprintf("hover init-packaging %s", packagingFormat)))
 		os.Exit(1)
 	}
 }
@@ -92,8 +92,8 @@ func removeDashesAndUnderscores(projectName string) string {
 }
 
 func printInitFinished(packagingFormat string) {
-	log.Info("go/packaging/%s has been created. You can modify the configuration files and add it to git.", packagingFormat)
-	log.Info("You now can package the %s using `%s`", strings.Split(packagingFormat, "-")[0], fmt.Sprintf(au.Magenta("hover build %s").String(), packagingFormat))
+	log.Info("go/packaging/%s has been created. You can modify the configuration files and add them to git.", packagingFormat)
+	log.Info("You now can package the %s: %s", strings.Split(packagingFormat, "-")[1], fmt.Sprintf(au.Magenta("hover build %s").String(), packagingFormat))
 }
 
 func getTemporaryBuildDirectory(projectName string, packagingFormat string) string {
@@ -215,7 +215,7 @@ func buildLinuxSnap(projectName string) {
 	assertCorrectOS(packagingFormat)
 	snapcraftBin, err := exec.LookPath("snapcraft")
 	if err != nil {
-		log.Fatal("Failed to lookup `snapcraft` executable. Please install snapcraft.\nhttps://tutorials.ubuntu.com/tutorial/create-your-first-snap#1")
+		log.Fatal("Failed to lookup 'snapcraft' executable. Please install snapcraft.\nhttps://tutorials.ubuntu.com/tutorial/create-your-first-snap#1")
 		os.Exit(1)
 	}
 	tmpPath := getTemporaryBuildDirectory(projectName, packagingFormat)
@@ -413,7 +413,7 @@ func buildLinuxDeb(projectName string) {
 	assertCorrectOS(packagingFormat)
 	dpkgDebBin, err := exec.LookPath("dpkg-deb")
 	if err != nil {
-		log.Fatal("Failed to lookup `dpkg-deb` executable. Please install dpkg-deb.")
+		log.Fatal("Failed to lookup 'dpkg-deb' executable. Please install dpkg-deb.")
 		os.Exit(1)
 	}
 	tmpPath := getTemporaryBuildDirectory(projectName, packagingFormat)

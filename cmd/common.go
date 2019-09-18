@@ -25,12 +25,12 @@ func initBinaries() {
 	var err error
 	goBin, err = exec.LookPath("go")
 	if err != nil {
-		log.Fatal("Failed to lookup `go` executable. Please install Go.\nhttps://golang.org/doc/install")
+		log.Fatal("Failed to lookup 'go' executable. Please install Go.\nhttps://golang.org/doc/install")
 		os.Exit(1)
 	}
 	flutterBin, err = exec.LookPath("flutter")
 	if err != nil {
-		log.Fatal("Failed to lookup `flutter` executable. Please install flutter.\nhttps://flutter.dev/docs/get-started/install")
+		log.Fatal("Failed to lookup 'flutter' executable. Please install flutter.\nhttps://flutter.dev/docs/get-started/install")
 		os.Exit(1)
 	}
 }
@@ -66,7 +66,7 @@ func getPubSpec() PubSpec {
 				goto Fail
 			}
 			if _, exists := pubspec.Dependencies["flutter"]; !exists {
-				log.Fatal("Missing `flutter` in pubspec.yaml dependencies list.")
+				log.Fatal("Missing 'flutter' in pubspec.yaml dependencies list.")
 				goto Fail
 			}
 		}
@@ -91,7 +91,7 @@ func assertHoverInitialized() {
 		if hoverMigration() {
 			return
 		}
-		log.Fatal("Directory '" + buildPath + "' is missing, did you run `hover init` in this project?")
+		log.Fatal("Directory '%s' is missing. Please init go-flutter first: %s", buildPath, log.Au.Magenta("hover init"))
 		os.Exit(1)
 	}
 	if err != nil {

@@ -2,17 +2,14 @@ package cmd
 
 import (
 	"bufio"
-	"fmt"
 	"github.com/go-flutter-desktop/hover/internal/log"
+	"github.com/spf13/cobra"
 	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
 	"runtime"
-	"strings"
-
-	"github.com/spf13/cobra"
 )
 
 var runObservatoryPort string
@@ -44,7 +41,7 @@ var runCmd = &cobra.Command{
 		// Can only run on host OS
 		targetOS := runtime.GOOS
 
-		// forcefully enable --debug (which is not an option for `hover run`)
+		// forcefully enable --debug (which is not an option for 'hover run')
 		buildDebug = true
 
 		build(projectName, targetOS, []string{"--observatory-port=" + runObservatoryPort})
@@ -97,16 +94,12 @@ func runAndAttach(projectName string, targetOS string) {
 	}
 
 	err = cmdApp.Wait()
-	if (err != nil && strings.Contains(err.Error(), "interrupt")) || err == nil {
-		fmt.Println("")
-		log.Info("App '%s' exited.", projectName)
-	} else {
+	if err != nil {
 		log.Fatal("App '%s' exited with error: %v", projectName, err)
 		os.Exit(cmdApp.ProcessState.ExitCode())
 	}
-	if err == nil {
-		log.Print("Closing the flutter attach sub process..")
-	}
+	log.Info("App '%s' exited.", projectName)
+	log.Print("Closing the flutter attach sub process..")
 	cmdFlutterAttach.Wait()
 	os.Exit(0)
 }

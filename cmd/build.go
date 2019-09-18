@@ -186,7 +186,7 @@ func build(projectName string, targetOS string, vmArguments []string) {
 			ignoreWarning := os.Getenv("HOVER_IGNORE_CHANNEL_WARNING")
 			if match[1] != "beta" && ignoreWarning != "true" {
 				log.Warn("⚠ The go-flutter project tries to stay compatible with the beta channel of Flutter.")
-				log.Warn("⚠     It's advised to use the beta channel. ($ flutter channel beta)")
+				log.Warn("⚠     It's advised to use the beta channel: %s", log.Au.Magenta("flutter channel beta"))
 			}
 		} else {
 			log.Warn("Failed to check your flutter channel: Unrecognized output format")

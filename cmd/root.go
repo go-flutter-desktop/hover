@@ -1,6 +1,7 @@
 package cmd
 
 import (
+	"fmt"
 	"github.com/go-flutter-desktop/hover/internal/log"
 	"os"
 	"os/signal"
@@ -18,6 +19,10 @@ func init() {
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
 	go func() {
+		for range c {
+			fmt.Println("")
+			os.Exit(1)
+		}
 	}()
 
 }
@@ -30,7 +35,7 @@ func initColors() {
 var rootCmd = &cobra.Command{
 	Use:   "hover",
 	Short: "Hover connects Flutter and go-flutter-desktop.",
-	Long:  `Hover helps developers to release Flutter applications on desktop.`,
+	Long:  "Hover helps developers to release Flutter applications on desktop.",
 	Run:   func(cmd *cobra.Command, args []string) {},
 }
 

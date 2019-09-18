@@ -33,5 +33,5 @@ func Info(part string, parts ...interface{}) {
 }
 
 func hoverPrint() {
-	fmt.Print(Au.Colorize("hover:", aurora.CyanBg|aurora.BlackFg).String() + " ")
+	fmt.Print(Au.Bold(Au.Cyan("hover: ")).String())
 }
