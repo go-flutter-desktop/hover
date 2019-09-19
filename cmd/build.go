@@ -27,6 +27,7 @@ var (
 	buildCachePath         string
 	buildOmitEmbedder      bool
 	buildOmitFlutterBundle bool
+	buildDocker            bool
 )
 
 const buildPath = "go"
@@ -43,6 +44,7 @@ func init() {
 	buildCmd.PersistentFlags().StringVarP(&buildBranch, "branch", "b", "", "The 'go-flutter' version to use. (@master or @v0.20.0 for example)")
 	buildCmd.PersistentFlags().BoolVar(&buildDebug, "debug", false, "Build a debug version of the app.")
 	buildCmd.PersistentFlags().StringVarP(&buildCachePath, "cache-path", "", "", "The path that hover uses to cache dependencies such as the Flutter engine .so/.dll (defaults to the standard user cache directory)")
+	buildCmd.PersistentFlags().BoolVar(&buildDocker, "docker", false, "Compile in Docker container only. No need to install go")
 	buildCmd.AddCommand(buildLinuxCmd)
 	buildCmd.AddCommand(buildLinuxSnapCmd)
 	buildCmd.AddCommand(buildLinuxDebCmd)
@@ -153,12 +155,11 @@ func outputBinaryPath(projectName string, targetOS string) string {
 }
 
 func dockerBuild(projectName string, targetOS string, vmArguments []string) {
-	dockerBin, err := exec.LookPath("docker")
-	if err != nil {
-		fmt.Printf("hover: Failed to lookup `docker` executable. Please install Docker.\nhttps://docs.docker.com/install/")
-		os.Exit(1)
+	buildMode := "release"
+	if buildDebug {
+		buildMode = "debug"
 	}
-	crossCompilingDir, err := filepath.Abs(filepath.Join(buildPath, "cross-compiling", targetOS))
+	crossCompilingDir, err := filepath.Abs(filepath.Join(buildPath, "cross-compiling", targetOS, buildMode))
 	err = os.MkdirAll(crossCompilingDir, 0755)
 	if err != nil {
 		fmt.Printf("hover: Cannot create the cross-compiling directory: %v\n", err)
@@ -240,6 +241,7 @@ func dockerBuild(projectName string, targetOS string, vmArguments []string) {
 
 func build(projectName string, targetOS string, vmArguments []string) {
 	crossCompile = targetOS != runtime.GOOS
+	buildDocker = crossCompile || buildDocker
 
 	if buildCachePath != "" {
 		engineCachePath = enginecache.ValidateOrUpdateEngineAtPath(targetOS, buildCachePath)
@@ -399,8 +401,10 @@ func build(projectName string, targetOS string, vmArguments []string) {
 		}
 	}
 
-	if crossCompile {
-		fmt.Printf("hover: Because %s is not able to compile for %s out of the box, a cross-compiling container is used\n", runtime.GOOS, targetOS)
+	if buildDocker {
+		if crossCompile {
+			fmt.Printf("hover: Because %s is not able to compile for %s out of the box, a cross-compiling container is used\n", runtime.GOOS, targetOS)
+		}
 		dockerBuild(projectName, targetOS, vmArguments)
 		return
 	}
@@ -438,11 +442,11 @@ func buildEnv(targetOS string, engineCachePath string) []string {
 		os.Exit(1)
 	}
 	cgoLdflagsString := ""
-	if crossCompile {
+	if buildDocker {
 		cgoLdflagsString = "\""
 	}
 	cgoLdflagsString = cgoLdflagsString + cgoLdflags
-	if crossCompile {
+	if buildDocker {
 		cgoLdflagsString = cgoLdflagsString + "\""
 	}
 	env := []string{
@@ -452,7 +456,7 @@ func buildEnv(targetOS string, engineCachePath string) []string {
 		"GOARCH=amd64",
 		"CGO_ENABLED=1",
 	}
-	if crossCompile {
+	if buildDocker {
 		env = append(env,
 			"GOCACHE=/cache",
 		)
@@ -489,7 +493,7 @@ func buildCommand(targetOS string, vmArguments []string, outputBinaryPath string
 		"-o", outputBinaryPath,
 		"-v",
 	}
-	if crossCompile {
+	if buildDocker {
 		outputCommand = append(outputCommand, fmt.Sprintf("-ldflags=\"%s\"", strings.Join(ldflags, " ")))
 	} else {
 		outputCommand = append(outputCommand, fmt.Sprintf("-ldflags=%s", strings.Join(ldflags, " ")))
