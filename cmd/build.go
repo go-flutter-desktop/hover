@@ -264,7 +264,6 @@ func build(projectName string, targetOS string, vmArguments []string) {
 		// Omit the 'go-flutter' build
 		return
 	}
-	addBuildConstantSourceFile()
 
 	var cgoLdflags string
 	switch targetOS {
@@ -285,14 +284,13 @@ func build(projectName string, targetOS string, vmArguments []string) {
 		os.Exit(1)
 	}
 
+	currentTag, err := versioncheck.CurrentGoFlutterTag(filepath.Join(wd, buildPath))
+	if err != nil {
+		fmt.Printf("hover: %v\n", err)
+		os.Exit(1)
+	}
+
 	if buildBranch == "" {
-
-		currentTag, err := versioncheck.CurrentGoFlutterTag(filepath.Join(wd, buildPath))
-		if err != nil {
-			fmt.Printf("hover: %v\n", err)
-			os.Exit(1)
-		}
-
 		semver, err := version.NewSemver(currentTag)
 		if err != nil {
 			fmt.Printf("hover: faild to parse 'go-flutter' semver: %v\n", err)
@@ -336,6 +334,17 @@ func build(projectName string, targetOS string, vmArguments []string) {
 		ldflags = append(ldflags, "-w")
 	}
 	ldflags = append(ldflags, fmt.Sprintf("-X main.vmArguments=%s", strings.Join(vmArguments, ";")))
+
+	// overwrite go-flutter build-constants values
+	ldflags = append(ldflags, fmt.Sprintf(
+		"-X github.com/go-flutter-desktop/go-flutter.ProjectVersion=%s "+
+			" -X github.com/go-flutter-desktop/go-flutter.PlatformVersion=%s "+
+			" -X github.com/go-flutter-desktop/go-flutter.ProjectName=%s "+
+			" -X github.com/go-flutter-desktop/go-flutter.OrganizationName=%s",
+		getPubSpec().Version,
+		currentTag,
+		getPubSpec().Name,
+		androidOrganizationName()))
 
 	cmdGoBuild := exec.Command(goBin, "build",
 		"-o", outputBinaryPath(projectName, targetOS),
