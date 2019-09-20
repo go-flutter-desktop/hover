@@ -38,7 +38,7 @@ func init() {
 	buildCmd.PersistentFlags().StringVarP(&buildBranch, "branch", "b", "", "The 'go-flutter' version to use. (@master or @v0.20.0 for example)")
 	buildCmd.PersistentFlags().BoolVar(&buildDebug, "debug", false, "Build a debug version of the app.")
 	buildCmd.PersistentFlags().StringVarP(&buildCachePath, "cache-path", "", "", "The path that hover uses to cache dependencies such as the Flutter engine .so/.dll (defaults to the standard user cache directory)")
-	buildCmd.PersistentFlags().StringVar(&buildOpenGlVersion, "opengl", "3.3", "Choose the version of OpenGL to compile go-flutter with.\nOpenGL is only used for external texture plugin support (i.e. video_plugin), if you don't need them, provide 'none'")
+	buildCmd.PersistentFlags().StringVar(&buildOpenGlVersion, "opengl", "3.3", "The OpenGL version specified here is only relevant for external texture plugin (i.e. video_plugin).\nIf 'none' is provided, texture won't be supported. Note: the Flutter Engine still needs a OpenGL compatible context.")
 	buildCmd.AddCommand(buildLinuxCmd)
 	buildCmd.AddCommand(buildLinuxSnapCmd)
 	buildCmd.AddCommand(buildLinuxDebCmd)
