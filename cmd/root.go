@@ -42,7 +42,7 @@ var rootCmd = &cobra.Command{
 // Execute executes the rootCmd
 func Execute() {
 	if err := rootCmd.Execute(); err != nil {
-		log.Fatal("Command failed: %v", err)
+		log.Errorf("Command failed: %v", err)
 		os.Exit(1)
 	}
 }

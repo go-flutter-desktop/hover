@@ -34,7 +34,7 @@ var runCmd = &cobra.Command{
 
 		// ensure we have something to build
 		if buildOmitEmbedder && buildOmitFlutterBundle {
-			log.Fatal("Flags omit-embedder and omit-flutter are not compatible.")
+			log.Errorf("Flags omit-embedder and omit-flutter are not compatible.")
 			os.Exit(1)
 		}
 
@@ -45,7 +45,7 @@ var runCmd = &cobra.Command{
 		buildDebug = true
 
 		build(projectName, targetOS, []string{"--observatory-port=" + runObservatoryPort})
-		log.Info("Build finished, starting app...")
+		log.Infof("Build finished, starting app...")
 		runAndAttach(projectName, targetOS)
 	},
 }
@@ -56,12 +56,12 @@ func runAndAttach(projectName string, targetOS string) {
 
 	stdoutApp, err := cmdApp.StdoutPipe()
 	if err != nil {
-		log.Fatal("Unable to create stdout pipe on app: %v", err)
+		log.Errorf("Unable to create stdout pipe on app: %v", err)
 		os.Exit(1)
 	}
 	stderrApp, err := cmdApp.StderrPipe()
 	if err != nil {
-		log.Fatal("Unable to create stderr pipe on app: %v", err)
+		log.Errorf("Unable to create stderr pipe on app: %v", err)
 		os.Exit(1)
 	}
 
@@ -72,7 +72,7 @@ func runAndAttach(projectName string, targetOS string) {
 		scanner := bufio.NewScanner(reader)
 		for scanner.Scan() {
 			text := scanner.Text()
-			log.Print(text)
+			log.Printf(text)
 			match := re.FindStringSubmatch(text)
 			if len(match) == 1 {
 				startHotReloadProcess(cmdFlutterAttach, buildTarget, match[0])
@@ -86,20 +86,20 @@ func runAndAttach(projectName string, targetOS string) {
 	// Non-blockingly echo command stderr to terminal
 	go io.Copy(os.Stderr, stderrApp)
 
-	log.Info("Running %s in debug mode", projectName)
+	log.Infof("Running %s in debug mode", projectName)
 	err = cmdApp.Start()
 	if err != nil {
-		log.Fatal("Failed to start app '%s': %v", projectName, err)
+		log.Errorf("Failed to start app '%s': %v", projectName, err)
 		os.Exit(1)
 	}
 
 	err = cmdApp.Wait()
 	if err != nil {
-		log.Fatal("App '%s' exited with error: %v", projectName, err)
+		log.Errorf("App '%s' exited with error: %v", projectName, err)
 		os.Exit(cmdApp.ProcessState.ExitCode())
 	}
-	log.Info("App '%s' exited.", projectName)
-	log.Print("Closing the flutter attach sub process..")
+	log.Infof("App '%s' exited.", projectName)
+	log.Printf("Closing the flutter attach sub process..")
 	cmdFlutterAttach.Wait()
 	os.Exit(0)
 }
@@ -117,6 +117,6 @@ func startHotReloadProcess(cmdFlutterAttach *exec.Cmd, buildTargetMainDart strin
 	}
 	err := cmdFlutterAttach.Start()
 	if err != nil {
-		log.Warn("Flutter attach failed: %v Hotreload disabled", err)
+		log.Warnf("The command 'flutter attach' failed: %v Hotreload disabled", err)
 	}
 }

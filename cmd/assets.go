@@ -13,7 +13,7 @@ func init() {
 	var err error
 	assetsBox, err = rice.FindBox("../assets")
 	if err != nil {
-		log.Fatal("Failed to find hover assets: %v", err)
+		log.Errorf("Failed to find hover assets: %v", err)
 		os.Exit(1)
 	}
 }

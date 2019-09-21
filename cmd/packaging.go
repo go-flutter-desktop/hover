@@ -55,7 +55,7 @@ var linuxPackagingDependencies = []string{"libx11-6", "libxrandr2", "libxcursor1
 func packagingFormatPath(packagingFormat string) string {
 	directoryPath, err := filepath.Abs(filepath.Join(packagingPath, packagingFormat))
 	if err != nil {
-		log.Fatal("Failed to resolve absolute path for %s directory: %v", packagingFormat, err)
+		log.Errorf("Failed to resolve absolute path for %s directory: %v", packagingFormat, err)
 		os.Exit(1)
 	}
 	return directoryPath
@@ -63,26 +63,26 @@ func packagingFormatPath(packagingFormat string) string {
 
 func createPackagingFormatDirectory(packagingFormat string) {
 	if _, err := os.Stat(packagingFormatPath(packagingFormat)); !os.IsNotExist(err) {
-		log.Fatal("A file or directory named '%s' already exists. Cannot continue packaging init for %s.", packagingFormat, packagingFormat)
+		log.Errorf("A file or directory named '%s' already exists. Cannot continue packaging init for %s.", packagingFormat, packagingFormat)
 		os.Exit(1)
 	}
 	err := os.MkdirAll(packagingFormatPath(packagingFormat), 0775)
 	if err != nil {
-		log.Fatal("Failed to create %s directory %s: %v", packagingFormat, packagingFormatPath(packagingFormat), err)
+		log.Errorf("Failed to create %s directory %s: %v", packagingFormat, packagingFormatPath(packagingFormat), err)
 		os.Exit(1)
 	}
 }
 
 func assertPackagingFormatInitialized(packagingFormat string) {
 	if _, err := os.Stat(packagingFormatPath(packagingFormat)); os.IsNotExist(err) {
-		log.Fatal("%s is not initialized for packaging. Please init packaging for %s first: %s", packagingFormat, packagingFormat, log.Au.Magenta(fmt.Sprintf("hover init-packaging %s", packagingFormat)))
+		log.Errorf("%s is not initialized for packaging. Please init packaging for %s first: %s", packagingFormat, packagingFormat, log.Au.Magenta(fmt.Sprintf("hover init-packaging %s", packagingFormat)))
 		os.Exit(1)
 	}
 }
 
 func assertCorrectOS(packagingFormat string) {
 	if runtime.GOOS != strings.Split(packagingFormat, "-")[0] {
-		log.Fatal("%s only works on %s", packagingFormat, strings.Split(packagingFormat, "-")[0])
+		log.Errorf("%s only works on %s", packagingFormat, strings.Split(packagingFormat, "-")[0])
 		os.Exit(1)
 	}
 }
@@ -92,14 +92,14 @@ func removeDashesAndUnderscores(projectName string) string {
 }
 
 func printInitFinished(packagingFormat string) {
-	log.Info("go/packaging/%s has been created. You can modify the configuration files and add them to git.", packagingFormat)
-	log.Info("You now can package the %s: %s", strings.Split(packagingFormat, "-")[1], fmt.Sprintf(au.Magenta("hover build %s").String(), packagingFormat))
+	log.Infof("go/packaging/%s has been created. You can modify the configuration files and add them to git.", packagingFormat)
+	log.Infof("You now can package the %s: %s", strings.Split(packagingFormat, "-")[1], fmt.Sprintf(au.Magenta("hover build %s").String(), packagingFormat))
 }
 
 func getTemporaryBuildDirectory(projectName string, packagingFormat string) string {
 	tmpPath, err := ioutil.TempDir("", "hover-build-"+projectName+"-"+packagingFormat)
 	if err != nil {
-		log.Fatal("Couldn't get temporary build directory: %v", err)
+		log.Errorf("Couldn't get temporary build directory: %v", err)
 		os.Exit(1)
 	}
 	return tmpPath
@@ -113,24 +113,24 @@ func initLinuxSnap(projectName string) {
 
 	snapLocalDirectoryPath, err := filepath.Abs(filepath.Join(snapDirectoryPath, "snap", "local"))
 	if err != nil {
-		log.Fatal("Failed to resolve absolute path for snap local directory: %v", err)
+		log.Errorf("Failed to resolve absolute path for snap local directory: %v", err)
 		os.Exit(1)
 	}
 	err = os.MkdirAll(snapLocalDirectoryPath, 0775)
 	if err != nil {
-		log.Fatal("Failed to create snap local directory %s: %v", snapDirectoryPath, err)
+		log.Errorf("Failed to create snap local directory %s: %v", snapDirectoryPath, err)
 		os.Exit(1)
 	}
 
 	snapcraftFilePath, err := filepath.Abs(filepath.Join(snapDirectoryPath, "snap", "snapcraft.yaml"))
 	if err != nil {
-		log.Fatal("Failed to resolve absolute path for snapcraft.yaml file %s: %v", snapcraftFilePath, err)
+		log.Errorf("Failed to resolve absolute path for snapcraft.yaml file %s: %v", snapcraftFilePath, err)
 		os.Exit(1)
 	}
 
 	snapcraftFile, err := os.Create(snapcraftFilePath)
 	if err != nil {
-		log.Fatal("Failed to create snapcraft.yaml file %s: %v", snapcraftFilePath, err)
+		log.Errorf("Failed to create snapcraft.yaml file %s: %v", snapcraftFilePath, err)
 		os.Exit(1)
 	}
 	snapcraftFileContent := []string{
@@ -164,24 +164,24 @@ func initLinuxSnap(projectName string) {
 
 	for _, line := range snapcraftFileContent {
 		if _, err := snapcraftFile.WriteString(line + "\n"); err != nil {
-			log.Fatal("Could not write snapcraft.yaml: %v", err)
+			log.Errorf("Could not write snapcraft.yaml: %v", err)
 			os.Exit(1)
 		}
 	}
 	err = snapcraftFile.Close()
 	if err != nil {
-		log.Fatal("Could not close snapcraft.yaml: %v", err)
+		log.Errorf("Could not close snapcraft.yaml: %v", err)
 		os.Exit(1)
 	}
 
 	desktopFilePath, err := filepath.Abs(filepath.Join(snapLocalDirectoryPath, projectName+".desktop"))
 	if err != nil {
-		log.Fatal("Failed to resolve absolute path for desktop file %s: %v", desktopFilePath, err)
+		log.Errorf("Failed to resolve absolute path for desktop file %s: %v", desktopFilePath, err)
 		os.Exit(1)
 	}
 	desktopFile, err := os.Create(desktopFilePath)
 	if err != nil {
-		log.Fatal("Failed to create desktop file %s: %v", desktopFilePath, err)
+		log.Errorf("Failed to create desktop file %s: %v", desktopFilePath, err)
 		os.Exit(1)
 	}
 	desktopFileContent := []string{
@@ -197,13 +197,13 @@ func initLinuxSnap(projectName string) {
 
 	for _, line := range desktopFileContent {
 		if _, err := desktopFile.WriteString(line + "\n"); err != nil {
-			log.Fatal("Could not write %s.desktop: %v", projectName, err)
+			log.Errorf("Could not write %s.desktop: %v", projectName, err)
 			os.Exit(1)
 		}
 	}
 	err = desktopFile.Close()
 	if err != nil {
-		log.Fatal("Could not close %s.desktop: %v", projectName, err)
+		log.Errorf("Could not close %s.desktop: %v", projectName, err)
 		os.Exit(1)
 	}
 
@@ -215,25 +215,25 @@ func buildLinuxSnap(projectName string) {
 	assertCorrectOS(packagingFormat)
 	snapcraftBin, err := exec.LookPath("snapcraft")
 	if err != nil {
-		log.Fatal("Failed to lookup 'snapcraft' executable. Please install snapcraft.\nhttps://tutorials.ubuntu.com/tutorial/create-your-first-snap#1")
+		log.Errorf("Failed to lookup 'snapcraft' executable. Please install snapcraft.\nhttps://tutorials.ubuntu.com/tutorial/create-your-first-snap#1")
 		os.Exit(1)
 	}
 	tmpPath := getTemporaryBuildDirectory(projectName, packagingFormat)
-	log.Info("Packaging snap in %s", tmpPath)
+	log.Infof("Packaging snap in %s", tmpPath)
 
 	err = copy.Copy(filepath.Join(buildPath, "assets"), filepath.Join(tmpPath, "assets"))
 	if err != nil {
-		log.Fatal("Could not copy assets folder: %v", err)
+		log.Errorf("Could not copy assets folder: %v", err)
 		os.Exit(1)
 	}
 	err = copy.Copy(outputDirectoryPath("linux"), filepath.Join(tmpPath, "build"))
 	if err != nil {
-		log.Fatal("Could not copy build folder: %v", err)
+		log.Errorf("Could not copy build folder: %v", err)
 		os.Exit(1)
 	}
 	err = copy.Copy(packagingFormatPath(packagingFormat), filepath.Join(tmpPath))
 	if err != nil {
-		log.Fatal("Could not copy packaging configuration folder: %v", err)
+		log.Errorf("Could not copy packaging configuration folder: %v", err)
 		os.Exit(1)
 	}
 
@@ -244,18 +244,18 @@ func buildLinuxSnap(projectName string) {
 	cmdBuildSnap.Stdin = os.Stdin
 	err = cmdBuildSnap.Run()
 	if err != nil {
-		log.Fatal("Failed to package snap: %v", err)
+		log.Errorf("Failed to package snap: %v", err)
 		os.Exit(1)
 	}
 	outputFilePath := filepath.Join(outputDirectoryPath("linux-snap"), removeDashesAndUnderscores(projectName)+"_"+runtime.GOARCH+".snap")
 	err = os.Rename(filepath.Join(tmpPath, removeDashesAndUnderscores(projectName)+"_"+getPubSpec().Version+"_"+runtime.GOARCH+".snap"), outputFilePath)
 	if err != nil {
-		log.Fatal("Could not move snap file: %v", err)
+		log.Errorf("Could not move snap file: %v", err)
 		os.Exit(1)
 	}
 	err = os.RemoveAll(tmpPath)
 	if err != nil {
-		log.Fatal("Could not remove packaging configuration folder: %v", err)
+		log.Errorf("Could not remove packaging configuration folder: %v", err)
 		os.Exit(1)
 	}
 }
@@ -265,58 +265,58 @@ func initLinuxDeb(projectName string) {
 	assertCorrectOS(packagingFormat)
 	author := getPubSpec().Author
 	if author == "" {
-		log.Warn("Missing author field in pubspec.yaml")
+		log.Warnf("Missing author field in pubspec.yaml")
 		u, err := user.Current()
 		if err != nil {
-			log.Fatal("Couldn't get current user: %v", err)
+			log.Errorf("Couldn't get current user: %v", err)
 			os.Exit(1)
 		}
 		author = u.Username
-		log.Print("Using this username from system instead: %s", author)
+		log.Printf("Using this username from system instead: %s", author)
 	}
 	createPackagingFormatDirectory(packagingFormat)
 	debDirectoryPath := packagingFormatPath(packagingFormat)
 	debDebianDirectoryPath, err := filepath.Abs(filepath.Join(debDirectoryPath, "DEBIAN"))
 	if err != nil {
-		log.Fatal("Failed to resolve absolute path for DEBIAN directory: %v", err)
+		log.Errorf("Failed to resolve absolute path for DEBIAN directory: %v", err)
 		os.Exit(1)
 	}
 	err = os.MkdirAll(debDebianDirectoryPath, 0775)
 	if err != nil {
-		log.Fatal("Failed to create DEBIAN directory %s: %v", debDebianDirectoryPath, err)
+		log.Errorf("Failed to create DEBIAN directory %s: %v", debDebianDirectoryPath, err)
 		os.Exit(1)
 	}
 
 	binDirectoryPath, err := filepath.Abs(filepath.Join(debDirectoryPath, "usr", "bin"))
 	if err != nil {
-		log.Fatal("Failed to resolve absolute path for bin directory: %v", err)
+		log.Errorf("Failed to resolve absolute path for bin directory: %v", err)
 		os.Exit(1)
 	}
 	err = os.MkdirAll(binDirectoryPath, 0775)
 	if err != nil {
-		log.Fatal("Failed to create bin directory %s: %v", binDirectoryPath, err)
+		log.Errorf("Failed to create bin directory %s: %v", binDirectoryPath, err)
 		os.Exit(1)
 	}
 	applicationsDirectoryPath, err := filepath.Abs(filepath.Join(debDirectoryPath, "usr", "share", "applications"))
 	if err != nil {
-		log.Fatal("Failed to resolve absolute path for applications directory: %v", err)
+		log.Errorf("Failed to resolve absolute path for applications directory: %v", err)
 		os.Exit(1)
 	}
 	err = os.MkdirAll(applicationsDirectoryPath, 0775)
 	if err != nil {
-		log.Fatal("Failed to create applications directory %s: %v", applicationsDirectoryPath, err)
+		log.Errorf("Failed to create applications directory %s: %v", applicationsDirectoryPath, err)
 		os.Exit(1)
 	}
 
 	controlFilePath, err := filepath.Abs(filepath.Join(debDebianDirectoryPath, "control"))
 	if err != nil {
-		log.Fatal("Failed to resolve absolute path for control file %s: %v", controlFilePath, err)
+		log.Errorf("Failed to resolve absolute path for control file %s: %v", controlFilePath, err)
 		os.Exit(1)
 	}
 
 	controlFile, err := os.Create(controlFilePath)
 	if err != nil {
-		log.Fatal("Failed to create control file %s: %v", controlFilePath, err)
+		log.Errorf("Failed to create control file %s: %v", controlFilePath, err)
 		os.Exit(1)
 	}
 	controlFileContent := []string{
@@ -331,25 +331,25 @@ func initLinuxDeb(projectName string) {
 
 	for _, line := range controlFileContent {
 		if _, err := controlFile.WriteString(line + "\n"); err != nil {
-			log.Fatal("Could not write control file: %v", err)
+			log.Errorf("Could not write control file: %v", err)
 			os.Exit(1)
 		}
 	}
 	err = controlFile.Close()
 	if err != nil {
-		log.Fatal("Could not close control file: %v", err)
+		log.Errorf("Could not close control file: %v", err)
 		os.Exit(1)
 	}
 
 	binFilePath, err := filepath.Abs(filepath.Join(binDirectoryPath, removeDashesAndUnderscores(projectName)))
 	if err != nil {
-		log.Fatal("Failed to resolve absolute path for bin file %s: %v", binFilePath, err)
+		log.Errorf("Failed to resolve absolute path for bin file %s: %v", binFilePath, err)
 		os.Exit(1)
 	}
 
 	binFile, err := os.Create(binFilePath)
 	if err != nil {
-		log.Fatal("Failed to create bin file %s: %v", controlFilePath, err)
+		log.Errorf("Failed to create bin file %s: %v", controlFilePath, err)
 		os.Exit(1)
 	}
 	binFileContent := []string{
@@ -358,29 +358,29 @@ func initLinuxDeb(projectName string) {
 	}
 	for _, line := range binFileContent {
 		if _, err := binFile.WriteString(line + "\n"); err != nil {
-			log.Fatal("Could not write bin file: %v", err)
+			log.Errorf("Could not write bin file: %v", err)
 			os.Exit(1)
 		}
 	}
 	err = binFile.Close()
 	if err != nil {
-		log.Fatal("Could not close bin file: %v", err)
+		log.Errorf("Could not close bin file: %v", err)
 		os.Exit(1)
 	}
 	err = os.Chmod(binFilePath, 0777)
 	if err != nil {
-		log.Fatal("Failed to change file permissions for bin file: %v", err)
+		log.Errorf("Failed to change file permissions for bin file: %v", err)
 		os.Exit(1)
 	}
 
 	desktopFilePath, err := filepath.Abs(filepath.Join(applicationsDirectoryPath, projectName+".desktop"))
 	if err != nil {
-		log.Fatal("Failed to resolve absolute path for desktop file %s: %v", desktopFilePath, err)
+		log.Errorf("Failed to resolve absolute path for desktop file %s: %v", desktopFilePath, err)
 		os.Exit(1)
 	}
 	desktopFile, err := os.Create(desktopFilePath)
 	if err != nil {
-		log.Fatal("Failed to create desktop file %s: %v", desktopFilePath, err)
+		log.Errorf("Failed to create desktop file %s: %v", desktopFilePath, err)
 		os.Exit(1)
 	}
 	desktopFileContent := []string{
@@ -395,13 +395,13 @@ func initLinuxDeb(projectName string) {
 	}
 	for _, line := range desktopFileContent {
 		if _, err := desktopFile.WriteString(line + "\n"); err != nil {
-			log.Fatal("Could not write %s.desktop file: %v", projectName, err)
+			log.Errorf("Could not write %s.desktop file: %v", projectName, err)
 			os.Exit(1)
 		}
 	}
 	err = desktopFile.Close()
 	if err != nil {
-		log.Fatal("Could not close %s.desktop file: %v", projectName, err)
+		log.Errorf("Could not close %s.desktop file: %v", projectName, err)
 		os.Exit(1)
 	}
 
@@ -413,25 +413,25 @@ func buildLinuxDeb(projectName string) {
 	assertCorrectOS(packagingFormat)
 	dpkgDebBin, err := exec.LookPath("dpkg-deb")
 	if err != nil {
-		log.Fatal("Failed to lookup 'dpkg-deb' executable. Please install dpkg-deb.")
+		log.Errorf("Failed to lookup 'dpkg-deb' executable. Please install dpkg-deb.")
 		os.Exit(1)
 	}
 	tmpPath := getTemporaryBuildDirectory(projectName, packagingFormat)
-	log.Info("Packaging deb in %s", tmpPath)
+	log.Infof("Packaging deb in %s", tmpPath)
 
 	libDirectoryPath, err := filepath.Abs(filepath.Join(tmpPath, "usr", "lib"))
 	if err != nil {
-		log.Fatal("Failed to resolve absolute path for bin directory: %v", err)
+		log.Errorf("Failed to resolve absolute path for bin directory: %v", err)
 		os.Exit(1)
 	}
 	err = copy.Copy(outputDirectoryPath("linux"), filepath.Join(libDirectoryPath, projectName))
 	if err != nil {
-		log.Fatal("Could not copy build folder: %v", err)
+		log.Errorf("Could not copy build folder: %v", err)
 		os.Exit(1)
 	}
 	err = copy.Copy(packagingFormatPath(packagingFormat), filepath.Join(tmpPath))
 	if err != nil {
-		log.Fatal("Could not copy packaging configuration folder: %v", err)
+		log.Errorf("Could not copy packaging configuration folder: %v", err)
 		os.Exit(1)
 	}
 	outputFileName := removeDashesAndUnderscores(projectName) + "_" + runtime.GOARCH + ".deb"
@@ -444,17 +444,17 @@ func buildLinuxDeb(projectName string) {
 	cmdBuildDeb.Stdin = os.Stdin
 	err = cmdBuildDeb.Run()
 	if err != nil {
-		log.Fatal("Failed to package deb: %v", err)
+		log.Errorf("Failed to package deb: %v", err)
 		os.Exit(1)
 	}
 	err = os.Rename(filepath.Join(tmpPath, outputFileName), outputFilePath)
 	if err != nil {
-		log.Fatal("Could not move deb file: %v", err)
+		log.Errorf("Could not move deb file: %v", err)
 		os.Exit(1)
 	}
 	err = os.RemoveAll(tmpPath)
 	if err != nil {
-		log.Fatal("Could not remove packaging configuration folder: %v", err)
+		log.Errorf("Could not remove packaging configuration folder: %v", err)
 		os.Exit(1)
 	}
 }

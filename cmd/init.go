@@ -37,7 +37,7 @@ var initCmd = &cobra.Command{
 		err := os.Mkdir(buildPath, 0775)
 		if err != nil {
 			if os.IsExist(err) {
-				log.Fatal("A file or directory named '%s' already exists. Cannot continue init.", buildPath)
+				log.Errorf("A file or directory named '%s' already exists. Cannot continue init.", buildPath)
 				os.Exit(1)
 			}
 		}
@@ -45,14 +45,14 @@ var initCmd = &cobra.Command{
 		desktopCmdPath := filepath.Join(buildPath, "cmd")
 		err = os.Mkdir(desktopCmdPath, 0775)
 		if err != nil {
-			log.Fatal("Failed to create '%s': %v", desktopCmdPath, err)
+			log.Errorf("Failed to create '%s': %v", desktopCmdPath, err)
 			os.Exit(1)
 		}
 
 		desktopAssetsPath := filepath.Join(buildPath, "assets")
 		err = os.Mkdir(desktopAssetsPath, 0775)
 		if err != nil {
-			log.Fatal("Failed to create '%s': %v", desktopAssetsPath, err)
+			log.Errorf("Failed to create '%s': %v", desktopAssetsPath, err)
 			os.Exit(1)
 		}
 
@@ -63,7 +63,7 @@ var initCmd = &cobra.Command{
 
 		wd, err := os.Getwd()
 		if err != nil {
-			log.Fatal("Failed to get working dir: %v", err)
+			log.Errorf("Failed to get working dir: %v", err)
 			os.Exit(1)
 		}
 
@@ -76,13 +76,13 @@ var initCmd = &cobra.Command{
 		cmdGoModInit.Stdout = os.Stdout
 		err = cmdGoModInit.Run()
 		if err != nil {
-			log.Fatal("Go mod init failed: %v", err)
+			log.Errorf("Go mod init failed: %v", err)
 			os.Exit(1)
 		}
 
 		cmdGoModTidy := exec.Command(goBin, "mod", "tidy")
 		cmdGoModTidy.Dir = filepath.Join(wd, buildPath)
-		log.Print(cmdGoModTidy.Dir)
+		log.Printf(cmdGoModTidy.Dir)
 		cmdGoModTidy.Env = append(os.Environ(),
 			"GO111MODULE=on",
 		)
@@ -90,7 +90,7 @@ var initCmd = &cobra.Command{
 		cmdGoModTidy.Stdout = os.Stdout
 		err = cmdGoModTidy.Run()
 		if err != nil {
-			log.Fatal("Go mod tidy failed: %v", err)
+			log.Errorf("Go mod tidy failed: %v", err)
 			os.Exit(1)
 		}
 	},
@@ -99,19 +99,19 @@ var initCmd = &cobra.Command{
 func copyAsset(boxed, to string) {
 	file, err := os.Create(to)
 	if err != nil {
-		log.Fatal("Failed to create %s: %v", to, err)
+		log.Errorf("Failed to create %s: %v", to, err)
 		os.Exit(1)
 	}
 	defer file.Close()
 	boxedFile, err := assetsBox.Open(boxed)
 	if err != nil {
-		log.Fatal("Failed to find boxed file %s: %v", boxed, err)
+		log.Errorf("Failed to find boxed file %s: %v", boxed, err)
 		os.Exit(1)
 	}
 	defer boxedFile.Close()
 	_, err = io.Copy(file, boxedFile)
 	if err != nil {
-		log.Fatal("Failed to write file %s: %v", to, err)
+		log.Errorf("Failed to write file %s: %v", to, err)
 		os.Exit(1)
 	}
 }

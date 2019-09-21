@@ -13,7 +13,7 @@ import (
 func cachePath() string {
 	homePath, err := homedir.Dir()
 	if err != nil {
-		log.Fatal("Failed to resolve home path: %v", err)
+		log.Errorf("Failed to resolve home path: %v", err)
 		os.Exit(1)
 	}
 
@@ -26,7 +26,7 @@ func cachePath() string {
 	case "windows":
 		p = filepath.Join(homePath, "AppData", "Local")
 	default:
-		log.Fatal("Cannot run on %s, enginecache not implemented.", runtime.GOOS)
+		log.Errorf("Cannot run on %s, enginecache not implemented.", runtime.GOOS)
 		os.Exit(1)
 	}
 	return p
