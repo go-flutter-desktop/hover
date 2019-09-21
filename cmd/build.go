@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"os/user"
 	"path/filepath"
 	"regexp"
 	"runtime"
@@ -155,11 +156,7 @@ func outputBinaryPath(projectName string, targetOS string) string {
 }
 
 func dockerBuild(projectName string, targetOS string, vmArguments []string) {
-	buildMode := "release"
-	if buildDebug {
-		buildMode = "debug"
-	}
-	crossCompilingDir, err := filepath.Abs(filepath.Join(buildPath, "cross-compiling", targetOS, buildMode))
+	crossCompilingDir, err := filepath.Abs(filepath.Join(buildPath, "cross-compiling"))
 	err = os.MkdirAll(crossCompilingDir, 0755)
 	if err != nil {
 		fmt.Printf("hover: Cannot create the cross-compiling directory: %v\n", err)
@@ -195,11 +192,6 @@ func dockerBuild(projectName string, targetOS string, vmArguments []string) {
 		dockerFileContent := []string{
 			"FROM dockercore/golang-cross",
 			"RUN apt-get install libgl1-mesa-dev xorg-dev -y",
-			"WORKDIR /app/go",
-			"CMD " + strings.Join(buildCommand(targetOS, vmArguments, "build/outputs/"+targetOS+"/"+outputBinaryName(projectName, targetOS)), " "),
-		}
-		for _, env := range buildEnv(targetOS, "/engine") {
-			dockerFileContent = append(dockerFileContent, "ENV "+env)
 		}
 
 		for _, line := range dockerFileContent {
@@ -215,7 +207,7 @@ func dockerBuild(projectName string, targetOS string, vmArguments []string) {
 		}
 		fmt.Printf("hover: A Dockerfile for cross-compiling for %s has been created at %s. You can add it to git.\n", targetOS, filepath.Join(buildPath, "cross-compiling", targetOS))
 	}
-	dockerBuildCmd := exec.Command(dockerBin, "build", "-t", "hover-build-cc-"+targetOS, ".")
+	dockerBuildCmd := exec.Command(dockerBin, "build", "-t", "hover-build-cc", ".")
 	dockerBuildCmd.Stderr = os.Stderr
 	dockerBuildCmd.Dir = crossCompilingDir
 	err = dockerBuildCmd.Run()
@@ -226,8 +218,29 @@ func dockerBuild(projectName string, targetOS string, vmArguments []string) {
 
 	fmt.Println("hover: Cross-Compiling 'go-flutter' and plugins using docker")
 
-	outputPath, err := filepath.Abs(filepath.Join(buildPath, "build", "outputs"))
-	dockerRunCmd := exec.Command(dockerBin, "run", "-e", "USERID=$UID", "-v", goPath+":/go", "-v", wd+":/app", "-v", engineCachePath+":/engine", "-v", outputPath+":/app/go/build/outputs", "-v", filepath.Join(userCacheDir, "go-build")+":/cache", "hover-build-cc-"+targetOS)
+	u, err := user.Current()
+	if err != nil {
+		fmt.Printf("hover: Couldn't get current user: %v\n", err)
+		os.Exit(1)
+	}
+	args := []string{
+		"run",
+		"-w", "/app/go",
+		"-v", goPath + ":/go",
+		"-v", wd + ":/app",
+		"-v", engineCachePath + ":/engine",
+		"-v", filepath.Join(userCacheDir, "go-build") + ":/cache",
+	}
+	for _, env := range buildEnv(targetOS, "/engine") {
+		args = append(args, "-e", env)
+	}
+	args = append(args, "hover-build-cc")
+	chownStr := ""
+	if runtime.GOOS != "windows" {
+		chownStr = fmt.Sprintf(" && chown %s:%s build/ -R", u.Uid, u.Gid)
+	}
+	args = append(args, "bash", "-c", fmt.Sprintf("%s%s", strings.Join(buildCommand(targetOS, vmArguments, "build/outputs/"+targetOS+"/"+outputBinaryName(projectName, targetOS)), " "), chownStr))
+	dockerRunCmd := exec.Command(dockerBin, args...)
 	dockerRunCmd.Stderr = os.Stderr
 	dockerRunCmd.Stdout = os.Stdout
 	dockerRunCmd.Dir = crossCompilingDir
@@ -441,17 +454,9 @@ func buildEnv(targetOS string, engineCachePath string) []string {
 		fmt.Printf("hover: Target platform %s is not supported, cgo_ldflags not implemented.\n", targetOS)
 		os.Exit(1)
 	}
-	cgoLdflagsString := ""
-	if buildDocker {
-		cgoLdflagsString = "\""
-	}
-	cgoLdflagsString = cgoLdflagsString + cgoLdflags
-	if buildDocker {
-		cgoLdflagsString = cgoLdflagsString + "\""
-	}
 	env := []string{
 		"GO111MODULE=on",
-		"CGO_LDFLAGS=" + cgoLdflagsString,
+		"CGO_LDFLAGS=" + cgoLdflags,
 		"GOOS=" + targetOS,
 		"GOARCH=amd64",
 		"CGO_ENABLED=1",
