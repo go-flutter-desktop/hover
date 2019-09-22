@@ -340,7 +340,7 @@ func build(projectName string, targetOS string, vmArguments []string) {
 		"-X github.com/go-flutter-desktop/go-flutter.ProjectVersion=%s "+
 			" -X github.com/go-flutter-desktop/go-flutter.PlatformVersion=%s "+
 			" -X github.com/go-flutter-desktop/go-flutter.ProjectName=%s "+
-			" -X github.com/go-flutter-desktop/go-flutter.OrganizationName=%s",
+			" -X github.com/go-flutter-desktop/go-flutter.ProjectOrganizationName=%s",
 		getPubSpec().Version,
 		currentTag,
 		getPubSpec().Name,
