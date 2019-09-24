@@ -21,13 +21,27 @@ func init() {
 var (
 	goBin      string
 	flutterBin string
+	dockerBin  string
 )
 
 func initBinaries() {
 	var err error
+	goAvailable := false
+	dockerAvailable := false
 	goBin, err = exec.LookPath("go")
-	if err != nil {
-		fmt.Println("hover: Failed to lookup `go` executable. Please install Go.\nhttps://golang.org/doc/install")
+	if err == nil {
+		goAvailable = true
+	}
+	dockerBin, err = exec.LookPath("docker")
+	if err == nil {
+		dockerAvailable = true
+	}
+	if !dockerAvailable && !goAvailable {
+		fmt.Println("hover: Failed to lookup `go` and `docker` executable. Please install one of them:\nGo: https://golang.org/doc/install\nDocker: https://docs.docker.com/install")
+		os.Exit(1)
+	}
+	if dockerAvailable && !goAvailable && !buildDocker {
+		fmt.Println("hover: Failed to lookup `go` executable. Please install go or add '--docker' to force running in Docker container.\nhttps://golang.org/doc/install")
 		os.Exit(1)
 	}
 	flutterBin, err = exec.LookPath("flutter")
