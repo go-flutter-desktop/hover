@@ -416,16 +416,16 @@ func build(projectName string, targetOS string, vmArguments []string) {
 		}
 	}
 
+	if buildOpenGlVersion == "none" {
+		fmt.Println("hover: The '--opengl=none' flag makes go-flutter incompatible with texture plugins!")
+	}
+
 	if buildDocker {
 		if crossCompile {
 			fmt.Printf("hover: Because %s is not able to compile for %s out of the box, a cross-compiling container is used\n", runtime.GOOS, targetOS)
 		}
 		dockerBuild(projectName, targetOS, vmArguments)
 		return
-	}
-
-	if buildOpenGlVersion == "none" {
-		fmt.Println("hover: The '--opengl=none' flag makes go-flutter incompatible with texture plugins!")
 	}
 
 	buildCommandString := buildCommand(targetOS, vmArguments, outputBinaryPath(projectName, targetOS))
@@ -501,7 +501,7 @@ func buildCommand(targetOS string, vmArguments []string, outputBinaryPath string
 	outputCommand := []string{
 		"go",
 		"build",
-    "-tags=opengl"+buildOpenGlVersion,
+		"-tags=opengl" + buildOpenGlVersion,
 		"-o", outputBinaryPath,
 		"-v",
 	}
