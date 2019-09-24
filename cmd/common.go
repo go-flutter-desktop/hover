@@ -169,7 +169,7 @@ type AndroidManifest struct {
 // Can by set upon flutter create (--org flag)
 //
 // If errors occurs when reading the android package name, the string value
-// will correspond to 'build.hover.example'
+// will correspond to 'hover.failed.to.retrieve.package.name'
 func androidOrganizationName() string {
 	// Default value
 	androidManifestFile := "android/app/src/main/AndroidManifest.xml"
@@ -178,26 +178,26 @@ func androidOrganizationName() string {
 	xmlFile, err := os.Open(androidManifestFile)
 	if err != nil {
 		fmt.Printf("hover: Failed to retrieve the organization name: %v\n", err)
-		return "build.hover.example"
+		return "hover.failed.to.retrieve.package.name"
 	}
 	defer xmlFile.Close()
 
 	byteXMLValue, err := ioutil.ReadAll(xmlFile)
 	if err != nil {
 		fmt.Printf("hover: Failed to retrieve the organization name: %v\n", err)
-		return "build.hover.example"
+		return "hover.failed.to.retrieve.package.name"
 	}
 
 	var androidManifest AndroidManifest
 	err = xml.Unmarshal(byteXMLValue, &androidManifest)
 	if err != nil {
 		fmt.Printf("hover: Failed to retrieve the organization name: %v\n", err)
-		return "build.hover.example"
+		return "hover.failed.to.retrieve.package.name"
 	}
 	javaPackage := strings.Split(androidManifest.Package, ".")
 	orgName := strings.Join(javaPackage[:len(javaPackage)-1], ".")
 	if orgName == "" {
-		return "build.hover.example"
+		return "hover.failed.to.retrieve.package.name"
 	}
 	return orgName
 }

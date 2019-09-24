@@ -377,13 +377,13 @@ func build(projectName string, targetOS string, vmArguments []string) {
 		os.Exit(1)
 	}
 
-	currentTag, err := versioncheck.CurrentGoFlutterTag(filepath.Join(wd, buildPath))
-	if err != nil {
-		fmt.Printf("hover: %v\n", err)
-		os.Exit(1)
-	}
-
 	if buildBranch == "" {
+		currentTag, err := versioncheck.CurrentGoFlutterTag(filepath.Join(wd, buildPath))
+		if err != nil {
+			fmt.Printf("hover: %v\n", err)
+			os.Exit(1)
+		}
+
 		semver, err := version.NewSemver(currentTag)
 		if err != nil {
 			fmt.Printf("hover: faild to parse 'go-flutter' semver: %v\n", err)
@@ -485,6 +485,12 @@ func buildEnv(targetOS string, engineCachePath string) []string {
 }
 
 func buildCommand(targetOS string, vmArguments []string, outputBinaryPath string) []string {
+	currentTag, err := versioncheck.CurrentGoFlutterTag(buildPath)
+	if err != nil {
+		fmt.Printf("hover: %v\n", err)
+		os.Exit(1)
+	}
+
 	var ldflags []string
 	if !buildDebug {
 		vmArguments = append(vmArguments, "--disable-dart-asserts")
@@ -507,7 +513,7 @@ func buildCommand(targetOS string, vmArguments []string, outputBinaryPath string
 		currentTag,
 		getPubSpec().Name,
 		androidOrganizationName()))
-  
+
 	outputCommand := []string{
 		"go",
 		"build",
