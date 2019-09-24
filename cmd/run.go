@@ -23,6 +23,7 @@ func init() {
 	runCmd.Flags().StringVarP(&runObservatoryPort, "observatory-port", "", "50300", "The observatory port used to connect hover to VM services (hot-reload/debug/..)")
 	runCmd.Flags().BoolVar(&buildOmitEmbedder, "omit-embedder", false, "Don't (re)compile 'go-flutter' source code, useful when only working with Dart code")
 	runCmd.Flags().BoolVar(&buildOmitFlutterBundle, "omit-flutter", false, "Don't (re)compile the current Flutter project, useful when only working with Golang code (plugin)")
+	runCmd.PersistentFlags().BoolVar(&buildDocker, "docker", false, "Compile and run in Docker container only. No need to install go")
 	rootCmd.AddCommand(runCmd)
 }
 
