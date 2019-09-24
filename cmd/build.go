@@ -378,7 +378,6 @@ func build(projectName string, targetOS string, vmArguments []string) {
 	}
 
 	if buildBranch == "" {
-
 		currentTag, err := versioncheck.CurrentGoFlutterTag(filepath.Join(wd, buildPath))
 		if err != nil {
 			fmt.Printf("hover: %v\n", err)
@@ -486,6 +485,12 @@ func buildEnv(targetOS string, engineCachePath string) []string {
 }
 
 func buildCommand(targetOS string, vmArguments []string, outputBinaryPath string) []string {
+	currentTag, err := versioncheck.CurrentGoFlutterTag(buildPath)
+	if err != nil {
+		fmt.Printf("hover: %v\n", err)
+		os.Exit(1)
+	}
+
 	var ldflags []string
 	if !buildDebug {
 		vmArguments = append(vmArguments, "--disable-dart-asserts")
@@ -498,6 +503,17 @@ func buildCommand(targetOS string, vmArguments []string, outputBinaryPath string
 		ldflags = append(ldflags, "-w")
 	}
 	ldflags = append(ldflags, fmt.Sprintf("-X main.vmArguments=%s", strings.Join(vmArguments, ";")))
+	// overwrite go-flutter build-constants values
+	ldflags = append(ldflags, fmt.Sprintf(
+		"-X github.com/go-flutter-desktop/go-flutter.ProjectVersion=%s "+
+			" -X github.com/go-flutter-desktop/go-flutter.PlatformVersion=%s "+
+			" -X github.com/go-flutter-desktop/go-flutter.ProjectName=%s "+
+			" -X github.com/go-flutter-desktop/go-flutter.ProjectOrganizationName=%s",
+		getPubSpec().Version,
+		currentTag,
+		getPubSpec().Name,
+		androidOrganizationName()))
+
 	outputCommand := []string{
 		"go",
 		"build",
