@@ -28,6 +28,7 @@ var (
 	buildCachePath         string
 	buildOmitEmbedder      bool
 	buildOmitFlutterBundle bool
+	buildOpenGlVersion     string
 	buildDocker            bool
 )
 
@@ -45,6 +46,7 @@ func init() {
 	buildCmd.PersistentFlags().StringVarP(&buildBranch, "branch", "b", "", "The 'go-flutter' version to use. (@master or @v0.20.0 for example)")
 	buildCmd.PersistentFlags().BoolVar(&buildDebug, "debug", false, "Build a debug version of the app.")
 	buildCmd.PersistentFlags().StringVarP(&buildCachePath, "cache-path", "", "", "The path that hover uses to cache dependencies such as the Flutter engine .so/.dll (defaults to the standard user cache directory)")
+	buildCmd.PersistentFlags().StringVar(&buildOpenGlVersion, "opengl", "3.3", "The OpenGL version specified here is only relevant for external texture plugin (i.e. video_plugin).\nIf 'none' is provided, texture won't be supported. Note: the Flutter Engine still needs a OpenGL compatible context.")
 	buildCmd.PersistentFlags().BoolVar(&buildDocker, "docker", false, "Compile in Docker container only. No need to install go")
 	buildCmd.AddCommand(buildLinuxCmd)
 	buildCmd.AddCommand(buildLinuxSnapCmd)
@@ -422,6 +424,10 @@ func build(projectName string, targetOS string, vmArguments []string) {
 		return
 	}
 
+	if buildOpenGlVersion == "none" {
+		fmt.Println("hover: The '--opengl=none' flag makes go-flutter incompatible with texture plugins!")
+	}
+
 	buildCommandString := buildCommand(targetOS, vmArguments, outputBinaryPath(projectName, targetOS))
 	cmdGoBuild := exec.Command(buildCommandString[0], buildCommandString[1:]...)
 	cmdGoBuild.Dir = filepath.Join(wd, buildPath)
@@ -495,6 +501,7 @@ func buildCommand(targetOS string, vmArguments []string, outputBinaryPath string
 	outputCommand := []string{
 		"go",
 		"build",
+    "-tags=opengl"+buildOpenGlVersion,
 		"-o", outputBinaryPath,
 		"-v",
 	}
