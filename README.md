@@ -44,7 +44,7 @@ cd into a flutter project.
 cd projects/simpleApplication
 ```
 
-The first time you use hover for a project, you'll need to initialize the project for desktop. `hover init` requires a project path. This is usualy the path for your project on github or a self-hosted git service. _If you are unsure, just make something up, it can always be changed later._
+The first time you use hover for a project, you'll need to initialize the project for desktop. An argument can be passed to `hover init` to set the project path. This is usually the path for your project on github or a self-hosted git service. _If you are unsure, use `hover init`, the generated path can always be changed later._
 
 ```bash
 hover init github.com/my-organization/simpleApplication
@@ -81,13 +81,15 @@ If you want to integrate go-flutter with VSCode, read this [issue](https://githu
 
 ### Build standalone application
 
-To create a standalone debug build run this command:
+To create a standalone release (JIT mode) build run this command:
 
 ```bash
 hover build linux # or darwin or windows
 ```
+You can create a build for any of the supported OSs using cross-compiling which needs [Docker to be installed](https://docs.docker.com/install/).
+Then just run the command from above and it will do everything for you.
 
-The output will be in `go/build/outputs/linux` or windows or darwin depending on your OS. Hover does not yet support cross-compilation.
+The output will be in `go/build/outputs/linux` or windows or darwin.
 
 To start the binary: (replace `yourApplicationName` with your app name)
 

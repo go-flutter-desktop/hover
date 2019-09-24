@@ -19,14 +19,20 @@ var initCmd = &cobra.Command{
 	Use:   "init [project]",
 	Short: "Initialize a flutter project to use go-flutter",
 	Args: func(cmd *cobra.Command, args []string) error {
-		if len(args) != 1 {
-			return errors.New("requires one argument, the project path. e.g.: github.com/my-organization/my-app")
+		if len(args) > 1 {
+			return errors.New("allows only one argument, the project path. e.g.: github.com/my-organization/my-app")
 		}
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		projectPath := args[0]
 		assertInFlutterProject()
+
+		var projectPath string
+		if len(args) == 0 || args[0] == "." {
+			projectPath = getPubSpec().Name
+		} else {
+			projectPath = args[0]
+		}
 
 		err := os.Mkdir(buildPath, 0775)
 		if err != nil {
