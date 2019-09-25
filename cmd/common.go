@@ -3,7 +3,6 @@ package cmd
 import (
 	"bufio"
 	"encoding/xml"
-	"fmt"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -12,6 +11,8 @@ import (
 
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
+
+	"github.com/go-flutter-desktop/hover/internal/log"
 )
 
 func init() {
@@ -37,20 +38,21 @@ func initBinaries() {
 		dockerAvailable = true
 	}
 	if !dockerAvailable && !goAvailable {
-		fmt.Println("hover: Failed to lookup `go` and `docker` executable. Please install one of them:\nGo: https://golang.org/doc/install\nDocker: https://docs.docker.com/install")
+		log.Errorf("Failed to lookup `go` and `docker` executable. Please install one of them:\nGo: https://golang.org/doc/install\nDocker: https://docs.docker.com/install")
 		os.Exit(1)
 	}
 	if dockerAvailable && !goAvailable && !buildDocker {
-		fmt.Println("hover: Failed to lookup `go` executable. Please install go or add '--docker' to force running in Docker container.\nhttps://golang.org/doc/install")
+		log.Errorf("Failed to lookup `go` executable. Please install go or add '--docker' to force running in Docker container.\nhttps://golang.org/doc/install")
 		os.Exit(1)
 	}
 	flutterBin, err = exec.LookPath("flutter")
 	if err != nil {
-		fmt.Println("hover: Failed to lookup `flutter` executable. Please install flutter.\nhttps://flutter.dev/docs/get-started/install")
+		log.Errorf("Failed to lookup 'flutter' executable. Please install flutter.\nhttps://flutter.dev/docs/get-started/install")
 		os.Exit(1)
 	}
 }
 
+// PubSpec  basic model pubspec
 type PubSpec struct {
 	Name         string
 	Description  string
@@ -67,21 +69,21 @@ func getPubSpec() PubSpec {
 			file, err := os.Open("pubspec.yaml")
 			if err != nil {
 				if os.IsNotExist(err) {
-					fmt.Println("hover: Error: No pubspec.yaml file found.")
+					log.Errorf("Error: No pubspec.yaml file found.")
 					goto Fail
 				}
-				fmt.Printf("hover: Failed to open pubspec.yaml: %v\n", err)
+				log.Errorf("Failed to open pubspec.yaml: %v", err)
 				os.Exit(1)
 			}
 			defer file.Close()
 
 			err = yaml.NewDecoder(file).Decode(&pubspec)
 			if err != nil {
-				fmt.Printf("hover: Failed to decode pubspec.yaml: %v\n", err)
+				log.Errorf("Failed to decode pubspec.yaml: %v", err)
 				goto Fail
 			}
 			if _, exists := pubspec.Dependencies["flutter"]; !exists {
-				fmt.Println("hover: Missing `flutter` in pubspec.yaml dependencies list.")
+				log.Errorf("Missing 'flutter' in pubspec.yaml dependencies list.")
 				goto Fail
 			}
 		}
@@ -90,7 +92,7 @@ func getPubSpec() PubSpec {
 	}
 
 Fail:
-	fmt.Println("hover: This command should be run from the root of your Flutter project.")
+	log.Errorf("This command should be run from the root of your Flutter project.")
 	os.Exit(1)
 	return PubSpec{}
 }
@@ -106,11 +108,11 @@ func assertHoverInitialized() {
 		if hoverMigration() {
 			return
 		}
-		fmt.Println("hover: Directory '" + buildPath + "' is missing, did you run `hover init` in this project?")
+		log.Errorf("Directory '%s' is missing. Please init go-flutter first: %s", buildPath, log.Au.Magenta("hover init"))
 		os.Exit(1)
 	}
 	if err != nil {
-		fmt.Printf("hover: Failed to detect directory desktop: %v\n", err)
+		log.Errorf("Failed to detect directory desktop: %v", err)
 		os.Exit(1)
 	}
 }
@@ -123,17 +125,17 @@ func hoverMigration() bool {
 	}
 	defer file.Close()
 
-	fmt.Println("hover: ⚠ Found older hover directory layout, hover is now expecting a 'go' directory instead of 'desktop'.")
-	fmt.Println("hover: ⚠    To migrate, rename the 'desktop' directory to 'go'.")
-	fmt.Printf("hover:      Let hover do the migration? ")
+	log.Warnf("⚠ Found older hover directory layout, hover is now expecting a 'go' directory instead of 'desktop'.")
+	log.Warnf("⚠    To migrate, rename the 'desktop' directory to 'go'.")
+	log.Warnf("     Let hover do the migration? ")
 
 	if askForConfirmation() {
 		err := os.Rename(oldBuildPath, buildPath)
 		if err != nil {
-			fmt.Printf("hover: Migration failed: %v\n", err)
+			log.Warnf("Migration failed: %v", err)
 			return false
 		}
-		fmt.Printf("hover: Migration success\n")
+		log.Infof("Migration success")
 		return true
 	}
 
@@ -142,7 +144,7 @@ func hoverMigration() bool {
 
 // askForConfirmation asks the user for confirmation.
 func askForConfirmation() bool {
-	fmt.Printf("[y/N]: ")
+	log.Printf("[y/N]: ")
 	in := bufio.NewReader(os.Stdin)
 	s, err := in.ReadString('\n')
 	if err != nil {
@@ -177,21 +179,21 @@ func androidOrganizationName() string {
 	// Open AndroidManifest file
 	xmlFile, err := os.Open(androidManifestFile)
 	if err != nil {
-		fmt.Printf("hover: Failed to retrieve the organization name: %v\n", err)
+		log.Errorf("Failed to retrieve the organization name: %v", err)
 		return "hover.failed.to.retrieve.package.name"
 	}
 	defer xmlFile.Close()
 
 	byteXMLValue, err := ioutil.ReadAll(xmlFile)
 	if err != nil {
-		fmt.Printf("hover: Failed to retrieve the organization name: %v\n", err)
+		log.Errorf("Failed to retrieve the organization name: %v", err)
 		return "hover.failed.to.retrieve.package.name"
 	}
 
 	var androidManifest AndroidManifest
 	err = xml.Unmarshal(byteXMLValue, &androidManifest)
 	if err != nil {
-		fmt.Printf("hover: Failed to retrieve the organization name: %v\n", err)
+		log.Errorf("Failed to retrieve the organization name: %v", err)
 		return "hover.failed.to.retrieve.package.name"
 	}
 	javaPackage := strings.Split(androidManifest.Package, ".")

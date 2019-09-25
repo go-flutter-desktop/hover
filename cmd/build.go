@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/go-flutter-desktop/hover/internal/log"
 	"os"
 	"os/exec"
 	"os/user"
@@ -123,13 +124,13 @@ var buildWindowsCmd = &cobra.Command{
 func outputDirectoryPath(targetOS string) string {
 	outputDirectoryPath, err := filepath.Abs(filepath.Join(buildPath, "build", "outputs", targetOS))
 	if err != nil {
-		fmt.Printf("hover: Failed to resolve absolute path for output directory: %v\n", err)
+		log.Errorf("Failed to resolve absolute path for output directory: %v", err)
 		os.Exit(1)
 	}
 	if _, err := os.Stat(outputDirectoryPath); os.IsNotExist(err) {
 		err = os.MkdirAll(outputDirectoryPath, 0775)
 		if err != nil {
-			fmt.Printf("hover: Failed to create output directory %s: %v\n", outputDirectoryPath, err)
+			log.Errorf("Failed to create output directory %s: %v", outputDirectoryPath, err)
 			os.Exit(1)
 		}
 	}
@@ -146,7 +147,7 @@ func outputBinaryName(projectName string, targetOS string) string {
 	case "windows":
 		outputBinaryName += ".exe"
 	default:
-		fmt.Printf("hover: Target platform %s is not supported.\n", targetOS)
+		log.Errorf("Target platform %s is not supported.", targetOS)
 		os.Exit(1)
 	}
 	return outputBinaryName
@@ -161,34 +162,34 @@ func dockerBuild(projectName string, targetOS string, vmArguments []string) {
 	crossCompilingDir, err := filepath.Abs(filepath.Join(buildPath, "cross-compiling"))
 	err = os.MkdirAll(crossCompilingDir, 0755)
 	if err != nil {
-		fmt.Printf("hover: Cannot create the cross-compiling directory: %v\n", err)
+		log.Errorf("Cannot create the cross-compiling directory: %v", err)
 		os.Exit(1)
 	}
 	userCacheDir, err := os.UserCacheDir()
 	if err != nil {
-		fmt.Printf("hover: Cannot get the path for the system cache directory: %v\n", err)
+		log.Errorf("Cannot get the path for the system cache directory: %v", err)
 		os.Exit(1)
 	}
 	goPath := filepath.Join(userCacheDir, "hover-cc")
 	err = os.MkdirAll(goPath, 0755)
 	if err != nil {
-		fmt.Printf("hover: Cannot create the hover-cc GOPATH under the system cache directory: %v\n", err)
+		log.Errorf("Cannot create the hover-cc GOPATH under the system cache directory: %v", err)
 		os.Exit(1)
 	}
 	wd, err := os.Getwd()
 	if err != nil {
-		fmt.Printf("hover: Cannot get the path for current directory %s", err)
+		log.Errorf("Cannot get the path for current directory %s", err)
 		os.Exit(1)
 	}
 	dockerFilePath, err := filepath.Abs(filepath.Join(crossCompilingDir, "Dockerfile"))
 	if err != nil {
-		fmt.Printf("hover: Failed to resolve absolute path for Dockerfile %s: %v\n", dockerFilePath, err)
+		log.Errorf("Failed to resolve absolute path for Dockerfile %s: %v", dockerFilePath, err)
 		os.Exit(1)
 	}
 	if _, err := os.Stat(dockerFilePath); os.IsNotExist(err) {
 		dockerFile, err := os.Create(dockerFilePath)
 		if err != nil {
-			fmt.Printf("hover: Failed to create Dockerfile %s: %v\n", dockerFilePath, err)
+			log.Errorf("Failed to create Dockerfile %s: %v", dockerFilePath, err)
 			os.Exit(1)
 		}
 		dockerFileContent := []string{
@@ -198,31 +199,31 @@ func dockerBuild(projectName string, targetOS string, vmArguments []string) {
 
 		for _, line := range dockerFileContent {
 			if _, err := dockerFile.WriteString(line + "\n"); err != nil {
-				fmt.Printf("hover: Could not write Dockerfile: %v\n", err)
+				log.Errorf("Could not write Dockerfile: %v", err)
 				os.Exit(1)
 			}
 		}
 		err = dockerFile.Close()
 		if err != nil {
-			fmt.Printf("hover: Could not close Dockerfile: %v\n", err)
+			log.Errorf("Could not close Dockerfile: %v", err)
 			os.Exit(1)
 		}
-		fmt.Printf("hover: A Dockerfile for cross-compiling for %s has been created at %s. You can add it to git.\n", targetOS, filepath.Join(buildPath, "cross-compiling", targetOS))
+		log.Infof("A Dockerfile for cross-compiling for %s has been created at %s. You can add it to git.", targetOS, filepath.Join(buildPath, "cross-compiling", targetOS))
 	}
 	dockerBuildCmd := exec.Command(dockerBin, "build", "-t", "hover-build-cc", ".")
 	dockerBuildCmd.Stderr = os.Stderr
 	dockerBuildCmd.Dir = crossCompilingDir
 	err = dockerBuildCmd.Run()
 	if err != nil {
-		fmt.Printf("hover: Docker build failed: %v\n", err)
+		log.Errorf("Docker build failed: %v", err)
 		os.Exit(1)
 	}
 
-	fmt.Println("hover: Cross-Compiling 'go-flutter' and plugins using docker")
+	log.Infof("Cross-Compiling 'go-flutter' and plugins using docker")
 
 	u, err := user.Current()
 	if err != nil {
-		fmt.Printf("hover: Couldn't get current user: %v\n", err)
+		log.Errorf("Couldn't get current user: %v", err)
 		os.Exit(1)
 	}
 	args := []string{
@@ -248,10 +249,10 @@ func dockerBuild(projectName string, targetOS string, vmArguments []string) {
 	dockerRunCmd.Dir = crossCompilingDir
 	err = dockerRunCmd.Run()
 	if err != nil {
-		fmt.Printf("hover: Docker run failed: %v\n", err)
+		log.Errorf("Docker run failed: %v", err)
 		os.Exit(1)
 	}
-	fmt.Println("hover: Successfully cross-compiled for " + targetOS)
+	log.Infof("Successfully cross-compiled for " + targetOS)
 }
 
 func build(projectName string, targetOS string, vmArguments []string) {
@@ -266,23 +267,23 @@ func build(projectName string, targetOS string, vmArguments []string) {
 
 	if !buildOmitFlutterBundle && !buildOmitEmbedder {
 		err := os.RemoveAll(outputDirectoryPath(targetOS))
-		fmt.Printf("hover: Cleaning the build directory\n")
+		log.Printf("Cleaning the build directory")
 		if err != nil {
-			fmt.Printf("hover: failed to clean output directory %s: %v\n", outputDirectoryPath(targetOS), err)
+			log.Errorf("Failed to clean output directory %s: %v", outputDirectoryPath(targetOS), err)
 			os.Exit(1)
 		}
 	}
 
 	err := os.MkdirAll(outputDirectoryPath(targetOS), 0775)
 	if err != nil {
-		fmt.Printf("hover: failed to create output directory %s: %v\n", outputDirectoryPath(targetOS), err)
+		log.Errorf("Failed to create output directory %s: %v", outputDirectoryPath(targetOS), err)
 		os.Exit(1)
 	}
 
 	cmdCheckFlutter := exec.Command(flutterBin, "--version")
 	cmdCheckFlutterOut, err := cmdCheckFlutter.Output()
 	if err != nil {
-		fmt.Printf("hover: failed to check your flutter channel: %v\n", err)
+		log.Warnf("Failed to check your flutter channel: %v", err)
 	} else {
 		re := regexp.MustCompile("•\\schannel\\s(\\w*)\\s•")
 
@@ -290,11 +291,11 @@ func build(projectName string, targetOS string, vmArguments []string) {
 		if len(match) >= 2 {
 			ignoreWarning := os.Getenv("HOVER_IGNORE_CHANNEL_WARNING")
 			if match[1] != "beta" && ignoreWarning != "true" {
-				fmt.Println("hover: ⚠ The go-flutter project tries to stay compatible with the beta channel of Flutter.")
-				fmt.Println("hover: ⚠     It's advised to use the beta channel. ($ flutter channel beta)")
+				log.Warnf("⚠ The go-flutter project tries to stay compatible with the beta channel of Flutter.")
+				log.Warnf("⚠     It's advised to use the beta channel: %s", log.Au.Magenta("flutter channel beta"))
 			}
 		} else {
-			fmt.Printf("hover: failed to check your flutter channel: Unrecognized output format")
+			log.Warnf("Failed to check your flutter channel: Unrecognized output format")
 		}
 	}
 
@@ -313,10 +314,10 @@ func build(projectName string, targetOS string, vmArguments []string) {
 	cmdFlutterBuild.Stdout = os.Stdout
 
 	if !buildOmitFlutterBundle {
-		fmt.Printf("hover: Bundling flutter app\n")
+		log.Infof("Bundling flutter app")
 		err = cmdFlutterBuild.Run()
 		if err != nil {
-			fmt.Printf("hover: Flutter build failed: %v\n", err)
+			log.Errorf("Flutter build failed: %v", err)
 			os.Exit(1)
 		}
 	}
@@ -337,13 +338,13 @@ func build(projectName string, targetOS string, vmArguments []string) {
 		outputEngineFile,
 	)
 	if err != nil {
-		fmt.Printf("hover: Failed to copy %s: %v\n", engineFile, err)
+		log.Errorf("Failed to copy %s: %v", engineFile, err)
 		os.Exit(1)
 	}
 	if !buildDebug && targetOS == "linux" {
 		err = exec.Command("strip", "-s", outputEngineFile).Run()
 		if err != nil {
-			fmt.Printf("Failed to strip %s: %v\n", outputEngineFile, err)
+			log.Errorf("Failed to strip %s: %v", outputEngineFile, err)
 			os.Exit(1)
 		}
 	}
@@ -353,7 +354,7 @@ func build(projectName string, targetOS string, vmArguments []string) {
 		filepath.Join(outputDirectoryPath(targetOS), "icudtl.dat"),
 	)
 	if err != nil {
-		fmt.Printf("hover: Failed to copy icudtl.dat: %v\n", err)
+		log.Errorf("Failed to copy icudtl.dat: %v", err)
 		os.Exit(1)
 	}
 
@@ -362,7 +363,7 @@ func build(projectName string, targetOS string, vmArguments []string) {
 		filepath.Join(outputDirectoryPath(targetOS), "assets"),
 	)
 	if err != nil {
-		fmt.Printf("hover: Failed to copy %s/assets: %v\n", buildPath, err)
+		log.Errorf("Failed to copy %s/assets: %v", buildPath, err)
 		os.Exit(1)
 	}
 
@@ -373,31 +374,31 @@ func build(projectName string, targetOS string, vmArguments []string) {
 
 	wd, err := os.Getwd()
 	if err != nil {
-		fmt.Printf("hover: Failed to get working dir: %v\n", err)
+		log.Errorf("Failed to get working dir: %v", err)
 		os.Exit(1)
 	}
 
 	if buildBranch == "" {
 		currentTag, err := versioncheck.CurrentGoFlutterTag(filepath.Join(wd, buildPath))
 		if err != nil {
-			fmt.Printf("hover: %v\n", err)
+			log.Errorf("%v", err)
 			os.Exit(1)
 		}
 
 		semver, err := version.NewSemver(currentTag)
 		if err != nil {
-			fmt.Printf("hover: faild to parse 'go-flutter' semver: %v\n", err)
+			log.Errorf("Faild to parse 'go-flutter' semver: %v", err)
 			os.Exit(1)
 		}
 
 		if semver.Prerelease() != "" {
-			fmt.Printf("hover: Upgrade 'go-flutter' to the latest release\n")
+			log.Infof("Upgrade 'go-flutter' to the latest release")
 			// no buildBranch provided and currentTag isn't a release,
 			// force update. (same behaviour as previous version of hover).
 			err = upgradeGoFlutter(targetOS, engineCachePath)
 			if err != nil {
 				// the upgrade can fail silently
-				fmt.Printf("hover: Upgrade ignored, current 'go-flutter' version: %s\n", currentTag)
+				log.Warnf("Upgrade ignored, current 'go-flutter' version: %s", currentTag)
 			}
 		} else {
 			// when the buildBranch is empty and the currentTag is a release.
@@ -406,7 +407,7 @@ func build(projectName string, targetOS string, vmArguments []string) {
 		}
 
 	} else {
-		fmt.Printf("hover: Downloading 'go-flutter' %s\n", buildBranch)
+		log.Printf("Downloading 'go-flutter' %s", buildBranch)
 
 		// when the buildBranch is set, fetch the go-flutter branch version.
 		err = upgradeGoFlutter(targetOS, engineCachePath)
@@ -416,12 +417,12 @@ func build(projectName string, targetOS string, vmArguments []string) {
 	}
 
 	if buildOpenGlVersion == "none" {
-		fmt.Println("hover: The '--opengl=none' flag makes go-flutter incompatible with texture plugins!")
+		log.Warnf("The '--opengl=none' flag makes go-flutter incompatible with texture plugins!")
 	}
 
 	if buildDocker {
 		if crossCompile {
-			fmt.Printf("hover: Because %s is not able to compile for %s out of the box, a cross-compiling container is used\n", runtime.GOOS, targetOS)
+			log.Infof("Because %s is not able to compile for %s out of the box, a cross-compiling container is used", runtime.GOOS, targetOS)
 		}
 		dockerBuild(projectName, targetOS, vmArguments)
 		return
@@ -437,13 +438,13 @@ func build(projectName string, targetOS string, vmArguments []string) {
 	cmdGoBuild.Stderr = os.Stderr
 	cmdGoBuild.Stdout = os.Stdout
 
-	fmt.Printf("hover: Compiling 'go-flutter' and plugins\n")
+	log.Infof("Compiling 'go-flutter' and plugins")
 	err = cmdGoBuild.Run()
 	if err != nil {
-		fmt.Printf("hover: Go build failed: %v\n", err)
+		log.Errorf("Go build failed: %v", err)
 		os.Exit(1)
 	}
-	fmt.Println("hover: Successfully compiled")
+	log.Infof("Successfully compiled")
 }
 
 func buildEnv(targetOS string, engineCachePath string) []string {
@@ -456,7 +457,7 @@ func buildEnv(targetOS string, engineCachePath string) []string {
 	case "windows":
 		cgoLdflags = fmt.Sprintf("-L%s", engineCachePath)
 	default:
-		fmt.Printf("hover: Target platform %s is not supported, cgo_ldflags not implemented.\n", targetOS)
+		log.Errorf("Target platform %s is not supported, cgo_ldflags not implemented.", targetOS)
 		os.Exit(1)
 	}
 	env := []string{
@@ -487,7 +488,7 @@ func buildEnv(targetOS string, engineCachePath string) []string {
 func buildCommand(targetOS string, vmArguments []string, outputBinaryPath string) []string {
 	currentTag, err := versioncheck.CurrentGoFlutterTag(buildPath)
 	if err != nil {
-		fmt.Printf("hover: %v\n", err)
+		log.Errorf("%v", err)
 		os.Exit(1)
 	}
 

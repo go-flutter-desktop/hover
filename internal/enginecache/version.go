@@ -1,23 +1,24 @@
 package enginecache
 
 import (
-	"fmt"
 	"os"
 	"os/exec"
 	"regexp"
+
+	log "github.com/go-flutter-desktop/hover/internal/log"
 )
 
 func flutterRequiredEngineVersion() string {
 	out, err := exec.Command("flutter", "--version").Output()
 	if err != nil {
-		fmt.Printf("hover: Failed to run `flutter --version`: %v\n", err)
+		log.Errorf("Failed to run %s: %v", log.Au.Magenta("flutter --version"), err)
 		os.Exit(1)
 	}
 
 	regexpEngineVersion := regexp.MustCompile(`Engine • revision (\w{10})`)
 	versionMatch := regexpEngineVersion.FindStringSubmatch(string(out))
 	if len(versionMatch) != 2 {
-		fmt.Printf("hover: Failed to obtain engine version")
+		log.Errorf("Failed to obtain engine version")
 		os.Exit(1)
 	}
 

@@ -1,7 +1,6 @@
 package versioncheck
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -11,7 +10,9 @@ import (
 	"time"
 
 	"github.com/pkg/errors"
-	latest "github.com/tcnksm/go-latest"
+	"github.com/tcnksm/go-latest"
+
+	"github.com/go-flutter-desktop/hover/internal/log"
 )
 
 // CheckFoGoFlutterUpdate check the last 'go-flutter' timestamp we have cached
@@ -22,7 +23,7 @@ func CheckFoGoFlutterUpdate(goDirectoryPath string, currentTag string) {
 	cachedGoFlutterCheckPath := filepath.Join(goDirectoryPath, ".last_goflutter_check")
 	cachedGoFlutterCheckBytes, err := ioutil.ReadFile(cachedGoFlutterCheckPath)
 	if err != nil && !os.IsNotExist(err) {
-		fmt.Printf("hover: Failed to read the go-flutter last update check: %v\n", err)
+		log.Warnf("Failed to read the go-flutter last update check: %v", err)
 		return
 	}
 
@@ -35,7 +36,7 @@ func CheckFoGoFlutterUpdate(goDirectoryPath string, currentTag string) {
 	if cachedGoFlutterCheck == "" {
 		err = ioutil.WriteFile(cachedGoFlutterCheckPath, []byte(nowString), 0664)
 		if err != nil {
-			fmt.Printf("hover: Failed to write the update timestamp: %v\n", err)
+			log.Warnf("Failed to write the update timestamp: %v", err)
 		}
 
 		// If needed, update the hover's .gitignore file with a new entry.
@@ -47,7 +48,7 @@ func CheckFoGoFlutterUpdate(goDirectoryPath string, currentTag string) {
 
 	i, err := strconv.ParseInt(cachedGoFlutterCheck, 10, 64)
 	if err != nil {
-		fmt.Printf("hover: Failed to parse the last update of go-flutter: %v\n", err)
+		log.Warnf("Failed to parse the last update of go-flutter: %v", err)
 		return
 	}
 	lastUpdateTimeStamp := time.Unix(i, 0)
@@ -60,7 +61,7 @@ func CheckFoGoFlutterUpdate(goDirectoryPath string, currentTag string) {
 
 	checkUpdateOptOut := os.Getenv("HOVER_IGNORE_CHECK_NEW_RELEASE")
 	if newCheck && checkUpdateOptOut != "true" {
-		fmt.Printf("hover: Checking available release on Github\n")
+		log.Printf("Checking available release on Github")
 
 		// fecth the last githubTag
 		githubTag := &latest.GithubTag{
@@ -71,7 +72,7 @@ func CheckFoGoFlutterUpdate(goDirectoryPath string, currentTag string) {
 
 		res, err := latest.Check(githubTag, currentTag)
 		if err != nil {
-			fmt.Printf("hover: Failed to check the latest release of 'go-flutter': %v\n", err)
+			log.Warnf("Failed to check the latest release of 'go-flutter': %v", err)
 
 			// update the timestamp
 			// don't spam people who don't have access to internet
@@ -80,21 +81,21 @@ func CheckFoGoFlutterUpdate(goDirectoryPath string, currentTag string) {
 
 			err = ioutil.WriteFile(cachedGoFlutterCheckPath, []byte(nowString), 0664)
 			if err != nil {
-				fmt.Printf("hover: Failed to write the update timestamp to file: %v\n", err)
+				log.Warnf("Failed to write the update timestamp to file: %v", err)
 			}
 
 			return
 		}
 		if res.Outdated {
-			fmt.Printf("hover: The core library 'go-flutter' has an update available. (%s -> %s)\n", currentTag, res.Current)
-			fmt.Printf("              To update 'go-flutter' in this project run: $ hover upgrade\n")
+			log.Infof("The core library 'go-flutter' has an update available. (%s -> %s)", currentTag, res.Current)
+			log.Infof("              To update 'go-flutter' in this project run: $ hover upgrade")
 		}
 
 		if now.Sub(lastUpdateTimeStamp).Hours() > checkRate {
 			// update the timestamp
 			err = ioutil.WriteFile(cachedGoFlutterCheckPath, []byte(nowString), 0664)
 			if err != nil {
-				fmt.Printf("hover: Failed to write the update timestamp to file: %v\n", err)
+				log.Warnf("Failed to write the update timestamp to file: %v", err)
 			}
 		}
 	}
@@ -127,14 +128,14 @@ func addLineToFile(filePath, newLine string) {
 	f, err := os.OpenFile(filePath,
 		os.O_RDWR|os.O_APPEND, 0660)
 	if err != nil {
-		fmt.Printf("hover: Failed to open file %s: %v\n", filePath, err)
-		return
+		log.Errorf("Failed to open file %s: %v", filePath, err)
+		os.Exit(1)
 	}
 	defer f.Close()
 	content, err := ioutil.ReadAll(f)
 	if err != nil {
-		fmt.Printf("hover: Failed to read file %s: %v\n", filePath, err)
-		return
+		log.Errorf("Failed to read file %s: %v", filePath, err)
+		os.Exit(1)
 	}
 	words := make(map[string]struct{})
 	for _, w := range strings.Fields(strings.ToLower(string(content))) {
@@ -145,7 +146,7 @@ func addLineToFile(filePath, newLine string) {
 		return
 	}
 	if _, err := f.WriteString(newLine + "\n"); err != nil {
-		fmt.Printf("hover: Failed to append '%s' to the file (%s): %v\n", newLine, filePath, err)
-		return
+		log.Errorf("Failed to append '%s' to the file (%s): %v", newLine, filePath, err)
+		os.Exit(1)
 	}
 }
