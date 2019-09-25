@@ -81,13 +81,15 @@ If you want to integrate go-flutter with VSCode, read this [issue](https://githu
 
 ### Build standalone application
 
-To create a standalone debug build run this command:
+To create a standalone release (JIT mode) build run this command:
 
 ```bash
 hover build linux # or darwin or windows
 ```
+You can create a build for any of the supported OSs using cross-compiling which needs [Docker to be installed](https://docs.docker.com/install/).
+Then just run the command from above and it will do everything for you.
 
-The output will be in `go/build/outputs/linux` or windows or darwin depending on your OS. Hover does not yet support cross-compilation.
+The output will be in `go/build/outputs/linux` or windows or darwin.
 
 To start the binary: (replace `yourApplicationName` with your app name)
 

@@ -5,6 +5,7 @@ import (
 	"github.com/go-flutter-desktop/hover/internal/log"
 	"os"
 	"os/exec"
+	"os/user"
 	"path/filepath"
 	"regexp"
 	"runtime"
@@ -28,9 +29,17 @@ var (
 	buildCachePath         string
 	buildOmitEmbedder      bool
 	buildOmitFlutterBundle bool
+	buildOpenGlVersion     string
+	buildDocker            bool
 )
 
 const buildPath = "go"
+
+const mingwGccBinName = "x86_64-w64-mingw32-gcc"
+const clangBinName = "o32-clang"
+
+var crossCompile = false
+var engineCachePath string
 
 func init() {
 	buildCmd.PersistentFlags().StringVarP(&buildTarget, "target", "t", "lib/main_desktop.dart", "The main entry-point file of the application.")
@@ -38,6 +47,8 @@ func init() {
 	buildCmd.PersistentFlags().StringVarP(&buildBranch, "branch", "b", "", "The 'go-flutter' version to use. (@master or @v0.20.0 for example)")
 	buildCmd.PersistentFlags().BoolVar(&buildDebug, "debug", false, "Build a debug version of the app.")
 	buildCmd.PersistentFlags().StringVarP(&buildCachePath, "cache-path", "", "", "The path that hover uses to cache dependencies such as the Flutter engine .so/.dll (defaults to the standard user cache directory)")
+	buildCmd.PersistentFlags().StringVar(&buildOpenGlVersion, "opengl", "3.3", "The OpenGL version specified here is only relevant for external texture plugin (i.e. video_plugin).\nIf 'none' is provided, texture won't be supported. Note: the Flutter Engine still needs a OpenGL compatible context.")
+	buildCmd.PersistentFlags().BoolVar(&buildDocker, "docker", false, "Compile in Docker container only. No need to install go")
 	buildCmd.AddCommand(buildLinuxCmd)
 	buildCmd.AddCommand(buildLinuxSnapCmd)
 	buildCmd.AddCommand(buildLinuxDebCmd)
@@ -147,12 +158,107 @@ func outputBinaryPath(projectName string, targetOS string) string {
 	return outputBinaryPath
 }
 
-func build(projectName string, targetOS string, vmArguments []string) {
-	if targetOS != runtime.GOOS {
-		log.Errorf("Cross-compiling is currently not supported")
+func dockerBuild(projectName string, targetOS string, vmArguments []string) {
+	crossCompilingDir, err := filepath.Abs(filepath.Join(buildPath, "cross-compiling"))
+	err = os.MkdirAll(crossCompilingDir, 0755)
+	if err != nil {
+		log.Errorf("Cannot create the cross-compiling directory: %v", err)
 		os.Exit(1)
 	}
-	var engineCachePath string
+	userCacheDir, err := os.UserCacheDir()
+	if err != nil {
+		log.Errorf("Cannot get the path for the system cache directory: %v", err)
+		os.Exit(1)
+	}
+	goPath := filepath.Join(userCacheDir, "hover-cc")
+	err = os.MkdirAll(goPath, 0755)
+	if err != nil {
+		log.Errorf("Cannot create the hover-cc GOPATH under the system cache directory: %v", err)
+		os.Exit(1)
+	}
+	wd, err := os.Getwd()
+	if err != nil {
+		log.Errorf("Cannot get the path for current directory %s", err)
+		os.Exit(1)
+	}
+	dockerFilePath, err := filepath.Abs(filepath.Join(crossCompilingDir, "Dockerfile"))
+	if err != nil {
+		log.Errorf("Failed to resolve absolute path for Dockerfile %s: %v", dockerFilePath, err)
+		os.Exit(1)
+	}
+	if _, err := os.Stat(dockerFilePath); os.IsNotExist(err) {
+		dockerFile, err := os.Create(dockerFilePath)
+		if err != nil {
+			log.Errorf("Failed to create Dockerfile %s: %v", dockerFilePath, err)
+			os.Exit(1)
+		}
+		dockerFileContent := []string{
+			"FROM dockercore/golang-cross",
+			"RUN apt-get install libgl1-mesa-dev xorg-dev -y",
+		}
+
+		for _, line := range dockerFileContent {
+			if _, err := dockerFile.WriteString(line + "\n"); err != nil {
+				log.Errorf("Could not write Dockerfile: %v", err)
+				os.Exit(1)
+			}
+		}
+		err = dockerFile.Close()
+		if err != nil {
+			log.Errorf("Could not close Dockerfile: %v", err)
+			os.Exit(1)
+		}
+		log.Infof("A Dockerfile for cross-compiling for %s has been created at %s. You can add it to git.", targetOS, filepath.Join(buildPath, "cross-compiling", targetOS))
+	}
+	dockerBuildCmd := exec.Command(dockerBin, "build", "-t", "hover-build-cc", ".")
+	dockerBuildCmd.Stderr = os.Stderr
+	dockerBuildCmd.Dir = crossCompilingDir
+	err = dockerBuildCmd.Run()
+	if err != nil {
+		log.Errorf("Docker build failed: %v", err)
+		os.Exit(1)
+	}
+
+	log.Infof("Cross-Compiling 'go-flutter' and plugins using docker")
+
+	u, err := user.Current()
+	if err != nil {
+		log.Errorf("Couldn't get current user: %v", err)
+		os.Exit(1)
+	}
+	args := []string{
+		"run",
+		"-w", "/app/go",
+		"-v", goPath + ":/go",
+		"-v", wd + ":/app",
+		"-v", engineCachePath + ":/engine",
+		"-v", filepath.Join(userCacheDir, "go-build") + ":/cache",
+	}
+	for _, env := range buildEnv(targetOS, "/engine") {
+		args = append(args, "-e", env)
+	}
+	args = append(args, "hover-build-cc")
+	chownStr := ""
+	if runtime.GOOS != "windows" {
+		chownStr = fmt.Sprintf(" && chown %s:%s build/ -R", u.Uid, u.Gid)
+	}
+	args = append(args, "bash", "-c", fmt.Sprintf("%s%s", strings.Join(buildCommand(targetOS, vmArguments, "build/outputs/"+targetOS+"/"+outputBinaryName(projectName, targetOS)), " "), chownStr))
+	dockerRunCmd := exec.Command(dockerBin, args...)
+	dockerRunCmd.Stderr = os.Stderr
+	dockerRunCmd.Stdout = os.Stdout
+	dockerRunCmd.Dir = crossCompilingDir
+	err = dockerRunCmd.Run()
+	if err != nil {
+		log.Errorf("Docker run failed: %v", err)
+		os.Exit(1)
+	}
+	log.Infof("Successfully cross-compiled for " + targetOS)
+}
+
+func build(projectName string, targetOS string, vmArguments []string) {
+	crossCompile = targetOS != runtime.GOOS
+	buildDocker = crossCompile || buildDocker
+
 	if buildCachePath != "" {
 		engineCachePath = enginecache.ValidateOrUpdateEngineAtPath(targetOS, buildCachePath)
 	} else {
@@ -266,19 +372,6 @@ func build(projectName string, targetOS string, vmArguments []string) {
 		return
 	}
 
-	var cgoLdflags string
-	switch targetOS {
-	case "darwin":
-		cgoLdflags = fmt.Sprintf("-F%s -Wl,-rpath,@executable_path", engineCachePath)
-	case "linux":
-		cgoLdflags = fmt.Sprintf("-L%s", engineCachePath)
-	case "windows":
-		cgoLdflags = fmt.Sprintf("-L%s", engineCachePath)
-	default:
-		log.Errorf("Target platform %s is not supported, cgo_ldflags not implemented.", targetOS)
-		os.Exit(1)
-	}
-
 	wd, err := os.Getwd()
 	if err != nil {
 		log.Errorf("Failed to get working dir: %v", err)
@@ -286,7 +379,6 @@ func build(projectName string, targetOS string, vmArguments []string) {
 	}
 
 	if buildBranch == "" {
-
 		currentTag, err := versioncheck.CurrentGoFlutterTag(filepath.Join(wd, buildPath))
 		if err != nil {
 			log.Errorf("%v", err)
@@ -324,6 +416,82 @@ func build(projectName string, targetOS string, vmArguments []string) {
 		}
 	}
 
+	if buildOpenGlVersion == "none" {
+		log.Warnf("The '--opengl=none' flag makes go-flutter incompatible with texture plugins!")
+	}
+
+	if buildDocker {
+		if crossCompile {
+			log.Infof("Because %s is not able to compile for %s out of the box, a cross-compiling container is used", runtime.GOOS, targetOS)
+		}
+		dockerBuild(projectName, targetOS, vmArguments)
+		return
+	}
+
+	buildCommandString := buildCommand(targetOS, vmArguments, outputBinaryPath(projectName, targetOS))
+	cmdGoBuild := exec.Command(buildCommandString[0], buildCommandString[1:]...)
+	cmdGoBuild.Dir = filepath.Join(wd, buildPath)
+	cmdGoBuild.Env = append(os.Environ(),
+		buildEnv(targetOS, engineCachePath)...,
+	)
+
+	cmdGoBuild.Stderr = os.Stderr
+	cmdGoBuild.Stdout = os.Stdout
+
+	log.Infof("Compiling 'go-flutter' and plugins")
+	err = cmdGoBuild.Run()
+	if err != nil {
+		log.Errorf("Go build failed: %v", err)
+		os.Exit(1)
+	}
+	log.Infof("Successfully compiled")
+}
+
+func buildEnv(targetOS string, engineCachePath string) []string {
+	var cgoLdflags string
+	switch targetOS {
+	case "darwin":
+		cgoLdflags = fmt.Sprintf("-F%s -Wl,-rpath,@executable_path", engineCachePath)
+	case "linux":
+		cgoLdflags = fmt.Sprintf("-L%s", engineCachePath)
+	case "windows":
+		cgoLdflags = fmt.Sprintf("-L%s", engineCachePath)
+	default:
+		log.Errorf("Target platform %s is not supported, cgo_ldflags not implemented.", targetOS)
+		os.Exit(1)
+	}
+	env := []string{
+		"GO111MODULE=on",
+		"CGO_LDFLAGS=" + cgoLdflags,
+		"GOOS=" + targetOS,
+		"GOARCH=amd64",
+		"CGO_ENABLED=1",
+	}
+	if buildDocker {
+		env = append(env,
+			"GOCACHE=/cache",
+		)
+		if targetOS == "windows" {
+			env = append(env,
+				"CC="+mingwGccBinName,
+			)
+		}
+		if targetOS == "darwin" {
+			env = append(env,
+				"CC="+clangBinName,
+			)
+		}
+	}
+	return env
+}
+
+func buildCommand(targetOS string, vmArguments []string, outputBinaryPath string) []string {
+	currentTag, err := versioncheck.CurrentGoFlutterTag(buildPath)
+	if err != nil {
+		log.Errorf("%v", err)
+		os.Exit(1)
+	}
+
 	var ldflags []string
 	if !buildDebug {
 		vmArguments = append(vmArguments, "--disable-dart-asserts")
@@ -336,25 +504,29 @@ func build(projectName string, targetOS string, vmArguments []string) {
 		ldflags = append(ldflags, "-w")
 	}
 	ldflags = append(ldflags, fmt.Sprintf("-X main.vmArguments=%s", strings.Join(vmArguments, ";")))
+	// overwrite go-flutter build-constants values
+	ldflags = append(ldflags, fmt.Sprintf(
+		"-X github.com/go-flutter-desktop/go-flutter.ProjectVersion=%s "+
+			" -X github.com/go-flutter-desktop/go-flutter.PlatformVersion=%s "+
+			" -X github.com/go-flutter-desktop/go-flutter.ProjectName=%s "+
+			" -X github.com/go-flutter-desktop/go-flutter.ProjectOrganizationName=%s",
+		getPubSpec().Version,
+		currentTag,
+		getPubSpec().Name,
+		androidOrganizationName()))
 
-	cmdGoBuild := exec.Command(goBin, "build",
-		"-o", outputBinaryPath(projectName, targetOS),
-		fmt.Sprintf("-ldflags=%s", strings.Join(ldflags, " ")),
-		dotSlash+"cmd",
-	)
-	cmdGoBuild.Dir = filepath.Join(wd, buildPath)
-	cmdGoBuild.Env = append(os.Environ(),
-		"GO111MODULE=on",
-		"CGO_LDFLAGS="+cgoLdflags,
-	)
-
-	cmdGoBuild.Stderr = os.Stderr
-	cmdGoBuild.Stdout = os.Stdout
-
-	log.Infof("Compiling 'go-flutter' and plugins")
-	err = cmdGoBuild.Run()
-	if err != nil {
-		log.Errorf("Go build failed: %v", err)
-		os.Exit(1)
+	outputCommand := []string{
+		"go",
+		"build",
+		"-tags=opengl" + buildOpenGlVersion,
+		"-o", outputBinaryPath,
+		"-v",
 	}
+	if buildDocker {
+		outputCommand = append(outputCommand, fmt.Sprintf("-ldflags=\"%s\"", strings.Join(ldflags, " ")))
+	} else {
+		outputCommand = append(outputCommand, fmt.Sprintf("-ldflags=%s", strings.Join(ldflags, " ")))
+	}
+	outputCommand = append(outputCommand, dotSlash+"cmd")
+	return outputCommand
 }
