@@ -297,7 +297,7 @@ func hoverPluginGet() bool {
 
 			// if remote plugin, get the correct version
 			if dep.path == "" {
-				cmdGoGetU := exec.Command(goBin, "get", "-u", strings.TrimSuffix(pluginImportStr, "/go")+"@go/v"+dep.Version)
+				cmdGoGetU := exec.Command(goBin, "get", "-u", pluginImportStr+"@v"+dep.Version)
 				cmdGoGetU.Dir = filepath.Join(buildPath)
 				cmdGoGetU.Env = append(os.Environ(),
 					"GOPROXY=direct", // github.com/golang/go/issues/32955 (allows '/' in branch name)
