@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"bufio"
+	"fmt"
 	"io"
 	"os"
 	"os/exec"
@@ -74,7 +75,7 @@ func runAndAttach(projectName string, targetOS string) {
 		scanner := bufio.NewScanner(reader)
 		for scanner.Scan() {
 			text := scanner.Text()
-			log.Printf(text)
+			fmt.Println(text)
 			match := re.FindStringSubmatch(text)
 			if len(match) == 1 {
 				startHotReloadProcess(cmdFlutterAttach, buildTarget, match[0])
