@@ -22,7 +22,6 @@ var dotSlash = string([]byte{'.', filepath.Separator})
 
 var (
 	buildTarget            string
-	buildManifest          string
 	buildBranch            string
 	buildDebug             bool
 	buildCachePath         string
@@ -42,7 +41,6 @@ var engineCachePath string
 
 func init() {
 	buildCmd.PersistentFlags().StringVarP(&buildTarget, "target", "t", "lib/main_desktop.dart", "The main entry-point file of the application.")
-	buildCmd.PersistentFlags().StringVarP(&buildManifest, "manifest", "m", "pubspec.yaml", "Flutter manifest file of the application.")
 	buildCmd.PersistentFlags().StringVarP(&buildBranch, "branch", "b", "", "The 'go-flutter' version to use. (@master or @v0.20.0 for example)")
 	buildCmd.PersistentFlags().BoolVar(&buildDebug, "debug", false, "Build a debug version of the app.")
 	buildCmd.PersistentFlags().StringVarP(&buildCachePath, "cache-path", "", "", "The path that hover uses to cache dependencies such as the Flutter engine .so/.dll (defaults to the standard user cache directory)")
@@ -306,7 +304,6 @@ func build(projectName string, targetOS string, vmArguments []string) {
 	cmdFlutterBuild := exec.Command(flutterBin, "build", "bundle",
 		"--asset-dir", filepath.Join(outputDirectoryPath(targetOS), "flutter_assets"),
 		"--target", buildTarget,
-		"--manifest", buildManifest,
 		trackWidgetCreation,
 	)
 	cmdFlutterBuild.Stderr = os.Stderr
