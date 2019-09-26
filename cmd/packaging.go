@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/go-flutter-desktop/hover/internal/log"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -10,6 +9,8 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+
+	"github.com/go-flutter-desktop/hover/internal/log"
 
 	"github.com/otiai10/copy"
 	"github.com/spf13/cobra"
@@ -93,7 +94,7 @@ func removeDashesAndUnderscores(projectName string) string {
 
 func printInitFinished(packagingFormat string) {
 	log.Infof("go/packaging/%s has been created. You can modify the configuration files and add them to git.", packagingFormat)
-	log.Infof("You now can package the %s: %s", strings.Split(packagingFormat, "-")[1], fmt.Sprintf(au.Magenta("hover build %s").String(), packagingFormat))
+	log.Infof("You now can package the %s: %s", strings.Split(packagingFormat, "-")[1], fmt.Sprintf(log.Au.Magenta("hover build %s").String(), packagingFormat))
 }
 
 func getTemporaryBuildDirectory(projectName string, packagingFormat string) string {

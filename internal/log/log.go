@@ -2,9 +2,12 @@ package log
 
 import (
 	"fmt"
+
 	"github.com/logrusorgru/aurora"
 )
 
+// InitColors initialize the logger with or without
+// colors.
 func InitColors(colors bool) {
 	Au = aurora.NewAurora(colors)
 }
