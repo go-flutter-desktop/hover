@@ -259,6 +259,8 @@ func hoverPluginGet() bool {
 	}
 
 	for _, dep := range dependencyList {
+		hasNewPlugin = true
+
 		if !dep.desktop {
 			continue
 		}
@@ -268,20 +270,31 @@ func hoverPluginGet() bool {
 			continue
 		}
 
-		if dep.imported() {
-			fmt.Printf("       plugin: [%s] already imported\n", dep.name)
-			if !reImport {
-				continue
-			}
-		}
-
-		hasNewPlugin = true
 		if dryRun {
-			fmt.Printf("       plugin: [%s] can be imported\n", dep.name)
+			fmt.Printf("       plugin: [%s] can be imported/updated\n", dep.name)
 			continue
 		}
 
 		pluginImportOutPath := filepath.Join(buildPath, "cmd", fmt.Sprintf("import-%s-plugin.go", dep.name))
+
+		if dep.imported() && !reImport {
+			pluginImportStr, err := readPluginGoImport(pluginImportOutPath, dep.name)
+			if err != nil {
+				log.Warnf("Couldn't read the plugin '%s' import URL", dep.name)
+				log.Warnf("Fallback to the latest version installed.")
+				continue
+			}
+
+			if !goGetModuleSuccess(pluginImportStr, dep.Version) {
+				log.Warnf("Couldn't download version '%s' of plugin '%s'", dep.Version, dep.name)
+				log.Warnf("Fallback to the latest version installed.")
+				continue
+			}
+
+			fmt.Printf("       plugin: [%s] updated\n", dep.name)
+			continue
+		}
+
 		if dep.standaloneImpl {
 			fileutils.DownloadFile(dep.pluginGoSource, pluginImportOutPath)
 		} else {
@@ -297,16 +310,7 @@ func hoverPluginGet() bool {
 
 			// if remote plugin, get the correct version
 			if dep.path == "" {
-				cmdGoGetU := exec.Command(goBin, "get", "-u", pluginImportStr+"@v"+dep.Version)
-				cmdGoGetU.Dir = filepath.Join(buildPath)
-				cmdGoGetU.Env = append(os.Environ(),
-					"GOPROXY=direct", // github.com/golang/go/issues/32955 (allows '/' in branch name)
-					"GO111MODULE=on",
-				)
-				cmdGoGetU.Stderr = os.Stderr
-				cmdGoGetU.Stdout = os.Stdout
-				err = cmdGoGetU.Run()
-				if err != nil {
+				if !goGetModuleSuccess(pluginImportStr, dep.Version) {
 					log.Warnf("Couldn't download version '%s' of plugin '%s'", dep.Version, dep.name)
 					log.Warnf("Fallback to the latest version available on github.")
 				}
@@ -517,4 +521,17 @@ func fetchStandaloneImplementationList() ([]StandaloneImplementation, error) {
 		return remoteList.List, err
 	}
 	return remoteList.List, nil
+}
+
+// goGetModuleSuccess updates a module at a version, if it fails, return false.
+func goGetModuleSuccess(pluginImportStr, version string) bool {
+	cmdGoGetU := exec.Command(goBin, "get", "-u", pluginImportStr+"@v"+version)
+	cmdGoGetU.Dir = filepath.Join(buildPath)
+	cmdGoGetU.Env = append(os.Environ(),
+		"GOPROXY=direct", // github.com/golang/go/issues/32955 (allows '/' in branch name)
+		"GO111MODULE=on",
+	)
+	cmdGoGetU.Stderr = os.Stderr
+	cmdGoGetU.Stdout = os.Stdout
+	return cmdGoGetU.Run() == nil
 }
