@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/go-flutter-desktop/hover/internal/log"
 	"os"
 	"os/exec"
 	"os/user"
@@ -10,6 +9,8 @@ import (
 	"regexp"
 	"runtime"
 	"strings"
+
+	"github.com/go-flutter-desktop/hover/internal/log"
 
 	"github.com/hashicorp/go-version"
 	"github.com/otiai10/copy"
@@ -292,7 +293,7 @@ func build(projectName string, targetOS string, vmArguments []string) {
 			ignoreWarning := os.Getenv("HOVER_IGNORE_CHANNEL_WARNING")
 			if match[1] != "beta" && ignoreWarning != "true" {
 				log.Warnf("⚠ The go-flutter project tries to stay compatible with the beta channel of Flutter.")
-				log.Warnf("⚠     It's advised to use the beta channel: %s", log.Au.Magenta("flutter channel beta"))
+				log.Warnf("⚠     It's advised to use the beta channel: %s", log.Au().Magenta("flutter channel beta"))
 			}
 		} else {
 			log.Warnf("Failed to check your flutter channel: Unrecognized output format")

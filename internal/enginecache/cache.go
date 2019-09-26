@@ -203,7 +203,7 @@ func ValidateOrUpdateEngineAtPath(targetOS string, cachePath string) (engineCach
 	if strings.Contains(engineCachePath, " ") {
 		log.Errorf("Cannot save the engine to '%s', engine cache is not compatible with path containing spaces.", cachePath)
 		log.Errorf("       Please run hover with a another engine cache path. Example:")
-		log.Errorf("              %s", log.Au.Magenta("hover run --cache-path \"C:\\cache\""))
+		log.Errorf("              %s", log.Au().Magenta("hover run --cache-path \"C:\\cache\""))
 		log.Errorf("       The --cache-path flag will have to be provided to every build and run command.")
 		os.Exit(1)
 	}

@@ -108,7 +108,7 @@ func assertHoverInitialized() {
 		if hoverMigration() {
 			return
 		}
-		log.Errorf("Directory '%s' is missing. Please init go-flutter first: %s", buildPath, log.Au.Magenta("hover init"))
+		log.Errorf("Directory '%s' is missing. Please init go-flutter first: %s", buildPath, log.Au().Magenta("hover init"))
 		os.Exit(1)
 	}
 	if err != nil {

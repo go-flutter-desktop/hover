@@ -11,7 +11,7 @@ import (
 func flutterRequiredEngineVersion() string {
 	out, err := exec.Command("flutter", "--version").Output()
 	if err != nil {
-		log.Errorf("Failed to run %s: %v", log.Au.Magenta("flutter --version"), err)
+		log.Errorf("Failed to run %s: %v", log.Au().Magenta("flutter --version"), err)
 		os.Exit(1)
 	}
 

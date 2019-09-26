@@ -76,7 +76,7 @@ func createPackagingFormatDirectory(packagingFormat string) {
 
 func assertPackagingFormatInitialized(packagingFormat string) {
 	if _, err := os.Stat(packagingFormatPath(packagingFormat)); os.IsNotExist(err) {
-		log.Errorf("%s is not initialized for packaging. Please init packaging for %s first: %s", packagingFormat, packagingFormat, log.Au.Magenta(fmt.Sprintf("hover init-packaging %s", packagingFormat)))
+		log.Errorf("%s is not initialized for packaging. Please init packaging for %s first: %s", packagingFormat, packagingFormat, log.Au().Magenta(fmt.Sprintf("hover init-packaging %s", packagingFormat)))
 		os.Exit(1)
 	}
 }
@@ -94,7 +94,7 @@ func removeDashesAndUnderscores(projectName string) string {
 
 func printInitFinished(packagingFormat string) {
 	log.Infof("go/packaging/%s has been created. You can modify the configuration files and add them to git.", packagingFormat)
-	log.Infof("You now can package the %s: %s", strings.Split(packagingFormat, "-")[1], fmt.Sprintf(log.Au.Magenta("hover build %s").String(), packagingFormat))
+	log.Infof("You now can package the %s: %s", strings.Split(packagingFormat, "-")[1], fmt.Sprintf(log.Au().Magenta("hover build %s").String(), packagingFormat))
 }
 
 func getTemporaryBuildDirectory(projectName string, packagingFormat string) string {

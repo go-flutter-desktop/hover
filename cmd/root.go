@@ -13,7 +13,9 @@ import (
 func init() {
 	var colors bool
 	rootCmd.PersistentFlags().BoolVar(&colors, "colors", true, "Add colors to log")
-	log.InitColors(colors) // MUST be called before any Execute
+	if colors {
+		log.Colorize()
+	}
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
 	go func() {
