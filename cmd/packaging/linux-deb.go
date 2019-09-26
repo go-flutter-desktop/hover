@@ -1,7 +1,7 @@
 package packaging
 
 import (
-	"fmt"
+	"github.com/go-flutter-desktop/hover/internal/log"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -20,45 +20,45 @@ func InitLinuxDeb() {
 	debDirectoryPath := packagingFormatPath(packagingFormat)
 	debDebianDirectoryPath, err := filepath.Abs(filepath.Join(debDirectoryPath, "DEBIAN"))
 	if err != nil {
-		fmt.Printf("hover: Failed to resolve absolute path for DEBIAN directory: %v\n", err)
+		log.Errorf("Failed to resolve absolute path for DEBIAN directory: %v", err)
 		os.Exit(1)
 	}
 	err = os.MkdirAll(debDebianDirectoryPath, 0775)
 	if err != nil {
-		fmt.Printf("hover: Failed to create DEBIAN directory %s: %v\n", debDebianDirectoryPath, err)
+		log.Errorf("Failed to create DEBIAN directory %s: %v", debDebianDirectoryPath, err)
 		os.Exit(1)
 	}
 
 	binDirectoryPath, err := filepath.Abs(filepath.Join(debDirectoryPath, "usr", "bin"))
 	if err != nil {
-		fmt.Printf("hover: Failed to resolve absolute path for bin directory: %v\n", err)
+		log.Errorf("Failed to resolve absolute path for bin directory: %v", err)
 		os.Exit(1)
 	}
 	err = os.MkdirAll(binDirectoryPath, 0775)
 	if err != nil {
-		fmt.Printf("hover: Failed to create bin directory %s: %v\n", binDirectoryPath, err)
+		log.Errorf("Failed to create bin directory %s: %v", binDirectoryPath, err)
 		os.Exit(1)
 	}
 	applicationsDirectoryPath, err := filepath.Abs(filepath.Join(debDirectoryPath, "usr", "share", "applications"))
 	if err != nil {
-		fmt.Printf("hover: Failed to resolve absolute path for applications directory: %v\n", err)
+		log.Errorf("Failed to resolve absolute path for applications directory: %v", err)
 		os.Exit(1)
 	}
 	err = os.MkdirAll(applicationsDirectoryPath, 0775)
 	if err != nil {
-		fmt.Printf("hover: Failed to create applications directory %s: %v\n", applicationsDirectoryPath, err)
+		log.Errorf("Failed to create applications directory %s: %v", applicationsDirectoryPath, err)
 		os.Exit(1)
 	}
 
 	controlFilePath, err := filepath.Abs(filepath.Join(debDebianDirectoryPath, "control"))
 	if err != nil {
-		fmt.Printf("hover: Failed to resolve absolute path for control file %s: %v\n", controlFilePath, err)
+		log.Errorf("Failed to resolve absolute path for control file %s: %v", controlFilePath, err)
 		os.Exit(1)
 	}
 
 	controlFile, err := os.Create(controlFilePath)
 	if err != nil {
-		fmt.Printf("hover: Failed to create control file %s: %v\n", controlFilePath, err)
+		log.Errorf("Failed to create control file %s: %v", controlFilePath, err)
 		os.Exit(1)
 	}
 	controlFileContent := []string{
@@ -73,25 +73,25 @@ func InitLinuxDeb() {
 
 	for _, line := range controlFileContent {
 		if _, err := controlFile.WriteString(line + "\n"); err != nil {
-			fmt.Printf("hover: Could not write control file: %v\n", err)
+			log.Errorf("Could not write control file: %v", err)
 			os.Exit(1)
 		}
 	}
 	err = controlFile.Close()
 	if err != nil {
-		fmt.Printf("hover: Could not close control file: %v\n", err)
+		log.Errorf("Could not close control file: %v", err)
 		os.Exit(1)
 	}
 
 	binFilePath, err := filepath.Abs(filepath.Join(binDirectoryPath, removeDashesAndUnderscores(projectName)))
 	if err != nil {
-		fmt.Printf("hover: Failed to resolve absolute path for bin file %s: %v\n", binFilePath, err)
+		log.Errorf("Failed to resolve absolute path for bin file %s: %v", binFilePath, err)
 		os.Exit(1)
 	}
 
 	binFile, err := os.Create(binFilePath)
 	if err != nil {
-		fmt.Printf("hover: Failed to create bin file %s: %v\n", controlFilePath, err)
+		log.Errorf("Failed to create bin file %s: %v", controlFilePath, err)
 		os.Exit(1)
 	}
 	binFileContent := []string{
@@ -100,24 +100,24 @@ func InitLinuxDeb() {
 	}
 	for _, line := range binFileContent {
 		if _, err := binFile.WriteString(line + "\n"); err != nil {
-			fmt.Printf("hover: Could not write bin file: %v\n", err)
+			log.Errorf("Could not write bin file: %v", err)
 			os.Exit(1)
 		}
 	}
 	err = binFile.Close()
 	if err != nil {
-		fmt.Printf("hover: Could not close bin file: %v\n", err)
+		log.Errorf("Could not close bin file: %v", err)
 		os.Exit(1)
 	}
 	err = os.Chmod(binFilePath, 0777)
 	if err != nil {
-		fmt.Printf("hover: Failed to change file permissions for bin file: %v\n", err)
+		log.Errorf("Failed to change file permissions for bin file: %v", err)
 		os.Exit(1)
 	}
 
 	desktopFilePath, err := filepath.Abs(filepath.Join(applicationsDirectoryPath, projectName+".desktop"))
 	if err != nil {
-		fmt.Printf("hover: Failed to resolve absolute path for desktop file %s: %v\n", desktopFilePath, err)
+		log.Errorf("Failed to resolve absolute path for desktop file %s: %v", desktopFilePath, err)
 		os.Exit(1)
 	}
 	createLinuxDesktopFile(desktopFilePath, packagingFormat, "/usr/bin/"+projectName, "/usr/lib/"+projectName+"/assets/icon.png")
@@ -130,21 +130,21 @@ func BuildLinuxDeb() {
 	projectName := pubspec.GetPubSpec().Name
 	packagingFormat := "linux-deb"
 	tmpPath := getTemporaryBuildDirectory(projectName, packagingFormat)
-	fmt.Printf("hover: Packaging deb in %s\n", tmpPath)
+	log.Infof("Packaging deb in %s", tmpPath)
 
 	libDirectoryPath, err := filepath.Abs(filepath.Join(tmpPath, "usr", "lib"))
 	if err != nil {
-		fmt.Printf("hover: Failed to resolve absolute path for lib directory: %v\n", err)
+		log.Errorf("Failed to resolve absolute path for lib directory: %v", err)
 		os.Exit(1)
 	}
 	err = copy.Copy(build.OutputDirectoryPath("linux"), filepath.Join(libDirectoryPath, projectName))
 	if err != nil {
-		fmt.Printf("hover: Could not copy build folder: %v\n", err)
+		log.Errorf("Could not copy build folder: %v", err)
 		os.Exit(1)
 	}
 	err = copy.Copy(packagingFormatPath(packagingFormat), filepath.Join(tmpPath))
 	if err != nil {
-		fmt.Printf("hover: Could not copy packaging configuration folder: %v\n", err)
+		log.Errorf("Could not copy packaging configuration folder: %v", err)
 		os.Exit(1)
 	}
 
@@ -154,12 +154,12 @@ func BuildLinuxDeb() {
 
 	err = os.Rename(filepath.Join(tmpPath, outputFileName), outputFilePath)
 	if err != nil {
-		fmt.Printf("hover: Could not move deb file: %v\n", err)
+		log.Errorf("Could not move deb file: %v", err)
 		os.Exit(1)
 	}
 	err = os.RemoveAll(tmpPath)
 	if err != nil {
-		fmt.Printf("hover: Could not remove temporary build directory: %v\n", err)
+		log.Errorf("Could not remove temporary build directory: %v", err)
 		os.Exit(1)
 	}
 	printPackagingFinished(packagingFormat)

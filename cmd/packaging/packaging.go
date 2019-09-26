@@ -2,6 +2,7 @@ package packaging
 
 import (
 	"fmt"
+	"github.com/go-flutter-desktop/hover/internal/log"
 	"github.com/go-flutter-desktop/hover/internal/pubspec"
 	"io/ioutil"
 	"os"
@@ -19,7 +20,7 @@ var packagingPath = filepath.Join(build.BuildPath, "packaging")
 func packagingFormatPath(packagingFormat string) string {
 	directoryPath, err := filepath.Abs(filepath.Join(packagingPath, packagingFormat))
 	if err != nil {
-		fmt.Printf("hover: Failed to resolve absolute path for %s directory: %v\n", packagingFormat, err)
+		log.Errorf("Failed to resolve absolute path for %s directory: %v", packagingFormat, err)
 		os.Exit(1)
 	}
 	return directoryPath
@@ -27,19 +28,19 @@ func packagingFormatPath(packagingFormat string) string {
 
 func createPackagingFormatDirectory(packagingFormat string) {
 	if _, err := os.Stat(packagingFormatPath(packagingFormat)); !os.IsNotExist(err) {
-		fmt.Printf("hover: A file or directory named `%s` already exists. Cannot continue packaging init for %s.\n", packagingFormat, packagingFormat)
+		log.Errorf("A file or directory named `%s` already exists. Cannot continue packaging init for %s.", packagingFormat, packagingFormat)
 		os.Exit(1)
 	}
 	err := os.MkdirAll(packagingFormatPath(packagingFormat), 0775)
 	if err != nil {
-		fmt.Printf("hover: Failed to create %s directory %s: %v\n", packagingFormat, packagingFormatPath(packagingFormat), err)
+		log.Errorf("Failed to create %s directory %s: %v", packagingFormat, packagingFormatPath(packagingFormat), err)
 		os.Exit(1)
 	}
 }
 
 func AssertPackagingFormatInitialized(packagingFormat string) {
 	if _, err := os.Stat(packagingFormatPath(packagingFormat)); os.IsNotExist(err) {
-		fmt.Printf("hover: %s is not initialized for packaging. Please run `hover init-packaging %s` first.\n", packagingFormat, packagingFormat)
+		log.Errorf("%s is not initialized for packaging. Please run `hover init-packaging %s` first.", packagingFormat, packagingFormat)
 		os.Exit(1)
 	}
 }
@@ -49,18 +50,18 @@ func removeDashesAndUnderscores(projectName string) string {
 }
 
 func printInitFinished(packagingFormat string) {
-	fmt.Printf("hover: go/packaging/%s has been created. You can modify the configuration files and add it to git.\n", packagingFormat)
-	fmt.Printf("hover: You now can package the %s using `hover build %s`\n", strings.Split(packagingFormat, "-")[0], packagingFormat)
+	log.Infof("go/packaging/%s has been created. You can modify the configuration files and add it to git.", packagingFormat)
+	log.Infof("You now can package the %s using `hover build %s`", strings.Split(packagingFormat, "-")[0], packagingFormat)
 }
 
 func printPackagingFinished(packagingFormat string) {
-	fmt.Printf("hover: Successfully packaged %s\n", strings.Split(packagingFormat, "-")[1])
+	log.Infof("Successfully packaged %s", strings.Split(packagingFormat, "-")[1])
 }
 
 func getTemporaryBuildDirectory(projectName string, packagingFormat string) string {
 	tmpPath, err := ioutil.TempDir("", "hover-build-"+projectName+"-"+packagingFormat)
 	if err != nil {
-		fmt.Printf("hover: Couldn't get temporary build directory: %v\n", err)
+		log.Errorf("Couldn't get temporary build directory: %v", err)
 		os.Exit(1)
 	}
 	return tmpPath
@@ -68,7 +69,7 @@ func getTemporaryBuildDirectory(projectName string, packagingFormat string) stri
 
 func DockerInstalled() bool {
 	if build.DockerBin == "" {
-		fmt.Println("hover: To use packaging, Docker needs to be installed.\nhttps://docs.docker.com/install")
+		log.Warnf("To use packaging, Docker needs to be installed.\nhttps://docs.docker.com/install")
 	}
 	return build.DockerBin != ""
 }
@@ -76,14 +77,14 @@ func DockerInstalled() bool {
 func getAuthor() string {
 	author := pubspec.GetPubSpec().Author
 	if author == "" {
-		fmt.Println("hover: Missing author field in pubspec.yaml")
+		log.Warnf("Missing author field in pubspec.yaml")
 		u, err := user.Current()
 		if err != nil {
-			fmt.Printf("hover: Couldn't get current user: %v\n", err)
+			log.Errorf("Couldn't get current user: %v", err)
 			os.Exit(1)
 		}
 		author = u.Username
-		fmt.Printf("hover: Using this username from system instead: %s\n", author)
+		log.Printf("Using this username from system instead: %s", author)
 	}
 	return author
 }
@@ -91,12 +92,12 @@ func getAuthor() string {
 func createDockerfile(packagingFormat string) {
 	dockerFilePath, err := filepath.Abs(filepath.Join(packagingFormatPath(packagingFormat), "Dockerfile"))
 	if err != nil {
-		fmt.Printf("hover: Failed to resolve absolute path for Dockerfile %s: %v\n", dockerFilePath, err)
+		log.Errorf("Failed to resolve absolute path for Dockerfile %s: %v", dockerFilePath, err)
 		os.Exit(1)
 	}
 	dockerFile, err := os.Create(dockerFilePath)
 	if err != nil {
-		fmt.Printf("hover: Failed to create Dockerfile %s: %v\n", dockerFilePath, err)
+		log.Errorf("Failed to create Dockerfile %s: %v", dockerFilePath, err)
 		os.Exit(1)
 	}
 	dockerFileContent := []string{}
@@ -114,19 +115,19 @@ func createDockerfile(packagingFormat string) {
 			"RUN apt-get update && apt-get install wixl -y",
 		}
 	} else {
-		fmt.Printf("hover: Tried to create Dockerfile for unknown packaging format %s\n", packagingFormat)
+		log.Errorf("Tried to create Dockerfile for unknown packaging format %s", packagingFormat)
 		os.Exit(1)
 	}
 
 	for _, line := range dockerFileContent {
 		if _, err := dockerFile.WriteString(line + "\n"); err != nil {
-			fmt.Printf("hover: Could not write Dockerfile: %v\n", err)
+			log.Errorf("Could not write Dockerfile: %v", err)
 			os.Exit(1)
 		}
 	}
 	err = dockerFile.Close()
 	if err != nil {
-		fmt.Printf("hover: Could not close Dockerfile: %v\n", err)
+		log.Errorf("Could not close Dockerfile: %v", err)
 		os.Exit(1)
 	}
 }
@@ -138,12 +139,12 @@ func runDockerPackaging(path string, packagingFormat string, command []string) {
 	dockerBuildCmd.Dir = packagingFormatPath(packagingFormat)
 	err := dockerBuildCmd.Run()
 	if err != nil {
-		fmt.Printf("hover: Docker build failed: %v\n", err)
+		log.Errorf("Docker build failed: %v", err)
 		os.Exit(1)
 	}
 	u, err := user.Current()
 	if err != nil {
-		fmt.Printf("hover: Couldn't get current user: %v\n", err)
+		log.Errorf("Couldn't get current user: %v", err)
 		os.Exit(1)
 	}
 	args := []string{
@@ -163,7 +164,7 @@ func runDockerPackaging(path string, packagingFormat string, command []string) {
 	dockerRunCmd.Dir = path
 	err = dockerRunCmd.Run()
 	if err != nil {
-		fmt.Printf("hover: Docker run failed: %v\n", err)
+		log.Errorf("Docker run failed: %v", err)
 		os.Exit(1)
 	}
 }

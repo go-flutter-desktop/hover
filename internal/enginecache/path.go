@@ -1,18 +1,18 @@
 package enginecache
 
 import (
-	"fmt"
 	"os"
 	"path/filepath"
 	"runtime"
 
+	"github.com/go-flutter-desktop/hover/internal/log"
 	homedir "github.com/mitchellh/go-homedir"
 )
 
 func cachePath() string {
 	homePath, err := homedir.Dir()
 	if err != nil {
-		fmt.Printf("hover: Failed to resolve home path: %v\n", err)
+		log.Errorf("Failed to resolve home path: %v", err)
 		os.Exit(1)
 	}
 
@@ -25,7 +25,7 @@ func cachePath() string {
 	case "windows":
 		p = filepath.Join(homePath, "AppData", "Local")
 	default:
-		fmt.Printf("hover: cannot run on %s, enginecache not implemented.\n", runtime.GOOS)
+		log.Errorf("Cannot run on %s, enginecache not implemented.", runtime.GOOS)
 		os.Exit(1)
 	}
 	return p

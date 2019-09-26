@@ -2,15 +2,16 @@ package packaging
 
 import (
 	"fmt"
-	"github.com/otiai10/copy"
 	"io/ioutil"
-	"log"
 	"os"
 	"path/filepath"
 	"strings"
 
+	"github.com/otiai10/copy"
+
 	"github.com/go-flutter-desktop/hover/internal/build"
 	"github.com/go-flutter-desktop/hover/internal/pubspec"
+	"github.com/go-flutter-desktop/hover/internal/log"
 )
 
 var directoriesFileContent = []string{}
@@ -25,12 +26,12 @@ func InitWindowsMsi() {
 
 	wxsFilePath, err := filepath.Abs(filepath.Join(msiDirectoryPath, projectName+".wxs"))
 	if err != nil {
-		fmt.Printf("hover: Failed to resolve absolute path for %s.wxs file %s: %v\n", projectName, wxsFilePath, err)
+		log.Errorf("Failed to resolve absolute path for %s.wxs file %s: %v", projectName, wxsFilePath, err)
 		os.Exit(1)
 	}
 	wxsFile, err := os.Create(wxsFilePath)
 	if err != nil {
-		fmt.Printf("hover: Failed to create %s.wxs file %s: %v\n", projectName, wxsFilePath, err)
+		log.Errorf("Failed to create %s.wxs file %s: %v", projectName, wxsFilePath, err)
 		os.Exit(1)
 	}
 	wxsFileContent := []string{
@@ -96,13 +97,13 @@ func InitWindowsMsi() {
 
 	for _, line := range wxsFileContent {
 		if _, err := wxsFile.WriteString(line + "\n"); err != nil {
-			fmt.Printf("hover: Could not write %s.wxs: %v\n", projectName, err)
+			log.Errorf("Could not write %s.wxs: %v", projectName, err)
 			os.Exit(1)
 		}
 	}
 	err = wxsFile.Close()
 	if err != nil {
-		fmt.Printf("hover: Could not close %s.wxs: %v\n", projectName, err)
+		log.Errorf("Could not close %s.wxs: %v", projectName, err)
 		os.Exit(1)
 	}
 
@@ -115,51 +116,51 @@ func BuildWindowsMsi() {
 	projectName := pubspec.GetPubSpec().Name
 	packagingFormat := "windows-msi"
 	tmpPath := getTemporaryBuildDirectory(projectName, packagingFormat)
-	fmt.Printf("hover: Packaging msi in %s\n", tmpPath)
+	log.Infof("Packaging msi in %s", tmpPath)
 
 	buildDirectoryPath, err := filepath.Abs(filepath.Join(tmpPath, "build"))
 	if err != nil {
-		fmt.Printf("hover: Failed to resolve absolute path for build directory: %v\n", err)
+		log.Errorf("Failed to resolve absolute path for build directory: %v", err)
 		os.Exit(1)
 	}
 	err = copy.Copy(build.OutputDirectoryPath("windows"), filepath.Join(buildDirectoryPath))
 	if err != nil {
-		fmt.Printf("hover: Could not copy build folder: %v\n", err)
+		log.Errorf("Could not copy build folder: %v", err)
 		os.Exit(1)
 	}
 	err = copy.Copy(packagingFormatPath(packagingFormat), filepath.Join(tmpPath))
 	if err != nil {
-		fmt.Printf("hover: Could not copy packaging configuration folder: %v\n", err)
+		log.Errorf("Could not copy packaging configuration folder: %v", err)
 		os.Exit(1)
 	}
 	directoriesFilePath, err := filepath.Abs(filepath.Join(tmpPath, "directories.wxi"))
 	if err != nil {
-		fmt.Printf("hover: Failed to resolve absolute path for directories.wxi file %s: %v\n", projectName, err)
+		log.Errorf("Failed to resolve absolute path for directories.wxi file %s: %v", projectName, err)
 		os.Exit(1)
 	}
 	directoriesFile, err := os.Create(directoriesFilePath)
 	if err != nil {
-		fmt.Printf("hover: Failed to create directories.wxi file %s: %v\n", projectName, err)
+		log.Errorf("Failed to create directories.wxi file %s: %v", projectName, err)
 		os.Exit(1)
 	}
 	directoryRefsFilePath, err := filepath.Abs(filepath.Join(tmpPath, "directory_refs.wxi"))
 	if err != nil {
-		fmt.Printf("hover: Failed to resolve absolute path for directory_refs.wxi file %s: %v\n", projectName, err)
+		log.Errorf("Failed to resolve absolute path for directory_refs.wxi file %s: %v", projectName, err)
 		os.Exit(1)
 	}
 	directoryRefsFile, err := os.Create(directoryRefsFilePath)
 	if err != nil {
-		fmt.Printf("hover: Failed to create directory_refs.wxi file %s: %v\n", projectName, err)
+		log.Errorf("Failed to create directory_refs.wxi file %s: %v", projectName, err)
 		os.Exit(1)
 	}
 	componentRefsFilePath, err := filepath.Abs(filepath.Join(tmpPath, "component_refs.wxi"))
 	if err != nil {
-		fmt.Printf("hover: Failed to resolve absolute path for component_refs.wxi file %s: %v\n", projectName, err)
+		log.Errorf("Failed to resolve absolute path for component_refs.wxi file %s: %v", projectName, err)
 		os.Exit(1)
 	}
 	componentRefsFile, err := os.Create(componentRefsFilePath)
 	if err != nil {
-		fmt.Printf("hover: Failed to create component_refs.wxi file %s: %v\n", projectName, err)
+		log.Errorf("Failed to create component_refs.wxi file %s: %v", projectName, err)
 		os.Exit(1)
 	}
 	directoriesFileContent = append(directoriesFileContent, `<Include>`)
@@ -172,35 +173,35 @@ func BuildWindowsMsi() {
 
 	for _, line := range directoriesFileContent {
 		if _, err := directoriesFile.WriteString(line + "\n"); err != nil {
-			fmt.Printf("hover: Could not write directories.wxi: %v\n", projectName, err)
+			log.Errorf("Could not write directories.wxi: %v", projectName, err)
 			os.Exit(1)
 		}
 	}
 	err = directoriesFile.Close()
 	if err != nil {
-		fmt.Printf("hover: Could not close directories.wxi: %v\n", projectName, err)
+		log.Errorf("Could not close directories.wxi: %v", projectName, err)
 		os.Exit(1)
 	}
 	for _, line := range directoryRefsFileContent {
 		if _, err := directoryRefsFile.WriteString(line + "\n"); err != nil {
-			fmt.Printf("hover: Could not write directory_refs.wxi: %v\n", projectName, err)
+			log.Errorf("Could not write directory_refs.wxi: %v", projectName, err)
 			os.Exit(1)
 		}
 	}
 	err = directoryRefsFile.Close()
 	if err != nil {
-		fmt.Printf("hover: Could not close directory_refs.wxi: %v\n", projectName, err)
+		log.Errorf("Could not close directory_refs.wxi: %v", projectName, err)
 		os.Exit(1)
 	}
 	for _, line := range componentRefsFileContent {
 		if _, err := componentRefsFile.WriteString(line + "\n"); err != nil {
-			fmt.Printf("hover: Could not write component_refs.wxi: %v\n", projectName, err)
+			log.Errorf("Could not write component_refs.wxi: %v", projectName, err)
 			os.Exit(1)
 		}
 	}
 	err = componentRefsFile.Close()
 	if err != nil {
-		fmt.Printf("hover: Could not close component_refs.wxi: %v\n", projectName, err)
+		log.Errorf("Could not close component_refs.wxi: %v", projectName, err)
 		os.Exit(1)
 	}
 
@@ -210,12 +211,12 @@ func BuildWindowsMsi() {
 
 	err = os.Rename(filepath.Join(tmpPath, outputFileName), outputFilePath)
 	if err != nil {
-		fmt.Printf("hover: Could not move msi file: %v\n", err)
+		log.Errorf("Could not move msi file: %v", err)
 		os.Exit(1)
 	}
 	err = os.RemoveAll(tmpPath)
 	if err != nil {
-		fmt.Printf("hover: Could not remove temporary build directory: %v\n", err)
+		log.Errorf("Could not remove temporary build directory: %v", err)
 		os.Exit(1)
 	}
 
@@ -225,7 +226,8 @@ func BuildWindowsMsi() {
 func processFiles(path string) {
 	files, err := ioutil.ReadDir(path)
 	if err != nil {
-		log.Fatal(err)
+		log.Errorf("Failed to read directory %s: %v", path, err)
+		os.Exit(1)
 	}
 
 	for _, f := range files {

@@ -2,9 +2,6 @@ package cmd
 
 import (
 	"bufio"
-	"fmt"
-	"github.com/go-flutter-desktop/hover/internal/build"
-	"github.com/go-flutter-desktop/hover/internal/pubspec"
 	"io"
 	"os"
 	"os/exec"
@@ -13,13 +10,16 @@ import (
 	"runtime"
 
 	"github.com/spf13/cobra"
+
+	"github.com/go-flutter-desktop/hover/internal/log"
+	"github.com/go-flutter-desktop/hover/internal/pubspec"
+	"github.com/go-flutter-desktop/hover/internal/build"
 )
 
 var runObservatoryPort string
 
 func init() {
 	runCmd.Flags().StringVarP(&buildTarget, "target", "t", "lib/main_desktop.dart", "The main entry-point file of the application.")
-	runCmd.Flags().StringVarP(&buildManifest, "manifest", "m", "pubspec.yaml", "Flutter manifest file of the application.")
 	runCmd.Flags().StringVarP(&buildBranch, "branch", "b", "", "The 'go-flutter' version to use. (@master or @v0.20.0 for example)")
 	runCmd.Flags().StringVarP(&buildCachePath, "cache-path", "", "", "The path that hover uses to cache dependencies such as the Flutter engine .so/.dll (defaults to the standard user cache directory)")
 	runCmd.Flags().StringVarP(&runObservatoryPort, "observatory-port", "", "50300", "The observatory port used to connect hover to VM services (hot-reload/debug/..)")
@@ -38,18 +38,18 @@ var runCmd = &cobra.Command{
 
 		// ensure we have something to build
 		if buildOmitEmbedder && buildOmitFlutterBundle {
-			fmt.Println("hover: flags omit-embedder and omit-flutter are not compatible.")
+			log.Errorf("Flags omit-embedder and omit-flutter are not compatible.")
 			os.Exit(1)
 		}
 
 		// Can only run on host OS
 		targetOS := runtime.GOOS
 
-		// forcefully enable --debug (which is not an option for `hover run`)
+		// forcefully enable --debug (which is not an option for 'hover run')
 		buildDebug = true
 
 		buildNormal(targetOS, []string{"--observatory-port=" + runObservatoryPort})
-		fmt.Println("hover: build finished, starting app...")
+		log.Infof("Build finished, starting app...")
 		runAndAttach(projectName, targetOS)
 	},
 }
@@ -60,12 +60,12 @@ func runAndAttach(projectName string, targetOS string) {
 
 	stdoutApp, err := cmdApp.StdoutPipe()
 	if err != nil {
-		fmt.Printf("hover: unable to create stdout pipe on app: %v\n", err)
+		log.Errorf("Unable to create stdout pipe on app: %v", err)
 		os.Exit(1)
 	}
 	stderrApp, err := cmdApp.StderrPipe()
 	if err != nil {
-		fmt.Printf("hover: unable to create stderr pipe on app: %v\n", err)
+		log.Errorf("Unable to create stderr pipe on app: %v", err)
 		os.Exit(1)
 	}
 
@@ -76,7 +76,7 @@ func runAndAttach(projectName string, targetOS string) {
 		scanner := bufio.NewScanner(reader)
 		for scanner.Scan() {
 			text := scanner.Text()
-			fmt.Println(text)
+			log.Printf(text)
 			match := re.FindStringSubmatch(text)
 			if len(match) == 1 {
 				startHotReloadProcess(cmdFlutterAttach, buildTarget, match[0])
@@ -90,20 +90,20 @@ func runAndAttach(projectName string, targetOS string) {
 	// Non-blockingly echo command stderr to terminal
 	go io.Copy(os.Stderr, stderrApp)
 
-	fmt.Printf("hover: Running %s in debug mode\n", projectName)
+	log.Infof("Running %s in debug mode", projectName)
 	err = cmdApp.Start()
 	if err != nil {
-		fmt.Printf("hover: failed to start app '%s': %v\n", projectName, err)
+		log.Errorf("Failed to start app '%s': %v", projectName, err)
 		os.Exit(1)
 	}
 
 	err = cmdApp.Wait()
 	if err != nil {
-		fmt.Printf("hover: app '%s' exited with error: %v\n", projectName, err)
+		log.Errorf("App '%s' exited with error: %v", projectName, err)
 		os.Exit(cmdApp.ProcessState.ExitCode())
 	}
-	fmt.Printf("hover: app '%s' exited.\n", projectName)
-	fmt.Println("hover: closing the flutter attach sub process..")
+	log.Infof("App '%s' exited.", projectName)
+	log.Printf("Closing the flutter attach sub process..")
 	cmdFlutterAttach.Wait()
 	os.Exit(0)
 }
@@ -121,6 +121,6 @@ func startHotReloadProcess(cmdFlutterAttach *exec.Cmd, buildTargetMainDart strin
 	}
 	err := cmdFlutterAttach.Start()
 	if err != nil {
-		fmt.Printf("hover: flutter attach failed: %v Hotreload disabled\n", err)
+		log.Warnf("The command 'flutter attach' failed: %v Hotreload disabled", err)
 	}
 }

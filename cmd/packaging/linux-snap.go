@@ -1,7 +1,7 @@
 package packaging
 
 import (
-	"fmt"
+	"github.com/go-flutter-desktop/hover/internal/log"
 	"os"
 	"path/filepath"
 	"runtime"
@@ -20,24 +20,24 @@ func InitLinuxSnap() {
 
 	snapLocalDirectoryPath, err := filepath.Abs(filepath.Join(snapDirectoryPath, "snap", "local"))
 	if err != nil {
-		fmt.Printf("hover: Failed to resolve absolute path for snap local directory: %v\n", err)
+		log.Errorf("Failed to resolve absolute path for snap local directory: %v", err)
 		os.Exit(1)
 	}
 	err = os.MkdirAll(snapLocalDirectoryPath, 0775)
 	if err != nil {
-		fmt.Printf("hover: Failed to create snap local directory %s: %v\n", snapDirectoryPath, err)
+		log.Errorf("Failed to create snap local directory %s: %v", snapDirectoryPath, err)
 		os.Exit(1)
 	}
 
 	snapcraftFilePath, err := filepath.Abs(filepath.Join(snapDirectoryPath, "snap", "snapcraft.yaml"))
 	if err != nil {
-		fmt.Printf("hover: Failed to resolve absolute path for snapcraft.yaml file %s: %v\n", snapcraftFilePath, err)
+		log.Errorf("Failed to resolve absolute path for snapcraft.yaml file %s: %v", snapcraftFilePath, err)
 		os.Exit(1)
 	}
 
 	snapcraftFile, err := os.Create(snapcraftFilePath)
 	if err != nil {
-		fmt.Printf("hover: Failed to create snapcraft.yaml file %s: %v\n", snapcraftFilePath, err)
+		log.Errorf("Failed to create snapcraft.yaml file %s: %v", snapcraftFilePath, err)
 		os.Exit(1)
 	}
 	snapcraftFileContent := []string{
@@ -71,19 +71,19 @@ func InitLinuxSnap() {
 
 	for _, line := range snapcraftFileContent {
 		if _, err := snapcraftFile.WriteString(line + "\n"); err != nil {
-			fmt.Printf("hover: Could not write snapcraft.yaml: %v\n", err)
+			log.Errorf("Could not write snapcraft.yaml: %v", err)
 			os.Exit(1)
 		}
 	}
 	err = snapcraftFile.Close()
 	if err != nil {
-		fmt.Printf("hover: Could not close snapcraft.yaml: %v\n", err)
+		log.Errorf("Could not close snapcraft.yaml: %v", err)
 		os.Exit(1)
 	}
 
 	desktopFilePath, err := filepath.Abs(filepath.Join(snapLocalDirectoryPath, projectName+".desktop"))
 	if err != nil {
-		fmt.Printf("hover: Failed to resolve absolute path for desktop file %s: %v\n", desktopFilePath, err)
+		log.Errorf("Failed to resolve absolute path for desktop file %s: %v", desktopFilePath, err)
 		os.Exit(1)
 	}
 	createLinuxDesktopFile(desktopFilePath, packagingFormat, "/"+projectName, "/icon.png")
@@ -96,21 +96,21 @@ func BuildLinuxSnap() {
 	projectName := pubspec.GetPubSpec().Name
 	packagingFormat := "linux-snap"
 	tmpPath := getTemporaryBuildDirectory(projectName, packagingFormat)
-	fmt.Printf("hover: Packaging snap in %s\n", tmpPath)
+	log.Infof("Packaging snap in %s", tmpPath)
 
 	err := copy.Copy(filepath.Join(build.BuildPath, "assets"), filepath.Join(tmpPath, "assets"))
 	if err != nil {
-		fmt.Printf("hover: Could not copy assets folder: %v\n", err)
+		log.Errorf("Could not copy assets folder: %v", err)
 		os.Exit(1)
 	}
 	err = copy.Copy(build.OutputDirectoryPath("linux"), filepath.Join(tmpPath, "build"))
 	if err != nil {
-		fmt.Printf("hover: Could not copy build folder: %v\n", err)
+		log.Errorf("Could not copy build folder: %v", err)
 		os.Exit(1)
 	}
 	err = copy.Copy(packagingFormatPath(packagingFormat), filepath.Join(tmpPath))
 	if err != nil {
-		fmt.Printf("hover: Could not copy packaging configuration folder: %v\n", err)
+		log.Errorf("Could not copy packaging configuration folder: %v", err)
 		os.Exit(1)
 	}
 
@@ -120,12 +120,12 @@ func BuildLinuxSnap() {
 
 	err = os.Rename(filepath.Join(tmpPath, outputFileName), outputFilePath)
 	if err != nil {
-		fmt.Printf("hover: Could not move snap file: %v\n", err)
+		log.Errorf("Could not move snap file: %v", err)
 		os.Exit(1)
 	}
 	err = os.RemoveAll(tmpPath)
 	if err != nil {
-		fmt.Printf("hover: Could not remove temporary build directory: %v\n", err)
+		log.Errorf("Could not remove temporary build directory: %v", err)
 		os.Exit(1)
 	}
 	printPackagingFinished(packagingFormat)

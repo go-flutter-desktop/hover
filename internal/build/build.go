@@ -1,7 +1,7 @@
 package build
 
 import (
-	"fmt"
+	"github.com/go-flutter-desktop/hover/internal/log"
 	"os"
 	"path/filepath"
 )
@@ -11,13 +11,13 @@ const BuildPath = "go"
 func OutputDirectoryPath(targetOS string) string {
 	outputDirectoryPath, err := filepath.Abs(filepath.Join(BuildPath, "build", "outputs", targetOS))
 	if err != nil {
-		fmt.Printf("hover: Failed to resolve absolute path for output directory: %v\n", err)
+		log.Errorf("Failed to resolve absolute path for output directory: %v", err)
 		os.Exit(1)
 	}
 	if _, err := os.Stat(outputDirectoryPath); os.IsNotExist(err) {
 		err = os.MkdirAll(outputDirectoryPath, 0775)
 		if err != nil {
-			fmt.Printf("hover: Failed to create output directory %s: %v\n", outputDirectoryPath, err)
+			log.Errorf("Failed to create output directory %s: %v", outputDirectoryPath, err)
 			os.Exit(1)
 		}
 	}
@@ -34,7 +34,7 @@ func OutputBinaryName(projectName string, targetOS string) string {
 	case "windows":
 		outputBinaryName += ".exe"
 	default:
-		fmt.Printf("hover: Target platform %s is not supported.\n", targetOS)
+		log.Errorf("Target platform %s is not supported.", targetOS)
 		os.Exit(1)
 	}
 	return outputBinaryName

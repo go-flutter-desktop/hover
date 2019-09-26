@@ -1,7 +1,7 @@
 package pubspec
 
 import (
-	"fmt"
+	"github.com/go-flutter-desktop/hover/internal/log"
 	"gopkg.in/yaml.v2"
 	"os"
 )
@@ -22,21 +22,21 @@ func GetPubSpec() PubSpec {
 			file, err := os.Open("pubspec.yaml")
 			if err != nil {
 				if os.IsNotExist(err) {
-					fmt.Println("hover: Error: No pubspec.yaml file found.")
+					log.Errorf("Error: No pubspec.yaml file found.")
 					goto Fail
 				}
-				fmt.Printf("hover: Failed to open pubspec.yaml: %v\n", err)
+				log.Errorf("Failed to open pubspec.yaml: %v", err)
 				os.Exit(1)
 			}
 			defer file.Close()
 
 			err = yaml.NewDecoder(file).Decode(&pubspec)
 			if err != nil {
-				fmt.Printf("hover: Failed to decode pubspec.yaml: %v\n", err)
+				log.Errorf("Failed to decode pubspec.yaml: %v", err)
 				goto Fail
 			}
 			if _, exists := pubspec.Dependencies["flutter"]; !exists {
-				fmt.Println("hover: Missing `flutter` in pubspec.yaml dependencies list.")
+				log.Errorf("Missing `flutter` in pubspec.yaml dependencies list.")
 				goto Fail
 			}
 		}
@@ -45,7 +45,7 @@ func GetPubSpec() PubSpec {
 	}
 
 Fail:
-	fmt.Println("hover: This command should be run from the root of your Flutter project.")
+	log.Errorf("This command should be run from the root of your Flutter project.")
 	os.Exit(1)
 	return PubSpec{}
 }
