@@ -11,7 +11,6 @@ import (
 	"strings"
 
 	"github.com/go-flutter-desktop/hover/internal/log"
-
 	"github.com/otiai10/copy"
 	"github.com/spf13/cobra"
 )

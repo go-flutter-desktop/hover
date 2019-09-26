@@ -2,14 +2,15 @@ package cmd
 
 import (
 	"bufio"
-	"github.com/go-flutter-desktop/hover/internal/log"
-	"github.com/spf13/cobra"
 	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
 	"runtime"
+
+	"github.com/go-flutter-desktop/hover/internal/log"
+	"github.com/spf13/cobra"
 )
 
 var runObservatoryPort string

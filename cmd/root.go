@@ -6,7 +6,6 @@ import (
 	"os/signal"
 
 	"github.com/go-flutter-desktop/hover/internal/log"
-
 	"github.com/spf13/cobra"
 )
 

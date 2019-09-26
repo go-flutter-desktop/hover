@@ -13,9 +13,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/pkg/errors"
-
 	"github.com/go-flutter-desktop/hover/internal/log"
+	"github.com/pkg/errors"
 )
 
 func createSymLink(oldname, newname string) error {

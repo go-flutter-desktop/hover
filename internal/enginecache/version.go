@@ -5,7 +5,7 @@ import (
 	"os/exec"
 	"regexp"
 
-	log "github.com/go-flutter-desktop/hover/internal/log"
+	"github.com/go-flutter-desktop/hover/internal/log"
 )
 
 func flutterRequiredEngineVersion() string {

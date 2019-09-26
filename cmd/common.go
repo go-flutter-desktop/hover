@@ -9,10 +9,9 @@ import (
 	"path/filepath"
 	"strings"
 
+	"github.com/go-flutter-desktop/hover/internal/log"
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
-
-	"github.com/go-flutter-desktop/hover/internal/log"
 )
 
 func init() {
