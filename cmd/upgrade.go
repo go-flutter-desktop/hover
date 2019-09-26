@@ -2,15 +2,14 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/go-flutter-desktop/hover/internal/log"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
 
 	"github.com/go-flutter-desktop/hover/internal/enginecache"
+	"github.com/go-flutter-desktop/hover/internal/log"
 	"github.com/go-flutter-desktop/hover/internal/versioncheck"
-
 	"github.com/spf13/cobra"
 )
 

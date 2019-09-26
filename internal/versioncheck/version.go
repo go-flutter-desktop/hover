@@ -9,10 +9,9 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-flutter-desktop/hover/internal/log"
 	"github.com/pkg/errors"
 	"github.com/tcnksm/go-latest"
-
-	"github.com/go-flutter-desktop/hover/internal/log"
 )
 
 // CheckFoGoFlutterUpdate check the last 'go-flutter' timestamp we have cached

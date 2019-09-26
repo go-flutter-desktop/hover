@@ -2,20 +2,24 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/go-flutter-desktop/hover/internal/log"
 	"os"
 	"os/signal"
 
-	"github.com/logrusorgru/aurora"
+	"github.com/go-flutter-desktop/hover/internal/log"
 	"github.com/spf13/cobra"
 )
 
-var au aurora.Aurora
 var colors bool
 
 func init() {
 	rootCmd.PersistentFlags().BoolVar(&colors, "colors", true, "Add colors to log")
-	cobra.OnInitialize(initColors)
+}
+
+func initHover() {
+	if colors {
+		log.Colorize()
+	}
+	initBinaries()
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
 	go func() {
@@ -24,12 +28,6 @@ func init() {
 			os.Exit(1)
 		}
 	}()
-
-}
-
-func initColors() {
-	au = aurora.NewAurora(colors)
-	log.Au = au
 }
 
 var rootCmd = &cobra.Command{
@@ -41,6 +39,7 @@ var rootCmd = &cobra.Command{
 
 // Execute executes the rootCmd
 func Execute() {
+	cobra.OnInitialize(initHover)
 	if err := rootCmd.Execute(); err != nil {
 		log.Errorf("Command failed: %v", err)
 		os.Exit(1)

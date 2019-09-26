@@ -2,12 +2,12 @@ package cmd
 
 import (
 	"errors"
-	"github.com/go-flutter-desktop/hover/internal/log"
 	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
 
+	"github.com/go-flutter-desktop/hover/internal/log"
 	"github.com/spf13/cobra"
 )
 

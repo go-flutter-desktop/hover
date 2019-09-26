@@ -9,15 +9,9 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/spf13/cobra"
-	"gopkg.in/yaml.v2"
-
 	"github.com/go-flutter-desktop/hover/internal/log"
+	"gopkg.in/yaml.v2"
 )
-
-func init() {
-	cobra.OnInitialize(initBinaries)
-}
 
 var (
 	goBin      string
@@ -108,7 +102,7 @@ func assertHoverInitialized() {
 		if hoverMigration() {
 			return
 		}
-		log.Errorf("Directory '%s' is missing. Please init go-flutter first: %s", buildPath, log.Au.Magenta("hover init"))
+		log.Errorf("Directory '%s' is missing. Please init go-flutter first: %s", buildPath, log.Au().Magenta("hover init"))
 		os.Exit(1)
 	}
 	if err != nil {

@@ -1,10 +1,10 @@
 package cmd
 
 import (
-	"github.com/go-flutter-desktop/hover/internal/log"
 	"os"
 
 	rice "github.com/GeertJohan/go.rice"
+	"github.com/go-flutter-desktop/hover/internal/log"
 )
 
 var assetsBox *rice.Box
