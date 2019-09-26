@@ -2,10 +2,10 @@ package cmd
 
 import (
 	"errors"
-	"io"
 	"os"
 	"path/filepath"
 
+	"github.com/go-flutter-desktop/hover/internal/fileutils"
 	"github.com/go-flutter-desktop/hover/internal/log"
 	"github.com/spf13/cobra"
 )
@@ -57,33 +57,13 @@ var initCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		copyAsset("app/main.go", filepath.Join(desktopCmdPath, "main.go"))
-		copyAsset("app/options.go", filepath.Join(desktopCmdPath, "options.go"))
-		copyAsset("app/icon.png", filepath.Join(desktopAssetsPath, "icon.png"))
-		copyAsset("app/gitignore", filepath.Join(buildPath, ".gitignore"))
+		fileutils.CopyAsset("app/main.go", filepath.Join(desktopCmdPath, "main.go"), assetsBox)
+		fileutils.CopyAsset("app/options.go", filepath.Join(desktopCmdPath, "options.go"), assetsBox)
+		fileutils.CopyAsset("app/icon.png", filepath.Join(desktopAssetsPath, "icon.png"), assetsBox)
+		fileutils.CopyAsset("app/gitignore", filepath.Join(buildPath, ".gitignore"), assetsBox)
 
 		initializeGoModule(projectPath)
 		log.Printf("Available plugin for this project:")
 		pluginListCmd.Run(cmd, []string{})
 	},
-}
-
-func copyAsset(boxed, to string) {
-	file, err := os.Create(to)
-	if err != nil {
-		log.Errorf("Failed to create %s: %v", to, err)
-		os.Exit(1)
-	}
-	defer file.Close()
-	boxedFile, err := assetsBox.Open(boxed)
-	if err != nil {
-		log.Errorf("Failed to find boxed file %s: %v", boxed, err)
-		os.Exit(1)
-	}
-	defer boxedFile.Close()
-	_, err = io.Copy(file, boxedFile)
-	if err != nil {
-		log.Errorf("Failed to write file %s: %v", to, err)
-		os.Exit(1)
-	}
 }

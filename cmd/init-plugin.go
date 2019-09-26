@@ -25,7 +25,7 @@ var createPluginCmd = &cobra.Command{
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
-		assertInFlutterProject()
+		assertInFlutterPluginProject()
 
 		vcsPath := args[0]
 
@@ -36,11 +36,6 @@ var createPluginCmd = &cobra.Command{
 				os.Exit(1)
 			}
 			log.Errorf("Failed to create '%s' directory: %v", buildPath, err)
-			os.Exit(1)
-		}
-
-		if _, ok := getPubSpec().Flutter["plugin"]; !ok {
-			log.Errorf("The directory doesn't appear to contain a plugin package. To create a new plugin, first run `flutter create --template=plugin`, then run `hover init-plugin`.")
 			os.Exit(1)
 		}
 

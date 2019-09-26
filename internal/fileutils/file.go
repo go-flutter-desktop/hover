@@ -110,6 +110,27 @@ func CopyTemplate(boxed, to string, assetsBox *rice.Box, templateData interface{
 	tmplFile.Execute(toFile, templateData)
 }
 
+// CopyAsset copies a file from asset
+func CopyAsset(boxed, to string, assetsBox *rice.Box) {
+	file, err := os.Create(to)
+	if err != nil {
+		log.Errorf("Failed to create %s: %v", to, err)
+		os.Exit(1)
+	}
+	defer file.Close()
+	boxedFile, err := assetsBox.Open(boxed)
+	if err != nil {
+		log.Errorf("Failed to find boxed file %s: %v", boxed, err)
+		os.Exit(1)
+	}
+	defer boxedFile.Close()
+	_, err = io.Copy(file, boxedFile)
+	if err != nil {
+		log.Errorf("Failed to write file %s: %v", to, err)
+		os.Exit(1)
+	}
+}
+
 // DownloadFile will download a url to a local file.
 func DownloadFile(url string, filepath string) {
 	resp, err := http.Get(url)

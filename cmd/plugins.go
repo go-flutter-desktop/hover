@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -23,13 +24,13 @@ const standaloneImplementationListAPI = "https://raw.githubusercontent.com/go-fl
 
 var (
 	listAllPluginDependencies bool
-	cleanPurge                bool
+	tidyPurge                 bool
 	dryRun                    bool
 	reImport                  bool
 )
 
 func init() {
-	pluginTidyCmd.Flags().BoolVar(&cleanPurge, "purge", false, "Remove all go platform plugins imports from the project.")
+	pluginTidyCmd.Flags().BoolVar(&tidyPurge, "purge", false, "Remove all go platform plugins imports from the project.")
 	pluginListCmd.Flags().BoolVarP(&listAllPluginDependencies, "all", "a", false, "List all platform plugins dependencies, even the one have no go-flutter support")
 	pluginGetCmd.Flags().BoolVar(&reImport, "force", false, "Re-import already imported plugins.")
 
@@ -149,7 +150,7 @@ var pluginListCmd = &cobra.Command{
 			}
 		}
 		if hasNewPlugin {
-			log.Infof(fmt.Sprintf("run `%s` to import the missing plugins!", log.Au().Magenta("hover plugins get").String()))
+			log.Infof(fmt.Sprintf("run `%s` to import the missing plugins!", log.Au().Magenta("hover plugins get")))
 		}
 	},
 }
@@ -197,7 +198,7 @@ var pluginTidyCmd = &cobra.Command{
 					}
 				}
 
-				if !pluginInUse || cleanPurge {
+				if !pluginInUse || tidyPurge {
 					if dryRun {
 						fmt.Printf("       plugin: [%s] can be removed\n", pluginName)
 						continue
@@ -286,24 +287,42 @@ func hoverPluginGet() bool {
 			fileutils.DownloadFile(dep.pluginGoSource, pluginImportOutPath)
 		} else {
 			fileutils.CopyFile(autoImportTemplatePath, pluginImportOutPath)
-		}
-		fmt.Printf("       plugin: [%s] imported\n", dep.name)
 
-		// if local plugin
-		if dep.path != "" {
 			pluginImportStr, err := readPluginGoImport(pluginImportOutPath, dep.name)
 			if err != nil {
-				fmt.Printf("       warning: Couldn't add the replace directive into the 'go.mod' file.\n")
-				fmt.Printf("                The plugin will be fetched online instead of using the one  on the filesystem.\n")
-				log.Warnf("          Error: %v", err)
+				log.Warnf("Couldn't read the plugin '%s' import URL", dep.name)
+				log.Warnf("Falling back to the latest version available on github.")
 				continue
 			}
-			path, err := filepath.Abs(filepath.Join(dep.path, "go"))
-			if err != nil {
-				log.Errorf("Failed to resolve absolute path for %s plugin: %v", dep.name, err)
-				os.Exit(1)
+
+			// if remote plugin, get the correct version
+			if dep.path == "" {
+				cmdGoGetU := exec.Command(goBin, "get", "-u", strings.TrimSuffix(pluginImportStr, "/go")+"@go/v"+dep.Version)
+				cmdGoGetU.Dir = filepath.Join(buildPath)
+				cmdGoGetU.Env = append(os.Environ(),
+					"GOPROXY=direct", // github.com/golang/go/issues/32955 (allows '/' in branch name)
+					"GO111MODULE=on",
+				)
+				cmdGoGetU.Stderr = os.Stderr
+				cmdGoGetU.Stdout = os.Stdout
+				err = cmdGoGetU.Run()
+				if err != nil {
+					log.Warnf("Couldn't download version '%s' of plugin '%s'", dep.Version, dep.name)
+					log.Warnf("Falling back to the latest version available on github.")
+				}
 			}
-			fileutils.AddLineToFile(filepath.Join(buildPath, "go.mod"), fmt.Sprintf("replace %s => %s", pluginImportStr, path))
+
+			// if local plugin
+			if dep.path != "" {
+				path, err := filepath.Abs(filepath.Join(dep.path, "go"))
+				if err != nil {
+					log.Errorf("Failed to resolve absolute path for plugin '%s': %v", dep.name, err)
+					os.Exit(1)
+				}
+				fileutils.AddLineToFile(filepath.Join(buildPath, "go.mod"), fmt.Sprintf("replace %s => %s", pluginImportStr, path))
+			}
+
+			fmt.Printf("       plugin: [%s] imported\n", dep.name)
 		}
 	}
 

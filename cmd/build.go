@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/go-flutter-desktop/hover/internal/enginecache"
+	"github.com/go-flutter-desktop/hover/internal/fileutils"
 	"github.com/go-flutter-desktop/hover/internal/log"
 	"github.com/go-flutter-desktop/hover/internal/versioncheck"
 	"github.com/hashicorp/go-version"
@@ -126,14 +127,15 @@ func checkForMainDesktop() {
 	}
 	_, err := os.Stat("lib/main_desktop.dart")
 	if os.IsNotExist(err) {
-		log.Warnf("Target file \"lib/main_desktop.dart\" not found.\n")
+		log.Warnf("Target file \"lib/main_desktop.dart\" not found.")
 		log.Warnf("Let hover add the \"lib/main_desktop.dart\" file? ")
 		if askForConfirmation() {
-			copyAsset("app/main_desktop.dart", filepath.Join("lib", "main_desktop.dart"))
-			log.Infof("Target file \"lib/main_desktop.dart\" has been created.\n")
-			log.Infof("       Depending on your project, you might want to tweak it.\n")
+			fileutils.CopyAsset("app/main_desktop.dart", filepath.Join("lib", "main_desktop.dart"), assetsBox)
+			log.Infof("Target file \"lib/main_desktop.dart\" has been created.")
+			log.Infof("       Depending on your project, you might want to tweak it.")
 			return
 		}
+		log.Printf("You can define a custom traget by using the %s flag.", log.Au().Magenta("--target"))
 		os.Exit(1)
 	}
 	if err != nil {
@@ -354,7 +356,7 @@ func build(projectName string, targetOS string, vmArguments []string) {
 	if runPluginGet {
 		log.Printf("listing available plugins:")
 		if hoverPluginGetDryRun() {
-			log.Infof(fmt.Sprintf("run `%s`? ", log.Au().Magenta("hover plugins get").String()))
+			log.Infof(fmt.Sprintf("run `%s`? ", log.Au().Magenta("hover plugins get")))
 			if askForConfirmation() {
 				hoverPluginGet()
 			}

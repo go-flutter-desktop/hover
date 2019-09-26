@@ -23,6 +23,7 @@ var (
 	goBin      string
 	flutterBin string
 	dockerBin  string
+	gitBin     string
 )
 
 // initBinaries is used to ensure go and flutter exec are found in the
@@ -51,6 +52,10 @@ func initBinaries() {
 	if err != nil {
 		log.Errorf("Failed to lookup 'flutter' executable. Please install flutter.\nhttps://flutter.dev/docs/get-started/install")
 		os.Exit(1)
+	}
+	gitBin, err = exec.LookPath("git")
+	if err != nil {
+		log.Warnf("Failed to lookup 'git' executable.")
 	}
 }
 
@@ -110,6 +115,14 @@ func readPubSpecFile(pubSpecPath string) (*PubSpec, error) {
 // assertInFlutterProject asserts this command is executed in a flutter project
 func assertInFlutterProject() {
 	getPubSpec()
+}
+
+// assertInFlutterPluginProject asserts this command is executed in a flutter plugin project
+func assertInFlutterPluginProject() {
+	if _, ok := getPubSpec().Flutter["plugin"]; !ok {
+		log.Errorf("The directory doesn't appear to contain a plugin package.\nTo create a new plugin, first run `%s`, then run `%s`.", log.Au().Magenta("flutter create --template=plugin"), log.Au().Magenta("hover init-plugin"))
+		os.Exit(1)
+	}
 }
 
 func assertHoverInitialized() {
