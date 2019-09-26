@@ -64,9 +64,14 @@ func upgradeGoFlutter(targetOS string, engineCachePath string) (err error) {
 		return
 	}
 
+	if buildBranch == "" {
+		buildBranch = "@latest"
+	}
+
 	cmdGoGetU := exec.Command(goBin, "get", "-u", "github.com/go-flutter-desktop/go-flutter"+buildBranch)
 	cmdGoGetU.Dir = filepath.Join(wd, buildPath)
 	cmdGoGetU.Env = append(os.Environ(),
+		"GOPROXY=direct", // github.com/golang/go/issues/32955 (allows '/' in branch name)
 		"GO111MODULE=on",
 		"CGO_LDFLAGS="+cgoLdflags,
 	)
@@ -75,11 +80,7 @@ func upgradeGoFlutter(targetOS string, engineCachePath string) (err error) {
 
 	err = cmdGoGetU.Run()
 	if err != nil {
-		versionName := buildBranch
-		if versionName == "" {
-			versionName = "latest"
-		}
-		log.Errorf("Updating go-flutter to %s version failed: %v", versionName, err)
+		log.Errorf("Updating go-flutter to %s version failed: %v", buildBranch, err)
 		return
 	}
 

@@ -388,7 +388,7 @@ func build(projectName string, targetOS string, vmArguments []string) {
 		}
 
 		if semver.Prerelease() != "" {
-			log.Infof("Upgrade 'go-flutter' to the latest release")
+			log.Infof("Upgrading 'go-flutter' to the latest release")
 			// no buildBranch provided and currentTag isn't a release,
 			// force update. (same behaviour as previous version of hover).
 			err = upgradeGoFlutter(targetOS, engineCachePath)
@@ -399,7 +399,7 @@ func build(projectName string, targetOS string, vmArguments []string) {
 		} else {
 			// when the buildBranch is empty and the currentTag is a release.
 			// Check if the 'go-flutter' needs updates.
-			versioncheck.CheckFoGoFlutterUpdate(filepath.Join(wd, buildPath), currentTag)
+			versioncheck.CheckForGoFlutterUpdate(filepath.Join(wd, buildPath), currentTag)
 		}
 
 	} else {
