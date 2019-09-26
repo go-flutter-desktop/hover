@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/go-flutter-desktop/hover/internal/build"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -64,8 +65,8 @@ func upgradeGoFlutter(targetOS string, engineCachePath string) (err error) {
 		return
 	}
 
-	cmdGoGetU := exec.Command(goBin, "get", "-u", "github.com/go-flutter-desktop/go-flutter"+buildBranch)
-	cmdGoGetU.Dir = filepath.Join(wd, buildPath)
+	cmdGoGetU := exec.Command(build.GoBin, "get", "-u", "github.com/go-flutter-desktop/go-flutter"+buildBranch)
+	cmdGoGetU.Dir = filepath.Join(wd, build.BuildPath)
 	cmdGoGetU.Env = append(os.Environ(),
 		"GO111MODULE=on",
 		"CGO_LDFLAGS="+cgoLdflags,
@@ -83,8 +84,8 @@ func upgradeGoFlutter(targetOS string, engineCachePath string) (err error) {
 		return
 	}
 
-	cmdGoModDownload := exec.Command(goBin, "mod", "download")
-	cmdGoModDownload.Dir = filepath.Join(wd, buildPath)
+	cmdGoModDownload := exec.Command(build.GoBin, "mod", "download")
+	cmdGoModDownload.Dir = filepath.Join(wd, build.BuildPath)
 	cmdGoModDownload.Env = append(os.Environ(),
 		"GO111MODULE=on",
 	)
@@ -97,7 +98,7 @@ func upgradeGoFlutter(targetOS string, engineCachePath string) (err error) {
 		return
 	}
 
-	currentTag, err := versioncheck.CurrentGoFlutterTag(filepath.Join(wd, buildPath))
+	currentTag, err := versioncheck.CurrentGoFlutterTag(filepath.Join(wd, build.BuildPath))
 	if err != nil {
 		fmt.Printf("hover: %v\n", err)
 		os.Exit(1)
