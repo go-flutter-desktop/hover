@@ -251,7 +251,6 @@ func hoverPluginGetDryRun() bool {
 }
 
 func hoverPluginGet() bool {
-	hasNewPlugin := false
 	dependencyList, err := listPlatformPlugin()
 	if err != nil {
 		log.Errorf("%v", err)
@@ -259,7 +258,6 @@ func hoverPluginGet() bool {
 	}
 
 	for _, dep := range dependencyList {
-		hasNewPlugin = true
 
 		if !dep.desktop {
 			continue
@@ -271,7 +269,11 @@ func hoverPluginGet() bool {
 		}
 
 		if dryRun {
-			fmt.Printf("       plugin: [%s] can be imported/updated\n", dep.name)
+			if dep.imported() {
+				fmt.Printf("       plugin: [%s] can be updated\n", dep.name)
+			} else {
+				fmt.Printf("       plugin: [%s] can be imported\n", dep.name)
+			}
 			continue
 		}
 
@@ -330,7 +332,7 @@ func hoverPluginGet() bool {
 		}
 	}
 
-	return hasNewPlugin
+	return len(dependencyList) != 0
 }
 
 func listPlatformPlugin() ([]PubDep, error) {
