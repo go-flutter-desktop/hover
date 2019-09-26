@@ -281,17 +281,17 @@ func hoverPluginGet() bool {
 			continue
 		}
 
-		autoImportTemplatePath := filepath.Join(dep.pluginGoSource, "import.go.tmpl")
 		pluginImportOutPath := filepath.Join(buildPath, "cmd", fmt.Sprintf("import-%s-plugin.go", dep.name))
 		if dep.standaloneImpl {
 			fileutils.DownloadFile(dep.pluginGoSource, pluginImportOutPath)
 		} else {
+			autoImportTemplatePath := filepath.Join(dep.pluginGoSource, "import.go.tmpl")
 			fileutils.CopyFile(autoImportTemplatePath, pluginImportOutPath)
 
 			pluginImportStr, err := readPluginGoImport(pluginImportOutPath, dep.name)
 			if err != nil {
 				log.Warnf("Couldn't read the plugin '%s' import URL", dep.name)
-				log.Warnf("Falling back to the latest version available on github.")
+				log.Warnf("Fallback to the latest version available on github.")
 				continue
 			}
 
@@ -308,7 +308,7 @@ func hoverPluginGet() bool {
 				err = cmdGoGetU.Run()
 				if err != nil {
 					log.Warnf("Couldn't download version '%s' of plugin '%s'", dep.Version, dep.name)
-					log.Warnf("Falling back to the latest version available on github.")
+					log.Warnf("Fallback to the latest version available on github.")
 				}
 			}
 

@@ -69,7 +69,7 @@ var publishPluginCmd = &cobra.Command{
 		}
 		// from go import string "github.com/my-organization/test_hover/go"
 		// check if `git remote -v` has a match on:
-		//  origin ?github.com?my-organization/test_hover.go
+		//  origin ?github.com?my-organization/test_hover.git
 		// this regex works on https and ssh remotes.
 		path := strings.TrimPrefix(url.Path, "/")
 		path = strings.TrimSuffix(path, "/go")
