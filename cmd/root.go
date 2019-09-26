@@ -9,12 +9,17 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var colors bool
+
 func init() {
-	var colors bool
 	rootCmd.PersistentFlags().BoolVar(&colors, "colors", true, "Add colors to log")
+}
+
+func initHover() {
 	if colors {
 		log.Colorize()
 	}
+	initBinaries()
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
 	go func() {
@@ -34,6 +39,7 @@ var rootCmd = &cobra.Command{
 
 // Execute executes the rootCmd
 func Execute() {
+	cobra.OnInitialize(initHover)
 	if err := rootCmd.Execute(); err != nil {
 		log.Errorf("Command failed: %v", err)
 		os.Exit(1)

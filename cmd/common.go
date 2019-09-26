@@ -10,13 +10,8 @@ import (
 	"strings"
 
 	"github.com/go-flutter-desktop/hover/internal/log"
-	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
 )
-
-func init() {
-	cobra.OnInitialize(initBinaries)
-}
 
 var (
 	goBin      string
