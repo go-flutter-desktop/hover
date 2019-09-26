@@ -4,7 +4,6 @@ import (
 	"errors"
 	"io"
 	"os"
-	"os/exec"
 	"path/filepath"
 
 	"github.com/go-flutter-desktop/hover/internal/log"
@@ -40,6 +39,8 @@ var initCmd = &cobra.Command{
 				log.Errorf("A file or directory named '%s' already exists. Cannot continue init.", buildPath)
 				os.Exit(1)
 			}
+			log.Errorf("Failed to create '%s' directory: %v", buildPath, err)
+			os.Exit(1)
 		}
 
 		desktopCmdPath := filepath.Join(buildPath, "cmd")
@@ -61,38 +62,9 @@ var initCmd = &cobra.Command{
 		copyAsset("app/icon.png", filepath.Join(desktopAssetsPath, "icon.png"))
 		copyAsset("app/gitignore", filepath.Join(buildPath, ".gitignore"))
 
-		wd, err := os.Getwd()
-		if err != nil {
-			log.Errorf("Failed to get working dir: %v", err)
-			os.Exit(1)
-		}
-
-		cmdGoModInit := exec.Command(goBin, "mod", "init", projectPath+"/"+buildPath)
-		cmdGoModInit.Dir = filepath.Join(wd, buildPath)
-		cmdGoModInit.Env = append(os.Environ(),
-			"GO111MODULE=on",
-		)
-		cmdGoModInit.Stderr = os.Stderr
-		cmdGoModInit.Stdout = os.Stdout
-		err = cmdGoModInit.Run()
-		if err != nil {
-			log.Errorf("Go mod init failed: %v", err)
-			os.Exit(1)
-		}
-
-		cmdGoModTidy := exec.Command(goBin, "mod", "tidy")
-		cmdGoModTidy.Dir = filepath.Join(wd, buildPath)
-		log.Printf(cmdGoModTidy.Dir)
-		cmdGoModTidy.Env = append(os.Environ(),
-			"GO111MODULE=on",
-		)
-		cmdGoModTidy.Stderr = os.Stderr
-		cmdGoModTidy.Stdout = os.Stdout
-		err = cmdGoModTidy.Run()
-		if err != nil {
-			log.Errorf("Go mod tidy failed: %v", err)
-			os.Exit(1)
-		}
+		initializeGoModule(projectPath)
+		log.Printf("Available plugin for this project:")
+		pluginListCmd.Run(cmd, []string{})
 	},
 }
 

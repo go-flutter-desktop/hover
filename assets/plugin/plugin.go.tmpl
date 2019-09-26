@@ -1,0 +1,24 @@
+package {{.pluginName}}
+
+import (
+	flutter "github.com/go-flutter-desktop/go-flutter"
+	"github.com/go-flutter-desktop/go-flutter/plugin"
+)
+
+const channelName = "{{.pluginName}}"
+
+// {{.structName}} implements flutter.Plugin and handles method.
+type {{.structName}} struct{}
+
+var _ flutter.Plugin = &{{.structName}}{} // compile-time type check
+
+// InitPlugin initializes the plugin.
+func (p *{{.structName}}) InitPlugin(messenger plugin.BinaryMessenger) error {
+	channel := plugin.NewMethodChannel(messenger, channelName, plugin.StandardMethodCodec{})
+	channel.HandleFunc("getPlatformVersion", p.handlePlatformVersion)
+	return nil
+}
+
+func (p *{{.structName}}) handlePlatformVersion(arguments interface{}) (reply interface{}, err error) {
+	return "go-flutter " + flutter.PlatformVersion, nil
+}

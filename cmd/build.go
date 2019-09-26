@@ -118,6 +118,30 @@ var buildWindowsCmd = &cobra.Command{
 	},
 }
 
+// checkForMainDesktop checks and adds the lib/main_desktop.dart dart entry
+// point if needed
+func checkForMainDesktop() {
+	if buildTarget != "lib/main_desktop.dart" {
+		return
+	}
+	_, err := os.Stat("lib/main_desktop.dart")
+	if os.IsNotExist(err) {
+		log.Warnf("Target file \"lib/main_desktop.dart\" not found.\n")
+		log.Warnf("Let hover add the \"lib/main_desktop.dart\" file? ")
+		if askForConfirmation() {
+			copyAsset("app/main_desktop.dart", filepath.Join("lib", "main_desktop.dart"))
+			log.Infof("Target file \"lib/main_desktop.dart\" has been created.\n")
+			log.Infof("       Depending on your project, you might want to tweak it.\n")
+			return
+		}
+		os.Exit(1)
+	}
+	if err != nil {
+		log.Errorf("Failed to stat lib/main_desktop.dart: %v\n", err)
+		os.Exit(1)
+	}
+}
+
 func outputDirectoryPath(targetOS string) string {
 	outputDirectoryPath, err := filepath.Abs(filepath.Join(buildPath, "build", "outputs", targetOS))
 	if err != nil {
@@ -253,6 +277,7 @@ func dockerBuild(projectName string, targetOS string, vmArguments []string) {
 }
 
 func build(projectName string, targetOS string, vmArguments []string) {
+	checkForMainDesktop()
 	crossCompile = targetOS != runtime.GOOS
 	buildDocker = crossCompile || buildDocker
 
@@ -301,6 +326,14 @@ func build(projectName string, targetOS string, vmArguments []string) {
 		trackWidgetCreation = "--track-widget-creation"
 	}
 
+	// must be run before `flutter build bundle`
+	// because `build bundle` will update the file timestamp
+	runPluginGet, err := shouldRunPluginGet()
+	if err != nil {
+		log.Errorf("Failed to check if plugin get should be run: %v.\n", err)
+		os.Exit(1)
+	}
+
 	cmdFlutterBuild := exec.Command(flutterBin, "build", "bundle",
 		"--asset-dir", filepath.Join(outputDirectoryPath(targetOS), "flutter_assets"),
 		"--target", buildTarget,
@@ -315,6 +348,16 @@ func build(projectName string, targetOS string, vmArguments []string) {
 		if err != nil {
 			log.Errorf("Flutter build failed: %v", err)
 			os.Exit(1)
+		}
+	}
+
+	if runPluginGet {
+		log.Printf("listing available plugins:")
+		if hoverPluginGetDryRun() {
+			log.Infof(fmt.Sprintf("run `%s`? ", log.Au().Magenta("hover plugins get").String()))
+			if askForConfirmation() {
+				hoverPluginGet()
+			}
 		}
 	}
 
