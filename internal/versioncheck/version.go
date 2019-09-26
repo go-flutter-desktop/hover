@@ -14,11 +14,11 @@ import (
 	"github.com/tcnksm/go-latest"
 )
 
-// CheckFoGoFlutterUpdate check the last 'go-flutter' timestamp we have cached
+// CheckForGoFlutterUpdate check the last 'go-flutter' timestamp we have cached
 // for the current project. If the last update comes back to more than X days,
 // fetch the last Github release semver. If the Github semver is more recent
 // than the current one, display the update notice.
-func CheckFoGoFlutterUpdate(goDirectoryPath string, currentTag string) {
+func CheckForGoFlutterUpdate(goDirectoryPath string, currentTag string) {
 	cachedGoFlutterCheckPath := filepath.Join(goDirectoryPath, ".last_goflutter_check")
 	cachedGoFlutterCheckBytes, err := ioutil.ReadFile(cachedGoFlutterCheckPath)
 	if err != nil && !os.IsNotExist(err) {
