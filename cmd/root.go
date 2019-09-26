@@ -15,7 +15,7 @@ var colors bool
 
 func init() {
 	rootCmd.PersistentFlags().BoolVar(&colors, "colors", true, "Add colors to log")
-	cobra.OnInitialize(initColors)
+	log.InitColors(colors)
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
 	go func() {
@@ -25,11 +25,6 @@ func init() {
 		}
 	}()
 
-}
-
-func initColors() {
-	au = aurora.NewAurora(colors)
-	log.Au = au
 }
 
 var rootCmd = &cobra.Command{

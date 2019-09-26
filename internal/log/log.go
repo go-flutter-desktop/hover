@@ -5,6 +5,10 @@ import (
 	"github.com/logrusorgru/aurora"
 )
 
+func InitColors(colors bool) {
+	Au = aurora.NewAurora(colors)
+}
+
 // Au Aurora instance used for colors
 var Au aurora.Aurora
 
