@@ -51,6 +51,7 @@ func init() {
 	buildCmd.AddCommand(buildLinuxCmd)
 	buildCmd.AddCommand(buildLinuxSnapCmd)
 	buildCmd.AddCommand(buildLinuxDebCmd)
+	buildCmd.AddCommand(buildLinuxAppImageCmd)
 	buildCmd.AddCommand(buildDarwinCmd)
 	buildCmd.AddCommand(buildWindowsCmd)
 	buildCmd.AddCommand(buildWindowsMsiCmd)
@@ -101,6 +102,22 @@ var buildLinuxDebCmd = &cobra.Command{
 
 		buildNormal("linux", nil)
 		packaging.BuildLinuxDeb()
+	},
+}
+
+var buildLinuxAppImageCmd = &cobra.Command{
+	Use:   "linux-appimage",
+	Short: "Build a desktop release for linux and package it for AppImage",
+	Run: func(cmd *cobra.Command, args []string) {
+		assertHoverInitialized()
+		packaging.AssertPackagingFormatInitialized("linux-appimage")
+
+		if !packaging.DockerInstalled() {
+			os.Exit(1)
+		}
+
+		buildNormal("linux", nil)
+		packaging.BuildLinuxAppImage()
 	},
 }
 
@@ -374,7 +391,7 @@ func buildNormal(targetOS string, vmArguments []string) {
 		}
 
 		if semver.Prerelease() != "" {
-			log.Infof("Upgrade 'go-flutter' to the latest release")
+			log.Infof("Upgrading 'go-flutter' to the latest release")
 			// no buildBranch provided and currentTag isn't a release,
 			// force update. (same behaviour as previous version of hover).
 			err = upgradeGoFlutter(targetOS, engineCachePath)
@@ -385,7 +402,7 @@ func buildNormal(targetOS string, vmArguments []string) {
 		} else {
 			// when the buildBranch is empty and the currentTag is a release.
 			// Check if the 'go-flutter' needs updates.
-			versioncheck.CheckFoGoFlutterUpdate(filepath.Join(wd, build.BuildPath), currentTag)
+			versioncheck.CheckForGoFlutterUpdate(filepath.Join(wd, build.BuildPath), currentTag)
 		}
 
 	} else {

@@ -16,13 +16,15 @@ func createLinuxDesktopFile(desktopFilePath string, packagingFormat string, exec
 	}
 	desktopFileContent := []string{
 		"[Desktop Entry]",
-		"Encoding=UTF-8",
-		"Version=" + pubspec.GetPubSpec().Version,
+		"Version=1.0",
 		"Type=Application",
 		"Terminal=false",
-		"Exec=" + exec,
 		"Name=" + pubspec.GetPubSpec().Name,
 		"Icon=" + icon,
+		"Categories=",
+	}
+	if exec != "" {
+		desktopFileContent = append(desktopFileContent, "Exec="+exec)
 	}
 
 	for _, line := range desktopFileContent {
