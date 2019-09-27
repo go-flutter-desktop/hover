@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"errors"
+	"fmt"
 	"net/url"
 	"os"
 	"os/exec"
@@ -60,6 +61,16 @@ var publishPluginCmd = &cobra.Command{
 		pluginImportStr, err := readPluginGoImport(filepath.Join("go", "import.go.tmpl"), getPubSpec().Name)
 		if err != nil {
 			log.Errorf("Failed to read the plugin import url: %v", err)
+			log.Infof("The file go/import.go.tmpl should look something like this:")
+			fmt.Printf(`package main
+
+import (
+	flutter "github.com/go-flutter-desktop/go-flutter"
+	%s "github.com/my-organization/%s/go"
+)
+
+// .. [init function] ..
+      `, getPubSpec().Name, getPubSpec().Name)
 			os.Exit(1)
 		}
 		url, err := url.Parse("https://" + pluginImportStr)
@@ -84,7 +95,7 @@ var publishPluginCmd = &cobra.Command{
 		match := re.FindStringSubmatch(string(remoteOut))
 		if len(match) < 1 {
 			log.Errorf("At least one git remote urls must matchs the plugin golang import URL.")
-			log.Printf("go import: %s", pluginImportStr)
+			log.Printf("go import URL: %s", pluginImportStr)
 			log.Printf("git remote -v:\n%s\n", string(remoteOut))
 			goCheckRemote.Stdout = os.Stdout
 			os.Exit(1)

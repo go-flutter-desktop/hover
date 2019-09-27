@@ -471,7 +471,7 @@ func readPluginGoImport(pluginImportOutPath, pluginName string) (string, error) 
 		return "", err
 	}
 
-	re := regexp.MustCompile(fmt.Sprintf(`\t%s\s"(\S*)"`, pluginName))
+	re := regexp.MustCompile(fmt.Sprintf(`\s+%s\s"(\S*)"`, pluginName))
 
 	match := re.FindStringSubmatch(string(pluginImportBytes))
 	if len(match) < 2 {

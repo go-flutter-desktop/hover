@@ -260,7 +260,7 @@ func initializeGoModule(projectPath string) {
 
 	cmdGoModTidy := exec.Command(goBin, "mod", "tidy")
 	cmdGoModTidy.Dir = filepath.Join(wd, buildPath)
-	log.Infof("go-flutter project is located: " + cmdGoModTidy.Dir)
+	log.Infof("You can add the '%s' directory to git.", cmdGoModTidy.Dir)
 	cmdGoModTidy.Env = append(os.Environ(),
 		"GO111MODULE=on",
 	)
