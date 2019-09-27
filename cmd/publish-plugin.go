@@ -101,9 +101,32 @@ import (
 			os.Exit(1)
 		}
 
+		tag := "go/v" + getPubSpec().Version
+
 		log.Infof("Your plugin at version '%s' is ready to be publish as a golang module.", getPubSpec().Version)
-		log.Infof("Please run: `%s`", log.Au().Magenta("git tag go/v"+getPubSpec().Version))
-		log.Infof("            `%s`", log.Au().Magenta("git push "+match[1]+" go/v"+getPubSpec().Version))
+		log.Infof("Please run: `%s`", log.Au().Magenta("git tag "+tag))
+		log.Infof("            `%s`", log.Au().Magenta("git push "+match[1]+" "+tag))
+
+		log.Infof(fmt.Sprintf("Let hover run those commands? "))
+		if askForConfirmation() {
+			gitTag := exec.Command(gitBin, "tag", tag)
+			gitTag.Stderr = os.Stderr
+			gitTag.Stdout = os.Stdout
+			err = gitTag.Run()
+			if err != nil {
+				log.Errorf("The git command '%s' failed. Error: %v", gitTag.String(), err)
+				os.Exit(1)
+			}
+
+			gitPush := exec.Command(gitBin, "push", match[1], tag)
+			gitPush.Stderr = os.Stderr
+			gitPush.Stdout = os.Stdout
+			err = gitPush.Run()
+			if err != nil {
+				log.Errorf("The git command '%s' failed. Error: %v", gitPush.String(), err)
+				os.Exit(1)
+			}
+		}
 
 	},
 }
