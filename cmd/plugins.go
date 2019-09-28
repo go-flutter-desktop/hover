@@ -203,23 +203,27 @@ var pluginTidyCmd = &cobra.Command{
 						fmt.Printf("       plugin: [%s] can be removed\n", pluginName)
 						continue
 					}
-					// remove import file
 					pluginImportPath := filepath.Join(desktopCmdPath, f.Name())
-					err = os.Remove(pluginImportPath)
-					if err != nil {
-						log.Warnf("Couldn't remove plugin %s: %v", pluginName, err)
-						continue
-					}
-					fmt.Printf("       plugin: [%s] removed\n", pluginName)
+
 					// clean-up go.mod
 					pluginImportStr, _ := readPluginGoImport(pluginImportPath, pluginName)
 					// Delete the 'replace' and 'require' import strings from go.mod.
 					// Not mission critical, if the plugins not correctly removed from
 					// the go.mod file, the project still works and the plugin is
 					// successfully removed from the flutter.Application.
-					if pluginImportStr != "" {
+					if err != nil || pluginImportStr == "" {
+						log.Warnf("Couldn't clean the '%s' plugin from the 'go.mod' file. Error: %v", pluginName, err)
+					} else {
 						fileutils.RemoveLinesFromFile(filepath.Join(buildPath, "go.mod"), pluginImportStr)
 					}
+
+					// remove import file
+					err = os.Remove(pluginImportPath)
+					if err != nil {
+						log.Warnf("Couldn't remove plugin %s: %v", pluginName, err)
+						continue
+					}
+					fmt.Printf("       plugin: [%s] removed\n", pluginName)
 				}
 			}
 		}
