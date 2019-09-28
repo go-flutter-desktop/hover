@@ -237,7 +237,7 @@ func dockerBuild(projectName string, targetOS string, vmArguments []string) {
 	args = append(args, "hover-build-cc")
 	chownStr := ""
 	if runtime.GOOS != "windows" {
-		chownStr = fmt.Sprintf(" && chown %s:%s build/ -R", u.Uid, u.Gid)
+		chownStr = fmt.Sprintf(" && chown %s:%s ./ -R", u.Uid, u.Gid)
 	}
 	args = append(args, "bash", "-c", fmt.Sprintf("%s%s", strings.Join(buildCommand(targetOS, vmArguments, "build/outputs/"+targetOS+"/"+outputBinaryName(projectName, targetOS)), " "), chownStr))
 	dockerRunCmd := exec.Command(dockerBin, args...)
