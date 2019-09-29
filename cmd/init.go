@@ -7,8 +7,11 @@ import (
 	"os/exec"
 	"path/filepath"
 
-	"github.com/go-flutter-desktop/hover/internal/log"
 	"github.com/spf13/cobra"
+
+	"github.com/go-flutter-desktop/hover/internal/build"
+	"github.com/go-flutter-desktop/hover/internal/log"
+	"github.com/go-flutter-desktop/hover/internal/pubspec"
 )
 
 func init() {
@@ -29,27 +32,27 @@ var initCmd = &cobra.Command{
 
 		var projectPath string
 		if len(args) == 0 || args[0] == "." {
-			projectPath = getPubSpec().Name
+			projectPath = pubspec.GetPubSpec().Name
 		} else {
 			projectPath = args[0]
 		}
 
-		err := os.Mkdir(buildPath, 0775)
+		err := os.Mkdir(build.BuildPath, 0775)
 		if err != nil {
 			if os.IsExist(err) {
-				log.Errorf("A file or directory named '%s' already exists. Cannot continue init.", buildPath)
+				log.Errorf("A file or directory named '%s' already exists. Cannot continue init.", build.BuildPath)
 				os.Exit(1)
 			}
 		}
 
-		desktopCmdPath := filepath.Join(buildPath, "cmd")
+		desktopCmdPath := filepath.Join(build.BuildPath, "cmd")
 		err = os.Mkdir(desktopCmdPath, 0775)
 		if err != nil {
 			log.Errorf("Failed to create '%s': %v", desktopCmdPath, err)
 			os.Exit(1)
 		}
 
-		desktopAssetsPath := filepath.Join(buildPath, "assets")
+		desktopAssetsPath := filepath.Join(build.BuildPath, "assets")
 		err = os.Mkdir(desktopAssetsPath, 0775)
 		if err != nil {
 			log.Errorf("Failed to create '%s': %v", desktopAssetsPath, err)
@@ -59,7 +62,7 @@ var initCmd = &cobra.Command{
 		copyAsset("app/main.go", filepath.Join(desktopCmdPath, "main.go"))
 		copyAsset("app/options.go", filepath.Join(desktopCmdPath, "options.go"))
 		copyAsset("app/icon.png", filepath.Join(desktopAssetsPath, "icon.png"))
-		copyAsset("app/gitignore", filepath.Join(buildPath, ".gitignore"))
+		copyAsset("app/gitignore", filepath.Join(build.BuildPath, ".gitignore"))
 
 		wd, err := os.Getwd()
 		if err != nil {
@@ -67,8 +70,8 @@ var initCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		cmdGoModInit := exec.Command(goBin, "mod", "init", projectPath+"/"+buildPath)
-		cmdGoModInit.Dir = filepath.Join(wd, buildPath)
+		cmdGoModInit := exec.Command(build.GoBin, "mod", "init", projectPath+"/"+build.BuildPath)
+		cmdGoModInit.Dir = filepath.Join(wd, build.BuildPath)
 		cmdGoModInit.Env = append(os.Environ(),
 			"GO111MODULE=on",
 		)
@@ -80,8 +83,8 @@ var initCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		cmdGoModTidy := exec.Command(goBin, "mod", "tidy")
-		cmdGoModTidy.Dir = filepath.Join(wd, buildPath)
+		cmdGoModTidy := exec.Command(build.GoBin, "mod", "tidy")
+		cmdGoModTidy.Dir = filepath.Join(wd, build.BuildPath)
 		log.Printf(cmdGoModTidy.Dir)
 		cmdGoModTidy.Env = append(os.Environ(),
 			"GO111MODULE=on",

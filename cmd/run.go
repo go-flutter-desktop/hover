@@ -10,8 +10,11 @@ import (
 	"regexp"
 	"runtime"
 
-	"github.com/go-flutter-desktop/hover/internal/log"
 	"github.com/spf13/cobra"
+
+	"github.com/go-flutter-desktop/hover/internal/log"
+	"github.com/go-flutter-desktop/hover/internal/pubspec"
+	"github.com/go-flutter-desktop/hover/internal/build"
 )
 
 var runObservatoryPort string
@@ -20,7 +23,6 @@ func init() {
 	runCmd.Flags().StringVarP(&buildTarget, "target", "t", "lib/main_desktop.dart", "The main entry-point file of the application.")
 	runCmd.Flags().StringVarP(&buildBranch, "branch", "b", "", "The 'go-flutter' version to use. (@master or @v0.20.0 for example)")
 	runCmd.Flags().StringVarP(&buildCachePath, "cache-path", "", "", "The path that hover uses to cache dependencies such as the Flutter engine .so/.dll (defaults to the standard user cache directory)")
-	runCmd.Flags().StringVar(&buildOpenGlVersion, "opengl", "3.3", "The OpenGL version specified here is only relevant for external texture plugin (i.e. video_plugin).\nIf 'none' is provided, texture won't be supported. Note: the Flutter Engine still needs a OpenGL compatible context.")
 	runCmd.Flags().StringVarP(&runObservatoryPort, "observatory-port", "", "50300", "The observatory port used to connect hover to VM services (hot-reload/debug/..)")
 	runCmd.Flags().BoolVar(&buildOmitEmbedder, "omit-embedder", false, "Don't (re)compile 'go-flutter' source code, useful when only working with Dart code")
 	runCmd.Flags().BoolVar(&buildOmitFlutterBundle, "omit-flutter", false, "Don't (re)compile the current Flutter project, useful when only working with Golang code (plugin)")
@@ -32,7 +34,7 @@ var runCmd = &cobra.Command{
 	Use:   "run",
 	Short: "Build and start a desktop release, with hot-reload support",
 	Run: func(cmd *cobra.Command, args []string) {
-		projectName := getPubSpec().Name
+		projectName := pubspec.GetPubSpec().Name
 		assertHoverInitialized()
 
 		// ensure we have something to build
@@ -47,14 +49,14 @@ var runCmd = &cobra.Command{
 		// forcefully enable --debug (which is not an option for 'hover run')
 		buildDebug = true
 
-		build(projectName, targetOS, []string{"--observatory-port=" + runObservatoryPort})
+		buildNormal(targetOS, []string{"--observatory-port=" + runObservatoryPort})
 		log.Infof("Build finished, starting app...")
 		runAndAttach(projectName, targetOS)
 	},
 }
 
 func runAndAttach(projectName string, targetOS string) {
-	cmdApp := exec.Command(dotSlash + filepath.Join(buildPath, "build", "outputs", targetOS, projectName))
+	cmdApp := exec.Command(dotSlash + filepath.Join(build.BuildPath, "build", "outputs", targetOS, projectName))
 	cmdFlutterAttach := exec.Command("flutter", "attach")
 
 	stdoutApp, err := cmdApp.StdoutPipe()
