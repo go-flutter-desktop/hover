@@ -105,7 +105,7 @@ func printDownloadPercent(done chan chan struct{}, path string, expectedSize int
 		var percent = float64(size) / float64(expectedSize) * 100
 
 		// We use '\033[2K\r' to avoid carriage return, it will print above previous.
-		log.Printf("\033[2K\r %.0f %% / 100 %%", percent)
+		fmt.Printf("\033[2K\r %.0f %% / 100 %%", percent)
 
 		if completedCh != nil {
 			close(completedCh)
