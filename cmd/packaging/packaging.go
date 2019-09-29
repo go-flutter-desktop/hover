@@ -109,6 +109,11 @@ func createDockerfile(packagingFormat string) {
 		dockerFileContent = []string{
 			"FROM ubuntu:bionic",
 		}
+	} else if packagingFormat == "windows-msi" {
+		dockerFileContent = []string{
+			"FROM ubuntu:bionic",
+			"RUN apt-get update && apt-get install wixl imagemagick -y",
+		}
 	} else {
 		log.Errorf("Tried to create Dockerfile for unknown packaging format %s", packagingFormat)
 		os.Exit(1)

@@ -9,6 +9,7 @@ import (
 func init() {
 	initPackagingCmd.AddCommand(initLinuxSnapCmd)
 	initPackagingCmd.AddCommand(initLinuxDebCmd)
+	initPackagingCmd.AddCommand(initWindowsMsiCmd)
 	rootCmd.AddCommand(initPackagingCmd)
 }
 
@@ -36,5 +37,16 @@ var initLinuxDebCmd = &cobra.Command{
 		packaging.DockerInstalled()
 
 		packaging.InitLinuxDeb()
+	},
+}
+
+var initWindowsMsiCmd = &cobra.Command{
+	Use:   "windows-msi",
+	Short: "Create configuration files for msi packaging",
+	Run: func(cmd *cobra.Command, args []string) {
+		assertHoverInitialized()
+		packaging.DockerInstalled()
+
+		packaging.InitWindowsMsi()
 	},
 }
