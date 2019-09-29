@@ -9,6 +9,7 @@ import (
 func init() {
 	initPackagingCmd.AddCommand(initLinuxSnapCmd)
 	initPackagingCmd.AddCommand(initLinuxDebCmd)
+	initPackagingCmd.AddCommand(initLinuxAppImageCmd)
 	rootCmd.AddCommand(initPackagingCmd)
 }
 
@@ -36,5 +37,16 @@ var initLinuxDebCmd = &cobra.Command{
 		packaging.DockerInstalled()
 
 		packaging.InitLinuxDeb()
+	},
+}
+
+var initLinuxAppImageCmd = &cobra.Command{
+	Use:   "linux-appimage",
+	Short: "Create configuration files for AppImage packaging",
+	Run: func(cmd *cobra.Command, args []string) {
+		assertHoverInitialized()
+		packaging.DockerInstalled()
+
+		packaging.InitLinuxAppImage()
 	},
 }

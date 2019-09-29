@@ -51,6 +51,7 @@ func init() {
 	buildCmd.AddCommand(buildLinuxCmd)
 	buildCmd.AddCommand(buildLinuxSnapCmd)
 	buildCmd.AddCommand(buildLinuxDebCmd)
+	buildCmd.AddCommand(buildLinuxAppImageCmd)
 	buildCmd.AddCommand(buildDarwinCmd)
 	buildCmd.AddCommand(buildWindowsCmd)
 	rootCmd.AddCommand(buildCmd)
@@ -100,6 +101,22 @@ var buildLinuxDebCmd = &cobra.Command{
 
 		buildNormal("linux", nil)
 		packaging.BuildLinuxDeb()
+	},
+}
+
+var buildLinuxAppImageCmd = &cobra.Command{
+	Use:   "linux-appimage",
+	Short: "Build a desktop release for linux and package it for AppImage",
+	Run: func(cmd *cobra.Command, args []string) {
+		assertHoverInitialized()
+		packaging.AssertPackagingFormatInitialized("linux-appimage")
+
+		if !packaging.DockerInstalled() {
+			os.Exit(1)
+		}
+
+		buildNormal("linux", nil)
+		packaging.BuildLinuxAppImage()
 	},
 }
 
