@@ -20,7 +20,7 @@ func init() {
 
 var publishPluginCmd = &cobra.Command{
 	Use:   "publish-plugin",
-	Short: "Assert that your go-flutter plugin can be pushed as golang module in your github repo.",
+	Short: "Publish your go-flutter plugin as golang module in your github repo.",
 	Args: func(cmd *cobra.Command, args []string) error {
 		if len(args) != 0 {
 			return errors.New("does not take arguments")

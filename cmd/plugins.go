@@ -242,19 +242,11 @@ var pluginGetCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		assertInFlutterProject()
 		assertHoverInitialized()
-		hoverPluginGet()
+		hoverPluginGet(false)
 	},
 }
 
-func hoverPluginGetDryRun() bool {
-	dryRun = true
-	defer func() {
-		dryRun = false
-	}()
-	return hoverPluginGet()
-}
-
-func hoverPluginGet() bool {
+func hoverPluginGet(dryRun bool) bool {
 	dependencyList, err := listPlatformPlugin()
 	if err != nil {
 		log.Errorf("%v", err)

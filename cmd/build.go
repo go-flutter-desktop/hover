@@ -355,10 +355,10 @@ func build(projectName string, targetOS string, vmArguments []string) {
 
 	if runPluginGet {
 		log.Printf("listing available plugins:")
-		if hoverPluginGetDryRun() {
+		if hoverPluginGet(true) {
 			log.Infof(fmt.Sprintf("run `%s`? ", log.Au().Magenta("hover plugins get")))
 			if askForConfirmation() {
-				hoverPluginGet()
+				hoverPluginGet(false)
 			}
 		}
 	}
