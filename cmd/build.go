@@ -301,8 +301,15 @@ func build(projectName string, targetOS string, vmArguments []string) {
 		trackWidgetCreation = "--track-widget-creation"
 	}
 
+	bundlePath := filepath.Join(buildPath, "build", "bundle")
+	err = os.MkdirAll(bundlePath, 0775)
+	if err != nil {
+		log.Errorf("Failed to create bundle directory %s: %v", bundlePath, err)
+		os.Exit(1)
+	}
+
 	cmdFlutterBuild := exec.Command(flutterBin, "build", "bundle",
-		"--asset-dir", filepath.Join(outputDirectoryPath(targetOS), "flutter_assets"),
+		"--asset-dir", bundlePath,
 		"--target", buildTarget,
 		trackWidgetCreation,
 	)
@@ -314,6 +321,14 @@ func build(projectName string, targetOS string, vmArguments []string) {
 		err = cmdFlutterBuild.Run()
 		if err != nil {
 			log.Errorf("Flutter build failed: %v", err)
+			os.Exit(1)
+		}
+		err = copy.Copy(
+			filepath.Join(buildPath, "build", "bundle"),
+			filepath.Join(outputDirectoryPath(targetOS), "flutter_assets"),
+		)
+		if err != nil {
+			log.Errorf("Failed to copy %s: %v", filepath.Join(outputDirectoryPath(targetOS), "flutter_assets"), err)
 			os.Exit(1)
 		}
 	}
