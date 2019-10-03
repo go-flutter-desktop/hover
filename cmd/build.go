@@ -11,6 +11,7 @@ import (
 	"strings"
 
 	"github.com/go-flutter-desktop/hover/internal/enginecache"
+	"github.com/go-flutter-desktop/hover/internal/fileutils"
 	"github.com/go-flutter-desktop/hover/internal/log"
 	"github.com/go-flutter-desktop/hover/internal/versioncheck"
 	"github.com/hashicorp/go-version"
@@ -116,6 +117,31 @@ var buildWindowsCmd = &cobra.Command{
 
 		build(projectName, "windows", nil)
 	},
+}
+
+// checkForMainDesktop checks and adds the lib/main_desktop.dart dart entry
+// point if needed
+func checkForMainDesktop() {
+	if buildTarget != "lib/main_desktop.dart" {
+		return
+	}
+	_, err := os.Stat("lib/main_desktop.dart")
+	if os.IsNotExist(err) {
+		log.Warnf("Target file \"lib/main_desktop.dart\" not found.")
+		log.Warnf("Let hover add the \"lib/main_desktop.dart\" file? ")
+		if askForConfirmation() {
+			fileutils.CopyAsset("app/main_desktop.dart", filepath.Join("lib", "main_desktop.dart"), assetsBox)
+			log.Infof("Target file \"lib/main_desktop.dart\" has been created.")
+			log.Infof("       Depending on your project, you might want to tweak it.")
+			return
+		}
+		log.Printf("You can define a custom traget by using the %s flag.", log.Au().Magenta("--target"))
+		os.Exit(1)
+	}
+	if err != nil {
+		log.Errorf("Failed to stat lib/main_desktop.dart: %v\n", err)
+		os.Exit(1)
+	}
 }
 
 func outputDirectoryPath(targetOS string) string {
@@ -253,6 +279,7 @@ func dockerBuild(projectName string, targetOS string, vmArguments []string) {
 }
 
 func build(projectName string, targetOS string, vmArguments []string) {
+	checkForMainDesktop()
 	crossCompile = targetOS != runtime.GOOS
 	buildDocker = crossCompile || buildDocker
 
@@ -301,6 +328,14 @@ func build(projectName string, targetOS string, vmArguments []string) {
 		trackWidgetCreation = "--track-widget-creation"
 	}
 
+	// must be run before `flutter build bundle`
+	// because `build bundle` will update the file timestamp
+	runPluginGet, err := shouldRunPluginGet()
+	if err != nil {
+		log.Errorf("Failed to check if plugin get should be run: %v.\n", err)
+		os.Exit(1)
+	}
+
 	cmdFlutterBuild := exec.Command(flutterBin, "build", "bundle",
 		"--asset-dir", filepath.Join(outputDirectoryPath(targetOS), "flutter_assets"),
 		"--target", buildTarget,
@@ -315,6 +350,16 @@ func build(projectName string, targetOS string, vmArguments []string) {
 		if err != nil {
 			log.Errorf("Flutter build failed: %v", err)
 			os.Exit(1)
+		}
+	}
+
+	if runPluginGet {
+		log.Printf("listing available plugins:")
+		if hoverPluginGet(true) {
+			log.Infof(fmt.Sprintf("run `%s`? ", log.Au().Magenta("hover plugins get")))
+			if askForConfirmation() {
+				hoverPluginGet(false)
+			}
 		}
 	}
 
