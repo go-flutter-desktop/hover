@@ -525,7 +525,7 @@ func fetchStandaloneImplementationList() ([]StandaloneImplementation, error) {
 
 // goGetModuleSuccess updates a module at a version, if it fails, return false.
 func goGetModuleSuccess(pluginImportStr, version string) bool {
-	cmdGoGetU := exec.Command(goBin, "get", "-u", pluginImportStr+"@v"+version)
+	cmdGoGetU := exec.Command(build.GoBin, "get", "-u", pluginImportStr+"@v"+version)
 	cmdGoGetU.Dir = filepath.Join(build.BuildPath)
 	cmdGoGetU.Env = append(os.Environ(),
 		"GOPROXY=direct", // github.com/golang/go/issues/32955 (allows '/' in branch name)

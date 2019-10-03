@@ -69,12 +69,12 @@ func getTemporaryBuildDirectory(projectName string, packagingFormat string) stri
 	return tmpPath
 }
 
-// DockerInstalled check if docker is installed on the host os.
-func DockerInstalled() bool {
+// AssertDockerInstalled check if docker is installed on the host os, otherwise exits with an error.
+func AssertDockerInstalled() {
 	if build.DockerBin == "" {
-		log.Warnf("To use packaging, Docker needs to be installed.\nhttps://docs.docker.com/install")
+		log.Errorf("To use packaging, Docker needs to be installed.\nhttps://docs.docker.com/install")
+		os.Exit(1)
 	}
-	return build.DockerBin != ""
 }
 
 func getAuthor() string {

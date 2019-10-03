@@ -83,10 +83,7 @@ var buildLinuxSnapCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		assertHoverInitialized()
 		packaging.AssertPackagingFormatInitialized("linux-snap")
-
-		if !packaging.DockerInstalled() {
-			os.Exit(1)
-		}
+		packaging.AssertDockerInstalled()
 
 		buildNormal("linux", nil)
 		packaging.BuildLinuxSnap()
@@ -99,10 +96,7 @@ var buildLinuxDebCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		assertHoverInitialized()
 		packaging.AssertPackagingFormatInitialized("linux-deb")
-
-		if !packaging.DockerInstalled() {
-			os.Exit(1)
-		}
+		packaging.AssertDockerInstalled()
 
 		buildNormal("linux", nil)
 		packaging.BuildLinuxDeb()
@@ -115,10 +109,7 @@ var buildLinuxAppImageCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		assertHoverInitialized()
 		packaging.AssertPackagingFormatInitialized("linux-appimage")
-
-		if !packaging.DockerInstalled() {
-			os.Exit(1)
-		}
+		packaging.AssertDockerInstalled()
 
 		buildNormal("linux", nil)
 		packaging.BuildLinuxAppImage()
@@ -141,10 +132,7 @@ var buildDarwinBundleCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		assertHoverInitialized()
 		packaging.AssertPackagingFormatInitialized("darwin-bundle")
-
-		if !packaging.DockerInstalled() {
-			os.Exit(1)
-		}
+		packaging.AssertDockerInstalled()
 
 		buildNormal("darwin", nil)
 		packaging.BuildDarwinBundle()
@@ -157,10 +145,7 @@ var buildDarwinPkgCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		assertHoverInitialized()
 		packaging.AssertPackagingFormatInitialized("darwin-pkg")
-
-		if !packaging.DockerInstalled() {
-			os.Exit(1)
-		}
+		packaging.AssertDockerInstalled()
 
 		buildNormal("darwin", nil)
 		packaging.BuildDarwinPkg()
@@ -183,10 +168,7 @@ var buildWindowsMsiCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		assertHoverInitialized()
 		packaging.AssertPackagingFormatInitialized("windows-msi")
-
-		if !packaging.DockerInstalled() {
-			os.Exit(1)
-		}
+		packaging.AssertDockerInstalled()
 
 		buildNormal("windows", nil)
 		packaging.BuildWindowsMsi()
