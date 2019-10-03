@@ -131,7 +131,7 @@ func BuildDarwinPkg() {
 		"&&", "mkbom -u 0 -g 80 flat/root flat/base.pkg/Bom",
 		"&&", "(cd flat && xar --compression none -cf '../" + projectName + " " + pubspec.GetPubSpec().Version + " Installer.pkg' * )",
 	})
-	err = os.Rename(filepath.Join(tmpPath, outputFileName), outputFilePath)
+	err = copy.Copy(filepath.Join(tmpPath, outputFileName), outputFilePath)
 	if err != nil {
 		log.Errorf("Could not move pkg directory: %v", err)
 		os.Exit(1)

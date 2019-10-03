@@ -138,7 +138,7 @@ func BuildDarwinBundle() {
 		log.Errorf("Could not remove previous bundle directory: %v", err)
 		os.Exit(1)
 	}
-	err = os.Rename(filepath.Join(tmpPath, outputFileName), outputFilePath)
+	err = copy.Copy(filepath.Join(tmpPath, outputFileName), outputFilePath)
 	if err != nil {
 		log.Errorf("Could not move bundle directory: %v", err)
 		os.Exit(1)

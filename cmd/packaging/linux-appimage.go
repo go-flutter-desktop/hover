@@ -81,7 +81,7 @@ func BuildLinuxAppImage() {
 	outputFilePath := filepath.Join(build.OutputDirectoryPath("linux-appimage"), outputFileName)
 	runDockerPackaging(tmpPath, packagingFormat, []string{"appimagetool", "."})
 
-	err = os.Rename(filepath.Join(tmpPath, outputFileName), outputFilePath)
+	err = copy.Copy(filepath.Join(tmpPath, outputFileName), outputFilePath)
 	if err != nil {
 		log.Errorf("Could not move AppImage file: %v", err)
 		os.Exit(1)

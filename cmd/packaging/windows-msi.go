@@ -209,7 +209,7 @@ func BuildWindowsMsi() {
 	outputFilePath := filepath.Join(build.OutputDirectoryPath("windows-msi"), outputFileName)
 	runDockerPackaging(tmpPath, packagingFormat, []string{"convert", "-resize", "x16", "build/assets/icon.png", "build/assets/icon.ico", "&&", "wixl", "-v", projectName + ".wxs"})
 
-	err = os.Rename(filepath.Join(tmpPath, outputFileName), outputFilePath)
+	err = copy.Copy(filepath.Join(tmpPath, outputFileName), outputFilePath)
 	if err != nil {
 		log.Errorf("Could not move msi file: %v", err)
 		os.Exit(1)
