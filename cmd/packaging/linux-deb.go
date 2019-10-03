@@ -132,6 +132,7 @@ func BuildLinuxDeb() {
 	projectName := pubspec.GetPubSpec().Name
 	packagingFormat := "linux-deb"
 	tmpPath := getTemporaryBuildDirectory(projectName, packagingFormat)
+	defer os.Remove(tmpPath)
 	log.Infof("Packaging deb in %s", tmpPath)
 
 	libDirectoryPath, err := filepath.Abs(filepath.Join(tmpPath, "usr", "lib"))

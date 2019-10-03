@@ -116,6 +116,7 @@ func BuildWindowsMsi() {
 	projectName := pubspec.GetPubSpec().Name
 	packagingFormat := "windows-msi"
 	tmpPath := getTemporaryBuildDirectory(projectName, packagingFormat)
+	defer os.Remove(tmpPath)
 	log.Infof("Packaging msi in %s", tmpPath)
 
 	buildDirectoryPath, err := filepath.Abs(filepath.Join(tmpPath, "build"))

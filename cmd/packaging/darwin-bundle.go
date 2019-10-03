@@ -116,6 +116,7 @@ func BuildDarwinBundle() {
 	projectName := pubspec.GetPubSpec().Name
 	packagingFormat := "darwin-bundle"
 	tmpPath := getTemporaryBuildDirectory(projectName, packagingFormat)
+	defer os.Remove(tmpPath)
 	log.Infof("Packaging bundle in %s", tmpPath)
 
 	err := copy.Copy(build.OutputDirectoryPath("darwin"), filepath.Join(tmpPath, projectName+".app", "Contents", "MacOS"))

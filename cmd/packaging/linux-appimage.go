@@ -64,6 +64,7 @@ func BuildLinuxAppImage() {
 	projectName := pubspec.GetPubSpec().Name
 	packagingFormat := "linux-appimage"
 	tmpPath := getTemporaryBuildDirectory(projectName, packagingFormat)
+	defer os.Remove(tmpPath)
 	log.Infof("Packaging AppImage in %s", tmpPath)
 
 	err := copy.Copy(build.OutputDirectoryPath("linux"), filepath.Join(tmpPath, "build"))

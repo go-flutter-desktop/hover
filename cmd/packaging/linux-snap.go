@@ -99,6 +99,7 @@ func BuildLinuxSnap() {
 	projectName := pubspec.GetPubSpec().Name
 	packagingFormat := "linux-snap"
 	tmpPath := getTemporaryBuildDirectory(projectName, packagingFormat)
+	defer os.Remove(tmpPath)
 	log.Infof("Packaging snap in %s", tmpPath)
 
 	err := copy.Copy(filepath.Join(build.BuildPath, "assets"), filepath.Join(tmpPath, "assets"))

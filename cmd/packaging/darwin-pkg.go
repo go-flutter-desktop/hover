@@ -111,6 +111,7 @@ func BuildDarwinPkg() {
 	projectName := pubspec.GetPubSpec().Name
 	packagingFormat := "darwin-pkg"
 	tmpPath := getTemporaryBuildDirectory(projectName, packagingFormat)
+	defer os.Remove(tmpPath)
 	log.Infof("Packaging pkg in %s", tmpPath)
 
 	err := copy.Copy(build.OutputDirectoryPath("darwin-bundle"), filepath.Join(tmpPath, "flat", "root", "Applications"))
