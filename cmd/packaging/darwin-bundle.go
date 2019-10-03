@@ -129,10 +129,10 @@ func BuildDarwinBundle() {
 		os.Exit(1)
 	}
 
-	outputFileName := projectName + ".app"
-	outputFilePath := filepath.Join(build.OutputDirectoryPath("darwin-bundle"), outputFileName)
 	runDockerPackaging(tmpPath, packagingFormat, []string{"png2icns", projectName + ".app/Contents/Resources/icon.icns", projectName + ".app/Contents/MacOS/assets/icon.png"})
 
+	outputFileName := projectName + ".app"
+	outputFilePath := filepath.Join(build.OutputDirectoryPath("darwin-bundle"), outputFileName)
 	err = os.RemoveAll(outputFilePath)
 	if err != nil {
 		log.Errorf("Could not remove previous bundle directory: %v", err)
