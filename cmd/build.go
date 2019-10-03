@@ -10,13 +10,17 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/go-flutter-desktop/hover/internal/enginecache"
-	"github.com/go-flutter-desktop/hover/internal/fileutils"
-	"github.com/go-flutter-desktop/hover/internal/log"
-	"github.com/go-flutter-desktop/hover/internal/versioncheck"
 	"github.com/hashicorp/go-version"
 	"github.com/otiai10/copy"
 	"github.com/spf13/cobra"
+
+	"github.com/go-flutter-desktop/hover/cmd/packaging"
+	"github.com/go-flutter-desktop/hover/internal/build"
+	"github.com/go-flutter-desktop/hover/internal/enginecache"
+	"github.com/go-flutter-desktop/hover/internal/fileutils"
+	"github.com/go-flutter-desktop/hover/internal/log"
+	"github.com/go-flutter-desktop/hover/internal/pubspec"
+	"github.com/go-flutter-desktop/hover/internal/versioncheck"
 )
 
 var dotSlash = string([]byte{'.', filepath.Separator})
@@ -31,8 +35,6 @@ var (
 	buildOpenGlVersion     string
 	buildDocker            bool
 )
-
-const buildPath = "go"
 
 const mingwGccBinName = "x86_64-w64-mingw32-gcc"
 const clangBinName = "o32-clang"
@@ -64,10 +66,9 @@ var buildLinuxCmd = &cobra.Command{
 	Use:   "linux",
 	Short: "Build a desktop release for linux",
 	Run: func(cmd *cobra.Command, args []string) {
-		projectName := getPubSpec().Name
 		assertHoverInitialized()
 
-		build(projectName, "linux", nil)
+		buildNormal("linux", nil)
 	},
 }
 
@@ -75,12 +76,15 @@ var buildLinuxSnapCmd = &cobra.Command{
 	Use:   "linux-snap",
 	Short: "Build a desktop release for linux and package it for snap",
 	Run: func(cmd *cobra.Command, args []string) {
-		projectName := getPubSpec().Name
 		assertHoverInitialized()
-		assertPackagingFormatInitialized("linux-snap")
+		packaging.AssertPackagingFormatInitialized("linux-snap")
 
-		build(projectName, "linux", nil)
-		buildLinuxSnap(projectName)
+		if !packaging.DockerInstalled() {
+			os.Exit(1)
+		}
+
+		buildNormal("linux", nil)
+		packaging.BuildLinuxSnap()
 	},
 }
 
@@ -88,12 +92,15 @@ var buildLinuxDebCmd = &cobra.Command{
 	Use:   "linux-deb",
 	Short: "Build a desktop release for linux and package it for deb",
 	Run: func(cmd *cobra.Command, args []string) {
-		projectName := getPubSpec().Name
 		assertHoverInitialized()
-		assertPackagingFormatInitialized("linux-deb")
+		packaging.AssertPackagingFormatInitialized("linux-deb")
 
-		build(projectName, "linux", nil)
-		buildLinuxDeb(projectName)
+		if !packaging.DockerInstalled() {
+			os.Exit(1)
+		}
+
+		buildNormal("linux", nil)
+		packaging.BuildLinuxDeb()
 	},
 }
 
@@ -101,10 +108,9 @@ var buildDarwinCmd = &cobra.Command{
 	Use:   "darwin",
 	Short: "Build a desktop release for darwin",
 	Run: func(cmd *cobra.Command, args []string) {
-		projectName := getPubSpec().Name
 		assertHoverInitialized()
 
-		build(projectName, "darwin", nil)
+		buildNormal("darwin", nil)
 	},
 }
 
@@ -112,10 +118,9 @@ var buildWindowsCmd = &cobra.Command{
 	Use:   "windows",
 	Short: "Build a desktop release for windows",
 	Run: func(cmd *cobra.Command, args []string) {
-		projectName := getPubSpec().Name
 		assertHoverInitialized()
 
-		build(projectName, "windows", nil)
+		buildNormal("windows", nil)
 	},
 }
 
@@ -145,7 +150,7 @@ func checkForMainDesktop() {
 }
 
 func outputDirectoryPath(targetOS string) string {
-	outputDirectoryPath, err := filepath.Abs(filepath.Join(buildPath, "build", "outputs", targetOS))
+	outputDirectoryPath, err := filepath.Abs(filepath.Join(build.BuildPath, "build", "outputs", targetOS))
 	if err != nil {
 		log.Errorf("Failed to resolve absolute path for output directory: %v", err)
 		os.Exit(1)
@@ -181,8 +186,8 @@ func outputBinaryPath(projectName string, targetOS string) string {
 	return outputBinaryPath
 }
 
-func dockerBuild(projectName string, targetOS string, vmArguments []string) {
-	crossCompilingDir, err := filepath.Abs(filepath.Join(buildPath, "cross-compiling"))
+func buildInDocker(targetOS string, vmArguments []string) {
+	crossCompilingDir, err := filepath.Abs(filepath.Join(build.BuildPath, "cross-compiling"))
 	err = os.MkdirAll(crossCompilingDir, 0755)
 	if err != nil {
 		log.Errorf("Cannot create the cross-compiling directory: %v", err)
@@ -217,7 +222,7 @@ func dockerBuild(projectName string, targetOS string, vmArguments []string) {
 		}
 		dockerFileContent := []string{
 			"FROM dockercore/golang-cross",
-			"RUN apt-get install libgl1-mesa-dev xorg-dev -y",
+			"RUN apt-get update && apt-get install libgl1-mesa-dev xorg-dev -y",
 		}
 
 		for _, line := range dockerFileContent {
@@ -231,9 +236,10 @@ func dockerBuild(projectName string, targetOS string, vmArguments []string) {
 			log.Errorf("Could not close Dockerfile: %v", err)
 			os.Exit(1)
 		}
-		log.Infof("A Dockerfile for cross-compiling for %s has been created at %s. You can add it to git.", targetOS, filepath.Join(buildPath, "cross-compiling", targetOS))
+		log.Infof("A Dockerfile for cross-compiling for %s has been created at %s. You can add it to git.", targetOS, filepath.Join(build.BuildPath, "cross-compiling", targetOS))
 	}
-	dockerBuildCmd := exec.Command(dockerBin, "build", "-t", "hover-build-cc", ".")
+	dockerBuildCmd := exec.Command(build.DockerBin, "build", "-t", "hover-build-cc", ".")
+	dockerBuildCmd.Stdout = os.Stdout
 	dockerBuildCmd.Stderr = os.Stderr
 	dockerBuildCmd.Dir = crossCompilingDir
 	err = dockerBuildCmd.Run()
@@ -263,10 +269,10 @@ func dockerBuild(projectName string, targetOS string, vmArguments []string) {
 	args = append(args, "hover-build-cc")
 	chownStr := ""
 	if runtime.GOOS != "windows" {
-		chownStr = fmt.Sprintf(" && chown %s:%s ./ -R", u.Uid, u.Gid)
+		chownStr = fmt.Sprintf(" && chown %s:%s build/ -R", u.Uid, u.Gid)
 	}
-	args = append(args, "bash", "-c", fmt.Sprintf("%s%s", strings.Join(buildCommand(targetOS, vmArguments, "build/outputs/"+targetOS+"/"+outputBinaryName(projectName, targetOS)), " "), chownStr))
-	dockerRunCmd := exec.Command(dockerBin, args...)
+	args = append(args, "bash", "-c", fmt.Sprintf("%s%s", strings.Join(buildCommand(targetOS, vmArguments, "build/outputs/"+targetOS+"/"+build.OutputBinaryName(pubspec.GetPubSpec().Name, targetOS)), " "), chownStr))
+	dockerRunCmd := exec.Command(build.DockerBin, args...)
 	dockerRunCmd.Stderr = os.Stderr
 	dockerRunCmd.Stdout = os.Stdout
 	dockerRunCmd.Dir = crossCompilingDir
@@ -278,7 +284,7 @@ func dockerBuild(projectName string, targetOS string, vmArguments []string) {
 	log.Infof("Successfully cross-compiled for " + targetOS)
 }
 
-func build(projectName string, targetOS string, vmArguments []string) {
+func buildNormal(targetOS string, vmArguments []string) {
 	checkForMainDesktop()
 	crossCompile = targetOS != runtime.GOOS
 	buildDocker = crossCompile || buildDocker
@@ -290,21 +296,21 @@ func build(projectName string, targetOS string, vmArguments []string) {
 	}
 
 	if !buildOmitFlutterBundle && !buildOmitEmbedder {
-		err := os.RemoveAll(outputDirectoryPath(targetOS))
+		err := os.RemoveAll(build.OutputDirectoryPath(targetOS))
 		log.Printf("Cleaning the build directory")
 		if err != nil {
-			log.Errorf("Failed to clean output directory %s: %v", outputDirectoryPath(targetOS), err)
+			log.Errorf("Failed to clean output directory %s: %v", build.OutputDirectoryPath(targetOS), err)
 			os.Exit(1)
 		}
 	}
 
-	err := os.MkdirAll(outputDirectoryPath(targetOS), 0775)
+	err := os.MkdirAll(build.OutputDirectoryPath(targetOS), 0775)
 	if err != nil {
-		log.Errorf("Failed to create output directory %s: %v", outputDirectoryPath(targetOS), err)
+		log.Errorf("Failed to create output directory %s: %v", build.OutputDirectoryPath(targetOS), err)
 		os.Exit(1)
 	}
 
-	cmdCheckFlutter := exec.Command(flutterBin, "--version")
+	cmdCheckFlutter := exec.Command(build.FlutterBin, "--version")
 	cmdCheckFlutterOut, err := cmdCheckFlutter.Output()
 	if err != nil {
 		log.Warnf("Failed to check your flutter channel: %v", err)
@@ -336,8 +342,8 @@ func build(projectName string, targetOS string, vmArguments []string) {
 		os.Exit(1)
 	}
 
-	cmdFlutterBuild := exec.Command(flutterBin, "build", "bundle",
-		"--asset-dir", filepath.Join(outputDirectoryPath(targetOS), "flutter_assets"),
+	cmdFlutterBuild := exec.Command(build.FlutterBin, "build", "bundle",
+		"--asset-dir", filepath.Join(build.OutputDirectoryPath(targetOS), "flutter_assets"),
 		"--target", buildTarget,
 		trackWidgetCreation,
 	)
@@ -373,7 +379,7 @@ func build(projectName string, targetOS string, vmArguments []string) {
 		engineFile = "flutter_engine.dll"
 	}
 
-	outputEngineFile := filepath.Join(outputDirectoryPath(targetOS), engineFile)
+	outputEngineFile := filepath.Join(build.OutputDirectoryPath(targetOS), engineFile)
 	err = copy.Copy(
 		filepath.Join(engineCachePath, engineFile),
 		outputEngineFile,
@@ -392,7 +398,7 @@ func build(projectName string, targetOS string, vmArguments []string) {
 
 	err = copy.Copy(
 		filepath.Join(engineCachePath, "artifacts", "icudtl.dat"),
-		filepath.Join(outputDirectoryPath(targetOS), "icudtl.dat"),
+		filepath.Join(build.OutputDirectoryPath(targetOS), "icudtl.dat"),
 	)
 	if err != nil {
 		log.Errorf("Failed to copy icudtl.dat: %v", err)
@@ -400,11 +406,11 @@ func build(projectName string, targetOS string, vmArguments []string) {
 	}
 
 	err = copy.Copy(
-		filepath.Join(buildPath, "assets"),
-		filepath.Join(outputDirectoryPath(targetOS), "assets"),
+		filepath.Join(build.BuildPath, "assets"),
+		filepath.Join(build.OutputDirectoryPath(targetOS), "assets"),
 	)
 	if err != nil {
-		log.Errorf("Failed to copy %s/assets: %v", buildPath, err)
+		log.Errorf("Failed to copy %s/assets: %v", build.BuildPath, err)
 		os.Exit(1)
 	}
 
@@ -420,7 +426,7 @@ func build(projectName string, targetOS string, vmArguments []string) {
 	}
 
 	if buildBranch == "" {
-		currentTag, err := versioncheck.CurrentGoFlutterTag(filepath.Join(wd, buildPath))
+		currentTag, err := versioncheck.CurrentGoFlutterTag(filepath.Join(wd, build.BuildPath))
 		if err != nil {
 			log.Errorf("%v", err)
 			os.Exit(1)
@@ -444,7 +450,7 @@ func build(projectName string, targetOS string, vmArguments []string) {
 		} else {
 			// when the buildBranch is empty and the currentTag is a release.
 			// Check if the 'go-flutter' needs updates.
-			versioncheck.CheckForGoFlutterUpdate(filepath.Join(wd, buildPath), currentTag)
+			versioncheck.CheckForGoFlutterUpdate(filepath.Join(wd, build.BuildPath), currentTag)
 		}
 
 	} else {
@@ -465,13 +471,13 @@ func build(projectName string, targetOS string, vmArguments []string) {
 		if crossCompile {
 			log.Infof("Because %s is not able to compile for %s out of the box, a cross-compiling container is used", runtime.GOOS, targetOS)
 		}
-		dockerBuild(projectName, targetOS, vmArguments)
+		buildInDocker(targetOS, vmArguments)
 		return
 	}
 
-	buildCommandString := buildCommand(targetOS, vmArguments, outputBinaryPath(projectName, targetOS))
+	buildCommandString := buildCommand(targetOS, vmArguments, build.OutputBinaryPath(pubspec.GetPubSpec().Name, targetOS))
 	cmdGoBuild := exec.Command(buildCommandString[0], buildCommandString[1:]...)
-	cmdGoBuild.Dir = filepath.Join(wd, buildPath)
+	cmdGoBuild.Dir = filepath.Join(wd, build.BuildPath)
 	cmdGoBuild.Env = append(os.Environ(),
 		buildEnv(targetOS, engineCachePath)...,
 	)
@@ -527,7 +533,7 @@ func buildEnv(targetOS string, engineCachePath string) []string {
 }
 
 func buildCommand(targetOS string, vmArguments []string, outputBinaryPath string) []string {
-	currentTag, err := versioncheck.CurrentGoFlutterTag(buildPath)
+	currentTag, err := versioncheck.CurrentGoFlutterTag(build.BuildPath)
 	if err != nil {
 		log.Errorf("%v", err)
 		os.Exit(1)
@@ -551,9 +557,9 @@ func buildCommand(targetOS string, vmArguments []string, outputBinaryPath string
 			" -X github.com/go-flutter-desktop/go-flutter.PlatformVersion=%s "+
 			" -X github.com/go-flutter-desktop/go-flutter.ProjectName=%s "+
 			" -X github.com/go-flutter-desktop/go-flutter.ProjectOrganizationName=%s",
-		getPubSpec().Version,
+		pubspec.GetPubSpec().Version,
 		currentTag,
-		getPubSpec().Name,
+		pubspec.GetPubSpec().Name,
 		androidOrganizationName()))
 
 	outputCommand := []string{

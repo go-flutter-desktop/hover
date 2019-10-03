@@ -13,10 +13,11 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-flutter-desktop/hover/internal/build"
 	"github.com/go-flutter-desktop/hover/internal/log"
+	"github.com/go-flutter-desktop/hover/internal/pubspec"
 	homedir "github.com/mitchellh/go-homedir"
 	"github.com/pkg/errors"
-	"gopkg.in/yaml.v2"
 )
 
 var (
@@ -32,11 +33,11 @@ func initBinaries() {
 	var err error
 	goAvailable := false
 	dockerAvailable := false
-	goBin, err = exec.LookPath("go")
+	build.GoBin, err = exec.LookPath("go")
 	if err == nil {
 		goAvailable = true
 	}
-	dockerBin, err = exec.LookPath("docker")
+	build.DockerBin, err = exec.LookPath("docker")
 	if err == nil {
 		dockerAvailable = true
 	}
@@ -48,7 +49,7 @@ func initBinaries() {
 		log.Errorf("Failed to lookup `go` executable. Please install go or add '--docker' to force running in Docker container.\nhttps://golang.org/doc/install")
 		os.Exit(1)
 	}
-	flutterBin, err = exec.LookPath("flutter")
+	build.FlutterBin, err = exec.LookPath("flutter")
 	if err != nil {
 		log.Errorf("Failed to lookup 'flutter' executable. Please install flutter.\nhttps://flutter.dev/docs/get-started/install")
 		os.Exit(1)
@@ -59,79 +60,26 @@ func initBinaries() {
 	}
 }
 
-// PubSpec contains the parsed contents of pubspec.yaml
-type PubSpec struct {
-	Name         string
-	Description  string
-	Version      string
-	Author       string
-	Dependencies map[string]interface{}
-	Flutter      map[string]interface{}
-}
-
-var pubspec = PubSpec{}
-
-// getPubSpec returns the working directory pubspec.yaml as a PubSpec
-func getPubSpec() PubSpec {
-	if pubspec.Name == "" {
-		pub, err := readPubSpecFile("pubspec.yaml")
-		if err != nil {
-			log.Errorf("%v", err)
-			log.Errorf("This command should be run from the root of your Flutter project.")
-			os.Exit(1)
-		}
-		pubspec = *pub
-	}
-	return pubspec
-}
-
-// readPubSpecFile reads a .yaml file at a path and return a correspond
-// PubSpec struct
-func readPubSpecFile(pubSpecPath string) (*PubSpec, error) {
-	file, err := os.Open(pubSpecPath)
-	if err != nil {
-		if os.IsNotExist(err) {
-			return nil, errors.Wrap(err, "Error: No pubspec.yaml file found")
-		}
-		return nil, errors.Wrap(err, "Failed to open pubspec.yaml")
-	}
-	defer file.Close()
-
-	var pub PubSpec
-	err = yaml.NewDecoder(file).Decode(&pub)
-	if err != nil {
-		return nil, errors.Wrap(err, "Failed to decode pubspec.yaml")
-	}
-	// avoid checking for the flutter dependencies for out of ws directories
-	if pubSpecPath != "pubspec.yaml" {
-		return &pub, nil
-	}
-	if _, exists := pub.Dependencies["flutter"]; !exists {
-		return nil, errors.New(fmt.Sprintf("Missing `flutter` in %s dependencies list", pubSpecPath))
-	}
-	return &pub, nil
-}
-
 // assertInFlutterProject asserts this command is executed in a flutter project
 func assertInFlutterProject() {
-	getPubSpec()
+	pubspec.GetPubSpec()
 }
 
 // assertInFlutterPluginProject asserts this command is executed in a flutter plugin project
 func assertInFlutterPluginProject() {
-	if _, ok := getPubSpec().Flutter["plugin"]; !ok {
+	if _, ok := pubspec.GetPubSpec().Flutter["plugin"]; !ok {
 		log.Errorf("The directory doesn't appear to contain a plugin package.\nTo create a new plugin, first run `%s`, then run `%s`.", log.Au().Magenta("flutter create --template=plugin"), log.Au().Magenta("hover init-plugin"))
 		os.Exit(1)
 	}
 }
 
 func assertHoverInitialized() {
-	_, err := os.Stat(buildPath)
+	_, err := os.Stat(build.BuildPath)
 	if os.IsNotExist(err) {
 		if hoverMigration() {
 			return
 		}
-		log.Errorf("Directory '%s' is missing. Please init go-flutter first: %s", buildPath, log.Au().Magenta("hover init"))
+		log.Errorf("Directory '%s' is missing. Please init go-flutter first: %s", build.BuildPath, log.Au().Magenta("hover init"))
 		os.Exit(1)
 	}
 	if err != nil {
@@ -154,7 +102,7 @@ func hoverMigration() bool {
 	log.Warnf("     Let hover do the migration? ")
 
 	if askForConfirmation() {
-		err := os.Rename(oldBuildPath, buildPath)
+		err := os.Rename(oldBuildPath, build.BuildPath)
 		if err != nil {
 			log.Warnf("Migration failed: %v", err)
 			return false
@@ -245,8 +193,8 @@ func initializeGoModule(projectPath string) {
 		os.Exit(1)
 	}
 
-	cmdGoModInit := exec.Command(goBin, "mod", "init", projectPath+"/"+buildPath)
-	cmdGoModInit.Dir = filepath.Join(wd, buildPath)
+	cmdGoModInit := exec.Command(goBin, "mod", "init", projectPath+"/"+build.BuildPath)
+	cmdGoModInit.Dir = filepath.Join(wd, build.BuildPath)
 	cmdGoModInit.Env = append(os.Environ(),
 		"GO111MODULE=on",
 	)
@@ -259,7 +207,7 @@ func initializeGoModule(projectPath string) {
 	}
 
 	cmdGoModTidy := exec.Command(goBin, "mod", "tidy")
-	cmdGoModTidy.Dir = filepath.Join(wd, buildPath)
+	cmdGoModTidy.Dir = filepath.Join(wd, build.BuildPath)
 	log.Infof("You can add the '%s' directory to git.", cmdGoModTidy.Dir)
 	cmdGoModTidy.Env = append(os.Environ(),
 		"GO111MODULE=on",
