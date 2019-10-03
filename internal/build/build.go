@@ -7,8 +7,13 @@ import (
 	"github.com/go-flutter-desktop/hover/internal/log"
 )
 
+// BuildPath sets the name of the directory used to store the go-flutter project.
+// Much like android and ios are already used.
 const BuildPath = "go"
 
+// OutputDirectoryPath returns the path where the go-flutter binary and flutter
+// binaries blobs will be stored for a particular platform.
+// If needed, the directory is create at the returned path.
 func OutputDirectoryPath(targetOS string) string {
 	outputDirectoryPath, err := filepath.Abs(filepath.Join(BuildPath, "build", "outputs", targetOS))
 	if err != nil {
@@ -25,6 +30,8 @@ func OutputDirectoryPath(targetOS string) string {
 	return outputDirectoryPath
 }
 
+// OutputBinaryName returns the string of the executable used to launch the
+// main desktop app. (appends .exe for windows)
 func OutputBinaryName(projectName string, targetOS string) string {
 	var outputBinaryName = projectName
 	switch targetOS {
@@ -41,6 +48,8 @@ func OutputBinaryName(projectName string, targetOS string) string {
 	return outputBinaryName
 }
 
+// OutputBinaryPath returns the path to the go-flutter Application for a
+// specified platform.
 func OutputBinaryPath(projectName string, targetOS string) string {
 	outputBinaryPath := filepath.Join(OutputDirectoryPath(targetOS), OutputBinaryName(projectName, targetOS))
 	return outputBinaryPath

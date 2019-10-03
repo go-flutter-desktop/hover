@@ -60,7 +60,7 @@ var publishPluginCmd = &cobra.Command{
 		}
 
 		// check if one of the git remote urls equals the package import 'url'
-		pluginImportStr, err := readPluginGoImport(filepath.Join("go", "import.go.tmpl"), pubspec.GetPubSpec().Name)
+		pluginImportStr, err := readPluginGoImport(filepath.Join(build.BuildPath, "import.go.tmpl"), pubspec.GetPubSpec().Name)
 		if err != nil {
 			log.Errorf("Failed to read the plugin import url: %v", err)
 			log.Infof("The file go/import.go.tmpl should look something like this:")

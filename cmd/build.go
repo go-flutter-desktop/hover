@@ -14,13 +14,14 @@ import (
 	"github.com/otiai10/copy"
 	"github.com/spf13/cobra"
 
-	"github.com/go-flutter-desktop/hover/cmd/packaging"
 	"github.com/go-flutter-desktop/hover/internal/build"
 	"github.com/go-flutter-desktop/hover/internal/enginecache"
 	"github.com/go-flutter-desktop/hover/internal/fileutils"
 	"github.com/go-flutter-desktop/hover/internal/log"
 	"github.com/go-flutter-desktop/hover/internal/pubspec"
-	"github.com/go-flutter-desktop/hover/internal/versioncheck"
+	"github.com/go-flutter-desktop/hover/internal/androidmanifest"
+  "github.com/go-flutter-desktop/hover/internal/versioncheck"
+	"github.com/go-flutter-desktop/hover/cmd/packaging"
 )
 
 var dotSlash = string([]byte{'.', filepath.Separator})
@@ -53,6 +54,8 @@ func init() {
 	buildCmd.AddCommand(buildLinuxSnapCmd)
 	buildCmd.AddCommand(buildLinuxDebCmd)
 	buildCmd.AddCommand(buildDarwinCmd)
+	buildCmd.AddCommand(buildDarwinBundleCmd)
+	buildCmd.AddCommand(buildDarwinPkgCmd)
 	buildCmd.AddCommand(buildWindowsCmd)
 	buildCmd.AddCommand(buildWindowsMsiCmd)
 	rootCmd.AddCommand(buildCmd)
@@ -112,6 +115,38 @@ var buildDarwinCmd = &cobra.Command{
 		assertHoverInitialized()
 
 		buildNormal("darwin", nil)
+	},
+}
+
+var buildDarwinBundleCmd = &cobra.Command{
+	Use:   "darwin-bundle",
+	Short: "Build a desktop release for darwin and package it for OSX bundle",
+	Run: func(cmd *cobra.Command, args []string) {
+		assertHoverInitialized()
+		packaging.AssertPackagingFormatInitialized("darwin-bundle")
+
+		if !packaging.DockerInstalled() {
+			os.Exit(1)
+		}
+
+		buildNormal("darwin", nil)
+		packaging.BuildDarwinBundle()
+	},
+}
+
+var buildDarwinPkgCmd = &cobra.Command{
+	Use:   "darwin-pkg",
+	Short: "Build a desktop release for darwin and package it for OSX pkg installer",
+	Run: func(cmd *cobra.Command, args []string) {
+		assertHoverInitialized()
+		packaging.AssertPackagingFormatInitialized("darwin-pkg")
+
+		if !packaging.DockerInstalled() {
+			os.Exit(1)
+		}
+
+		buildNormal("darwin", nil)
+		packaging.BuildDarwinPkg()
 	},
 }
 
@@ -302,7 +337,7 @@ func buildNormal(targetOS string, vmArguments []string) {
 			ignoreWarning := os.Getenv("HOVER_IGNORE_CHANNEL_WARNING")
 			if match[1] != "beta" && ignoreWarning != "true" {
 				log.Warnf("⚠ The go-flutter project tries to stay compatible with the beta channel of Flutter.")
-				log.Warnf("⚠     It's advised to use the beta channel: %s", log.Au().Magenta("flutter channel beta"))
+				log.Warnf("⚠     It's advised to use the beta channel: `%s`", log.Au().Magenta("flutter channel beta"))
 			}
 		} else {
 			log.Warnf("Failed to check your flutter channel: Unrecognized output format")
@@ -540,7 +575,7 @@ func buildCommand(targetOS string, vmArguments []string, outputBinaryPath string
 		pubspec.GetPubSpec().Version,
 		currentTag,
 		pubspec.GetPubSpec().Name,
-		androidOrganizationName()))
+		androidmanifest.AndroidOrganizationName()))
 
 	outputCommand := []string{
 		"go",
