@@ -132,6 +132,13 @@ func BuildLinuxDeb() {
 	projectName := pubspec.GetPubSpec().Name
 	packagingFormat := "linux-deb"
 	tmpPath := getTemporaryBuildDirectory(projectName, packagingFormat)
+	defer func() {
+		err := os.RemoveAll(tmpPath)
+		if err != nil {
+			log.Errorf("Could not remove temporary build directory: %v", err)
+			os.Exit(1)
+		}
+	}()
 	log.Infof("Packaging deb in %s", tmpPath)
 
 	libDirectoryPath, err := filepath.Abs(filepath.Join(tmpPath, "usr", "lib"))
@@ -151,18 +158,14 @@ func BuildLinuxDeb() {
 	}
 
 	outputFileName := removeDashesAndUnderscores(projectName) + "_" + runtime.GOARCH + ".deb"
-	outputFilePath := filepath.Join(build.OutputDirectoryPath("linux-deb"), outputFileName)
 	runDockerPackaging(tmpPath, packagingFormat, []string{"dpkg-deb", "--build", ".", outputFileName})
 
+	outputFilePath := filepath.Join(build.OutputDirectoryPath("linux-deb"), outputFileName)
 	err = copy.Copy(filepath.Join(tmpPath, outputFileName), outputFilePath)
 	if err != nil {
 		log.Errorf("Could not move deb file: %v", err)
 		os.Exit(1)
 	}
-	err = os.RemoveAll(tmpPath)
-	if err != nil {
-		log.Errorf("Could not remove temporary build directory: %v", err)
-		os.Exit(1)
-	}
+
 	printPackagingFinished(packagingFormat)
 }

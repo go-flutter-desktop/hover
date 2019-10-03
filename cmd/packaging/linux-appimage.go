@@ -64,6 +64,13 @@ func BuildLinuxAppImage() {
 	projectName := pubspec.GetPubSpec().Name
 	packagingFormat := "linux-appimage"
 	tmpPath := getTemporaryBuildDirectory(projectName, packagingFormat)
+	defer func() {
+		err := os.RemoveAll(tmpPath)
+		if err != nil {
+			log.Errorf("Could not remove temporary build directory: %v", err)
+			os.Exit(1)
+		}
+	}()
 	log.Infof("Packaging AppImage in %s", tmpPath)
 
 	err := copy.Copy(build.OutputDirectoryPath("linux"), filepath.Join(tmpPath, "build"))
@@ -77,19 +84,15 @@ func BuildLinuxAppImage() {
 		os.Exit(1)
 	}
 
-	outputFileName := projectName + "-x86_64.AppImage"
-	outputFilePath := filepath.Join(build.OutputDirectoryPath("linux-appimage"), outputFileName)
 	runDockerPackaging(tmpPath, packagingFormat, []string{"appimagetool", "."})
 
+	outputFileName := projectName + "-x86_64.AppImage"
+	outputFilePath := filepath.Join(build.OutputDirectoryPath("linux-appimage"), outputFileName)
 	err = copy.Copy(filepath.Join(tmpPath, outputFileName), outputFilePath)
 	if err != nil {
 		log.Errorf("Could not move AppImage file: %v", err)
 		os.Exit(1)
 	}
-	err = os.RemoveAll(tmpPath)
-	if err != nil {
-		log.Errorf("Could not remove temporary build directory: %v", err)
-		os.Exit(1)
-	}
+
 	printPackagingFinished(packagingFormat)
 }

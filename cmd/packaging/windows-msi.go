@@ -116,6 +116,13 @@ func BuildWindowsMsi() {
 	projectName := pubspec.GetPubSpec().Name
 	packagingFormat := "windows-msi"
 	tmpPath := getTemporaryBuildDirectory(projectName, packagingFormat)
+	defer func() {
+		err := os.RemoveAll(tmpPath)
+		if err != nil {
+			log.Errorf("Could not remove temporary build directory: %v", err)
+			os.Exit(1)
+		}
+	}()
 	log.Infof("Packaging msi in %s", tmpPath)
 
 	buildDirectoryPath, err := filepath.Abs(filepath.Join(tmpPath, "build"))
@@ -205,18 +212,13 @@ func BuildWindowsMsi() {
 		os.Exit(1)
 	}
 
-	outputFileName := projectName + ".msi"
-	outputFilePath := filepath.Join(build.OutputDirectoryPath("windows-msi"), outputFileName)
 	runDockerPackaging(tmpPath, packagingFormat, []string{"convert", "-resize", "x16", "build/assets/icon.png", "build/assets/icon.ico", "&&", "wixl", "-v", projectName + ".wxs"})
 
+	outputFileName := projectName + ".msi"
+	outputFilePath := filepath.Join(build.OutputDirectoryPath("windows-msi"), outputFileName)
 	err = copy.Copy(filepath.Join(tmpPath, outputFileName), outputFilePath)
 	if err != nil {
 		log.Errorf("Could not move msi file: %v", err)
-		os.Exit(1)
-	}
-	err = os.RemoveAll(tmpPath)
-	if err != nil {
-		log.Errorf("Could not remove temporary build directory: %v", err)
 		os.Exit(1)
 	}
 
