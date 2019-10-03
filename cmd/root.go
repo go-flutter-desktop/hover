@@ -34,7 +34,6 @@ var rootCmd = &cobra.Command{
 	Use:   "hover",
 	Short: "Hover connects Flutter and go-flutter-desktop.",
 	Long:  "Hover helps developers to release Flutter applications on desktop.",
-	Run:   func(cmd *cobra.Command, args []string) {},
 }
 
 // Execute executes the rootCmd
