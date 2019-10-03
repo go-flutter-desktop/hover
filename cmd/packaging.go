@@ -9,6 +9,7 @@ import (
 func init() {
 	initPackagingCmd.AddCommand(initLinuxSnapCmd)
 	initPackagingCmd.AddCommand(initLinuxDebCmd)
+	initPackagingCmd.AddCommand(initLinuxAppImageCmd)
 	initPackagingCmd.AddCommand(initWindowsMsiCmd)
 	initPackagingCmd.AddCommand(initDarwinBundleCmd)
 	initPackagingCmd.AddCommand(initDarwinPkgCmd)
@@ -42,6 +43,17 @@ var initLinuxDebCmd = &cobra.Command{
 	},
 }
 
+var initLinuxAppImageCmd = &cobra.Command{
+	Use:   "linux-appimage",
+	Short: "Create configuration files for AppImage packaging",
+	Run: func(cmd *cobra.Command, args []string) {
+		assertHoverInitialized()
+		packaging.DockerInstalled()
+
+		packaging.InitLinuxAppImage()
+	},
+}
+
 var initWindowsMsiCmd = &cobra.Command{
 	Use:   "windows-msi",
 	Short: "Create configuration files for msi packaging",
@@ -67,6 +79,7 @@ var initDarwinBundleCmd = &cobra.Command{
 var initDarwinPkgCmd = &cobra.Command{
 	Use:   "darwin-pkg",
 	Short: "Create configuration files for OSX pkg installer packaging",
+
 	Run: func(cmd *cobra.Command, args []string) {
 		assertHoverInitialized()
 		packaging.DockerInstalled()
