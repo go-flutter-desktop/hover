@@ -3,17 +3,32 @@ package cmd
 import (
 	"bufio"
 	"encoding/xml"
+	"fmt"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
+	"runtime"
 	"strings"
+	"time"
 
-	"github.com/go-flutter-desktop/hover/internal/pubspec"
 	"github.com/go-flutter-desktop/hover/internal/build"
 	"github.com/go-flutter-desktop/hover/internal/log"
+	"github.com/go-flutter-desktop/hover/internal/pubspec"
+	homedir "github.com/mitchellh/go-homedir"
+	"github.com/pkg/errors"
 )
 
+var (
+	goBin      string
+	flutterBin string
+	dockerBin  string
+	gitBin     string
+)
+
+// initBinaries is used to ensure go and flutter exec are found in the
+// user's path
 func initBinaries() {
 	var err error
 	goAvailable := false
@@ -39,11 +54,23 @@ func initBinaries() {
 		log.Errorf("Failed to lookup 'flutter' executable. Please install flutter.\nhttps://flutter.dev/docs/get-started/install")
 		os.Exit(1)
 	}
+	gitBin, err = exec.LookPath("git")
+	if err != nil {
+		log.Warnf("Failed to lookup 'git' executable.")
+	}
 }
 
 // assertInFlutterProject asserts this command is executed in a flutter project
 func assertInFlutterProject() {
 	pubspec.GetPubSpec()
+}
+
+// assertInFlutterPluginProject asserts this command is executed in a flutter plugin project
+func assertInFlutterPluginProject() {
+	if _, ok := pubspec.GetPubSpec().Flutter["plugin"]; !ok {
+		log.Errorf("The directory doesn't appear to contain a plugin package.\nTo create a new plugin, first run `%s`, then run `%s`.", log.Au().Magenta("flutter create --template=plugin"), log.Au().Magenta("hover init-plugin"))
+		os.Exit(1)
+	}
 }
 
 func assertHoverInitialized() {
@@ -61,6 +88,7 @@ func assertHoverInitialized() {
 	}
 }
 
+// hoverMigration migrates from old hover buildPath directory to the new one ("desktop" -> "go")
 func hoverMigration() bool {
 	oldBuildPath := "desktop"
 	file, err := os.Open(filepath.Join(oldBuildPath, "go.mod"))
@@ -88,7 +116,7 @@ func hoverMigration() bool {
 
 // askForConfirmation asks the user for confirmation.
 func askForConfirmation() bool {
-	log.Printf("[y/N]: ")
+	fmt.Print(log.Au().Bold(log.Au().Cyan("hover: ")).String() + "[y/N]? ")
 	in := bufio.NewReader(os.Stdin)
 	s, err := in.ReadString('\n')
 	if err != nil {
@@ -146,4 +174,91 @@ func androidOrganizationName() string {
 		return "hover.failed.to.retrieve.package.name"
 	}
 	return orgName
+}
+
+var camelcaseRegex = regexp.MustCompile("(^[A-Za-z])|_([A-Za-z])")
+
+// toCamelCase take a snake_case string and converts it to camelcase
+func toCamelCase(str string) string {
+	return camelcaseRegex.ReplaceAllStringFunc(str, func(s string) string {
+		return strings.ToUpper(strings.Replace(s, "_", "", -1))
+	})
+}
+
+// initializeGoModule uses the golang binary to initialize the go module
+func initializeGoModule(projectPath string) {
+	wd, err := os.Getwd()
+	if err != nil {
+		log.Errorf("Failed to get working dir: %v\n", err)
+		os.Exit(1)
+	}
+
+	cmdGoModInit := exec.Command(goBin, "mod", "init", projectPath+"/"+build.BuildPath)
+	cmdGoModInit.Dir = filepath.Join(wd, build.BuildPath)
+	cmdGoModInit.Env = append(os.Environ(),
+		"GO111MODULE=on",
+	)
+	cmdGoModInit.Stderr = os.Stderr
+	cmdGoModInit.Stdout = os.Stdout
+	err = cmdGoModInit.Run()
+	if err != nil {
+		log.Errorf("Go mod init failed: %v\n", err)
+		os.Exit(1)
+	}
+
+	cmdGoModTidy := exec.Command(goBin, "mod", "tidy")
+	cmdGoModTidy.Dir = filepath.Join(wd, build.BuildPath)
+	log.Infof("You can add the '%s' directory to git.", cmdGoModTidy.Dir)
+	cmdGoModTidy.Env = append(os.Environ(),
+		"GO111MODULE=on",
+	)
+	cmdGoModTidy.Stderr = os.Stderr
+	cmdGoModTidy.Stdout = os.Stdout
+	err = cmdGoModTidy.Run()
+	if err != nil {
+		log.Errorf("Go mod tidy failed: %v\n", err)
+		os.Exit(1)
+	}
+}
+
+// findPubcachePath returns the absolute path for the pub-cache or an error.
+func findPubcachePath() (string, error) {
+	var path string
+	switch runtime.GOOS {
+	case "darwin", "linux":
+		home, err := homedir.Dir()
+		if err != nil {
+			return "", errors.Wrap(err, "failed to resolve user home dir")
+		}
+		path = filepath.Join(home, ".pub-cache")
+	case "windows":
+		path = filepath.Join(os.Getenv("APPDATA"), "Pub", "Cache")
+	}
+	return path, nil
+}
+
+// shouldRunPluginGet checks if the pubspec.yaml file is older than the
+// .packages file, if it is the case, prompt the user for a hover plugin get.
+func shouldRunPluginGet() (bool, error) {
+	file1Info, err := os.Stat("pubspec.yaml")
+	if err != nil {
+		return false, err
+	}
+
+	file2Info, err := os.Stat(".packages")
+	if err != nil {
+		if os.IsNotExist(err) {
+			return true, nil
+		}
+		return false, err
+	}
+	modTime1 := file1Info.ModTime()
+	modTime2 := file2Info.ModTime()
+
+	diff := modTime1.Sub(modTime2)
+
+	if diff > (time.Duration(0) * time.Second) {
+		return true, nil
+	}
+	return false, nil
 }
