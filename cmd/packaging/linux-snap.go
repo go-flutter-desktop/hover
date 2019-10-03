@@ -117,11 +117,11 @@ func BuildLinuxSnap() {
 		os.Exit(1)
 	}
 
-	outputFileName := removeDashesAndUnderscores(projectName) + "_" + pubspec.GetPubSpec().Version + "_" + runtime.GOARCH + ".snap"
+	outputFileName := strings.ToLower(removeDashesAndUnderscores(projectName)) + "_" + pubspec.GetPubSpec().Version + "_" + runtime.GOARCH + ".snap"
 	outputFilePath := filepath.Join(build.OutputDirectoryPath("linux-snap"), outputFileName)
 	runDockerPackaging(tmpPath, packagingFormat, []string{"snapcraft"})
 
-	err = os.Rename(filepath.Join(tmpPath, outputFileName), outputFilePath)
+	err = copy.Copy(filepath.Join(tmpPath, outputFileName), outputFilePath)
 	if err != nil {
 		log.Errorf("Could not move snap file: %v", err)
 		os.Exit(1)

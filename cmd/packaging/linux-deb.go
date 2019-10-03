@@ -154,7 +154,7 @@ func BuildLinuxDeb() {
 	outputFilePath := filepath.Join(build.OutputDirectoryPath("linux-deb"), outputFileName)
 	runDockerPackaging(tmpPath, packagingFormat, []string{"dpkg-deb", "--build", ".", outputFileName})
 
-	err = os.Rename(filepath.Join(tmpPath, outputFileName), outputFilePath)
+	err = copy.Copy(filepath.Join(tmpPath, outputFileName), outputFilePath)
 	if err != nil {
 		log.Errorf("Could not move deb file: %v", err)
 		os.Exit(1)
