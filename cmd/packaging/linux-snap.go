@@ -8,10 +8,11 @@ import (
 	"github.com/otiai10/copy"
 
 	"github.com/go-flutter-desktop/hover/internal/build"
-	"github.com/go-flutter-desktop/hover/internal/pubspec"
 	"github.com/go-flutter-desktop/hover/internal/log"
+	"github.com/go-flutter-desktop/hover/internal/pubspec"
 )
 
+// InitLinuxSnap initialize the a linux snap packagingFormat
 func InitLinuxSnap() {
 	projectName := pubspec.GetPubSpec().Name
 	packagingFormat := "linux-snap"
@@ -92,6 +93,7 @@ func InitLinuxSnap() {
 	printInitFinished(packagingFormat)
 }
 
+// BuildLinuxSnap uses the InitLinuxSnap template to create a snap package.
 func BuildLinuxSnap() {
 	projectName := pubspec.GetPubSpec().Name
 	packagingFormat := "linux-snap"

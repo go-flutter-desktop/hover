@@ -318,7 +318,7 @@ func hoverPluginGet(dryRun bool) bool {
 
 			// if local plugin
 			if dep.path != "" {
-				path, err := filepath.Abs(filepath.Join(dep.path, "go"))
+				path, err := filepath.Abs(filepath.Join(dep.path, build.BuildPath))
 				if err != nil {
 					log.Errorf("Failed to resolve absolute path for plugin '%s': %v", dep.name, err)
 					os.Exit(1)

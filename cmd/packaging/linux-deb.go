@@ -9,10 +9,11 @@ import (
 	"github.com/otiai10/copy"
 
 	"github.com/go-flutter-desktop/hover/internal/build"
-	"github.com/go-flutter-desktop/hover/internal/pubspec"
 	"github.com/go-flutter-desktop/hover/internal/log"
+	"github.com/go-flutter-desktop/hover/internal/pubspec"
 )
 
+// InitLinuxDeb initialize the a linux deb packagingFormat.
 func InitLinuxDeb() {
 	projectName := pubspec.GetPubSpec().Name
 	packagingFormat := "linux-deb"
@@ -126,6 +127,7 @@ func InitLinuxDeb() {
 	printInitFinished(packagingFormat)
 }
 
+// BuildLinuxDeb uses the InitLinuxDeb template to create a deb package.
 func BuildLinuxDeb() {
 	projectName := pubspec.GetPubSpec().Name
 	packagingFormat := "linux-deb"

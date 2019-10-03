@@ -10,6 +10,7 @@ import (
 	"github.com/pkg/errors"
 )
 
+// PubSpec contains the parsed contents of pubspec.yaml
 type PubSpec struct {
 	Name         string
 	Description  string
