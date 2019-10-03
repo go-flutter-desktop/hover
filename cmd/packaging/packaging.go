@@ -112,6 +112,10 @@ func createDockerfile(packagingFormat string) {
 		dockerFileContent = []string{
 			"FROM ubuntu:bionic",
 		}
+	} else if packagingFormat == "windows-msi" {
+		dockerFileContent = []string{
+			"FROM ubuntu:bionic",
+			"RUN apt-get update && apt-get install wixl imagemagick -y",
 	} else if packagingFormat == "darwin-bundle" {
 		dockerFileContent = []string{
 			"FROM ubuntu:bionic",

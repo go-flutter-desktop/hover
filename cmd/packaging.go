@@ -9,6 +9,7 @@ import (
 func init() {
 	initPackagingCmd.AddCommand(initLinuxSnapCmd)
 	initPackagingCmd.AddCommand(initLinuxDebCmd)
+	initPackagingCmd.AddCommand(initWindowsMsiCmd)
 	initPackagingCmd.AddCommand(initDarwinBundleCmd)
 	initPackagingCmd.AddCommand(initDarwinPkgCmd)
 	rootCmd.AddCommand(initPackagingCmd)
@@ -41,13 +42,24 @@ var initLinuxDebCmd = &cobra.Command{
 	},
 }
 
+var initWindowsMsiCmd = &cobra.Command{
+	Use:   "windows-msi",
+	Short: "Create configuration files for msi packaging",
+	Run: func(cmd *cobra.Command, args []string) {
+		assertHoverInitialized()
+		packaging.DockerInstalled()
+    
+		packaging.InitWindowsMsi()
+	},
+}
+
 var initDarwinBundleCmd = &cobra.Command{
 	Use:   "darwin-bundle",
 	Short: "Create configuration files for OSX bundle packaging",
 	Run: func(cmd *cobra.Command, args []string) {
 		assertHoverInitialized()
 		packaging.DockerInstalled()
-
+    
 		packaging.InitDarwinBundle()
 	},
 }

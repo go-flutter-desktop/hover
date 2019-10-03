@@ -57,6 +57,7 @@ func init() {
 	buildCmd.AddCommand(buildDarwinBundleCmd)
 	buildCmd.AddCommand(buildDarwinPkgCmd)
 	buildCmd.AddCommand(buildWindowsCmd)
+	buildCmd.AddCommand(buildWindowsMsiCmd)
 	rootCmd.AddCommand(buildCmd)
 }
 
@@ -156,6 +157,22 @@ var buildWindowsCmd = &cobra.Command{
 		assertHoverInitialized()
 
 		buildNormal("windows", nil)
+	},
+}
+
+var buildWindowsMsiCmd = &cobra.Command{
+	Use:   "windows-msi",
+	Short: "Build a desktop release for windows and package it for msi",
+	Run: func(cmd *cobra.Command, args []string) {
+		assertHoverInitialized()
+		packaging.AssertPackagingFormatInitialized("windows-msi")
+
+		if !packaging.DockerInstalled() {
+			os.Exit(1)
+		}
+
+		buildNormal("windows", nil)
+		packaging.BuildWindowsMsi()
 	},
 }
 
