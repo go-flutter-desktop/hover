@@ -149,43 +149,6 @@ func checkForMainDesktop() {
 	}
 }
 
-func outputDirectoryPath(targetOS string) string {
-	outputDirectoryPath, err := filepath.Abs(filepath.Join(build.BuildPath, "build", "outputs", targetOS))
-	if err != nil {
-		log.Errorf("Failed to resolve absolute path for output directory: %v", err)
-		os.Exit(1)
-	}
-	if _, err := os.Stat(outputDirectoryPath); os.IsNotExist(err) {
-		err = os.MkdirAll(outputDirectoryPath, 0775)
-		if err != nil {
-			log.Errorf("Failed to create output directory %s: %v", outputDirectoryPath, err)
-			os.Exit(1)
-		}
-	}
-	return outputDirectoryPath
-}
-
-func outputBinaryName(projectName string, targetOS string) string {
-	var outputBinaryName = projectName
-	switch targetOS {
-	case "darwin":
-		// no special filename
-	case "linux":
-		// no special filename
-	case "windows":
-		outputBinaryName += ".exe"
-	default:
-		log.Errorf("Target platform %s is not supported.", targetOS)
-		os.Exit(1)
-	}
-	return outputBinaryName
-}
-
-func outputBinaryPath(projectName string, targetOS string) string {
-	outputBinaryPath := filepath.Join(outputDirectoryPath(targetOS), outputBinaryName(projectName, targetOS))
-	return outputBinaryPath
-}
-
 func buildInDocker(targetOS string, vmArguments []string) {
 	crossCompilingDir, err := filepath.Abs(filepath.Join(build.BuildPath, "cross-compiling"))
 	err = os.MkdirAll(crossCompilingDir, 0755)
