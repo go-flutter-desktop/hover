@@ -111,6 +111,13 @@ func BuildDarwinPkg() {
 	projectName := pubspec.GetPubSpec().Name
 	packagingFormat := "darwin-pkg"
 	tmpPath := getTemporaryBuildDirectory(projectName, packagingFormat)
+	defer func() {
+		err := os.RemoveAll(tmpPath)
+		if err != nil {
+			log.Errorf("Could not remove temporary build directory: %v", err)
+			os.Exit(1)
+		}
+	}()
 	log.Infof("Packaging pkg in %s", tmpPath)
 
 	err := copy.Copy(build.OutputDirectoryPath("darwin-bundle"), filepath.Join(tmpPath, "flat", "root", "Applications"))
@@ -125,21 +132,18 @@ func BuildDarwinPkg() {
 	}
 
 	outputFileName := projectName + " " + pubspec.GetPubSpec().Version + " Installer.pkg"
-	outputFilePath := filepath.Join(build.OutputDirectoryPath("darwin-pkg"), outputFileName)
 	runDockerPackaging(tmpPath, packagingFormat, []string{
 		"(cd flat/root && find . | cpio -o --format odc --owner 0:80 | gzip -c ) > flat/base.pkg/Payload",
 		"&&", "mkbom -u 0 -g 80 flat/root flat/base.pkg/Bom",
-		"&&", "(cd flat && xar --compression none -cf '../" + projectName + " " + pubspec.GetPubSpec().Version + " Installer.pkg' * )",
+		"&&", "(cd flat && xar --compression none -cf '../" + outputFileName + "' * )",
 	})
+
+	outputFilePath := filepath.Join(build.OutputDirectoryPath("darwin-pkg"), outputFileName)
 	err = copy.Copy(filepath.Join(tmpPath, outputFileName), outputFilePath)
 	if err != nil {
 		log.Errorf("Could not move pkg directory: %v", err)
 		os.Exit(1)
 	}
-	err = os.RemoveAll(tmpPath)
-	if err != nil {
-		log.Errorf("Could not remove temporary build directory: %v", err)
-		os.Exit(1)
-	}
+
 	printPackagingFinished(packagingFormat)
 }

@@ -116,6 +116,13 @@ func BuildDarwinBundle() {
 	projectName := pubspec.GetPubSpec().Name
 	packagingFormat := "darwin-bundle"
 	tmpPath := getTemporaryBuildDirectory(projectName, packagingFormat)
+	defer func() {
+		err := os.RemoveAll(tmpPath)
+		if err != nil {
+			log.Errorf("Could not remove temporary build directory: %v", err)
+			os.Exit(1)
+		}
+	}()
 	log.Infof("Packaging bundle in %s", tmpPath)
 
 	err := copy.Copy(build.OutputDirectoryPath("darwin"), filepath.Join(tmpPath, projectName+".app", "Contents", "MacOS"))
@@ -143,10 +150,6 @@ func BuildDarwinBundle() {
 		log.Errorf("Could not move bundle directory: %v", err)
 		os.Exit(1)
 	}
-	err = os.RemoveAll(tmpPath)
-	if err != nil {
-		log.Errorf("Could not remove temporary build directory: %v", err)
-		os.Exit(1)
-	}
+
 	printPackagingFinished(packagingFormat)
 }

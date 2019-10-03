@@ -99,6 +99,13 @@ func BuildLinuxSnap() {
 	projectName := pubspec.GetPubSpec().Name
 	packagingFormat := "linux-snap"
 	tmpPath := getTemporaryBuildDirectory(projectName, packagingFormat)
+	defer func() {
+		err := os.RemoveAll(tmpPath)
+		if err != nil {
+			log.Errorf("Could not remove temporary build directory: %v", err)
+			os.Exit(1)
+		}
+	}()
 	log.Infof("Packaging snap in %s", tmpPath)
 
 	err := copy.Copy(filepath.Join(build.BuildPath, "assets"), filepath.Join(tmpPath, "assets"))
@@ -117,19 +124,15 @@ func BuildLinuxSnap() {
 		os.Exit(1)
 	}
 
-	outputFileName := strings.ToLower(removeDashesAndUnderscores(projectName)) + "_" + pubspec.GetPubSpec().Version + "_" + runtime.GOARCH + ".snap"
-	outputFilePath := filepath.Join(build.OutputDirectoryPath("linux-snap"), outputFileName)
 	runDockerPackaging(tmpPath, packagingFormat, []string{"snapcraft"})
 
+	outputFileName := strings.ToLower(removeDashesAndUnderscores(projectName)) + "_" + pubspec.GetPubSpec().Version + "_" + runtime.GOARCH + ".snap"
+	outputFilePath := filepath.Join(build.OutputDirectoryPath("linux-snap"), outputFileName)
 	err = copy.Copy(filepath.Join(tmpPath, outputFileName), outputFilePath)
 	if err != nil {
 		log.Errorf("Could not move snap file: %v", err)
 		os.Exit(1)
 	}
-	err = os.RemoveAll(tmpPath)
-	if err != nil {
-		log.Errorf("Could not remove temporary build directory: %v", err)
-		os.Exit(1)
-	}
+
 	printPackagingFinished(packagingFormat)
 }
