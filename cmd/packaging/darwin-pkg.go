@@ -6,10 +6,10 @@ import (
 
 	"github.com/otiai10/copy"
 
+	"github.com/go-flutter-desktop/hover/internal/androidmanifest"
 	"github.com/go-flutter-desktop/hover/internal/build"
 	"github.com/go-flutter-desktop/hover/internal/log"
 	"github.com/go-flutter-desktop/hover/internal/pubspec"
-	"github.com/go-flutter-desktop/hover/internal/androidmanifest"
 )
 
 func InitDarwinPkg() {

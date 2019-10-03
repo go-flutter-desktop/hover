@@ -60,7 +60,7 @@ var initWindowsMsiCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		assertHoverInitialized()
 		packaging.DockerInstalled()
-    
+
 		packaging.InitWindowsMsi()
 	},
 }
@@ -71,7 +71,7 @@ var initDarwinBundleCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		assertHoverInitialized()
 		packaging.DockerInstalled()
-    
+
 		packaging.InitDarwinBundle()
 	},
 }

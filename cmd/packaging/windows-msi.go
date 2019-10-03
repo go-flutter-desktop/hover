@@ -10,8 +10,8 @@ import (
 	"github.com/otiai10/copy"
 
 	"github.com/go-flutter-desktop/hover/internal/build"
-	"github.com/go-flutter-desktop/hover/internal/pubspec"
 	"github.com/go-flutter-desktop/hover/internal/log"
+	"github.com/go-flutter-desktop/hover/internal/pubspec"
 )
 
 var directoriesFileContent = []string{}
@@ -164,12 +164,12 @@ func BuildWindowsMsi() {
 		os.Exit(1)
 	}
 	directoriesFileContent = append(directoriesFileContent, `<Include>`)
-	directoryRefsFileContent = append(directoryRefsFileContent, `<Include>`, )
-	componentRefsFileContent = append(componentRefsFileContent, `<Include>`, )
+	directoryRefsFileContent = append(directoryRefsFileContent, `<Include>`)
+	componentRefsFileContent = append(componentRefsFileContent, `<Include>`)
 	processFiles(filepath.Join(buildDirectoryPath, "flutter_assets"))
 	directoriesFileContent = append(directoriesFileContent, `</Include>`)
-	directoryRefsFileContent = append(directoryRefsFileContent, `</Include>`, )
-	componentRefsFileContent = append(componentRefsFileContent, `</Include>`, )
+	directoryRefsFileContent = append(directoryRefsFileContent, `</Include>`)
+	componentRefsFileContent = append(componentRefsFileContent, `</Include>`)
 
 	for _, line := range directoriesFileContent {
 		if _, err := directoriesFile.WriteString(line + "\n"); err != nil {

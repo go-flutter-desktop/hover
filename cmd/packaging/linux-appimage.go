@@ -79,7 +79,7 @@ func BuildLinuxAppImage() {
 
 	outputFileName := projectName + "-x86_64.AppImage"
 	outputFilePath := filepath.Join(build.OutputDirectoryPath("linux-appimage"), outputFileName)
-	runDockerPackaging(tmpPath, packagingFormat, []string{"appimagetool", ".",})
+	runDockerPackaging(tmpPath, packagingFormat, []string{"appimagetool", "."})
 
 	err = os.Rename(filepath.Join(tmpPath, outputFileName), outputFilePath)
 	if err != nil {

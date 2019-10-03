@@ -124,10 +124,12 @@ func createDockerfile(packagingFormat string) {
 			"mv squashfs-root appimagetool && \\",
 			"rm appimagetool-x86_64.AppImage",
 			"ENV PATH=/opt/appimagetool/usr/bin:$PATH",
+		}
 	} else if packagingFormat == "windows-msi" {
 		dockerFileContent = []string{
 			"FROM ubuntu:bionic",
 			"RUN apt-get update && apt-get install wixl imagemagick -y",
+		}
 	} else if packagingFormat == "darwin-bundle" {
 		dockerFileContent = []string{
 			"FROM ubuntu:bionic",
