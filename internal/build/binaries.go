@@ -5,4 +5,5 @@ var (
 	GoBin      string
 	FlutterBin string
 	DockerBin  string
+	GitBin     string
 )

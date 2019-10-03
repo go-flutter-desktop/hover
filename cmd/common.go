@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"bufio"
+	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -13,6 +14,8 @@ import (
 	"github.com/go-flutter-desktop/hover/internal/build"
 	"github.com/go-flutter-desktop/hover/internal/log"
 	"github.com/go-flutter-desktop/hover/internal/pubspec"
+	"github.com/mitchellh/go-homedir"
+	"github.com/pkg/errors"
 )
 
 // initBinaries is used to ensure go and flutter exec are found in the
@@ -42,7 +45,7 @@ func initBinaries() {
 		log.Errorf("Failed to lookup 'flutter' executable. Please install flutter.\nhttps://flutter.dev/docs/get-started/install")
 		os.Exit(1)
 	}
-	gitBin, err = exec.LookPath("git")
+	build.GitBin, err = exec.LookPath("git")
 	if err != nil {
 		log.Warnf("Failed to lookup 'git' executable.")
 	}
@@ -118,4 +121,91 @@ func askForConfirmation() bool {
 		return true
 	}
 	return false
+}
+
+var camelcaseRegex = regexp.MustCompile("(^[A-Za-z])|_([A-Za-z])")
+
+// toCamelCase take a snake_case string and converts it to camelcase
+func toCamelCase(str string) string {
+	return camelcaseRegex.ReplaceAllStringFunc(str, func(s string) string {
+		return strings.ToUpper(strings.Replace(s, "_", "", -1))
+	})
+}
+
+// initializeGoModule uses the golang binary to initialize the go module
+func initializeGoModule(projectPath string) {
+	wd, err := os.Getwd()
+	if err != nil {
+		log.Errorf("Failed to get working dir: %v\n", err)
+		os.Exit(1)
+	}
+
+	cmdGoModInit := exec.Command(build.GoBin, "mod", "init", projectPath+"/"+build.BuildPath)
+	cmdGoModInit.Dir = filepath.Join(wd, build.BuildPath)
+	cmdGoModInit.Env = append(os.Environ(),
+		"GO111MODULE=on",
+	)
+	cmdGoModInit.Stderr = os.Stderr
+	cmdGoModInit.Stdout = os.Stdout
+	err = cmdGoModInit.Run()
+	if err != nil {
+		log.Errorf("Go mod init failed: %v\n", err)
+		os.Exit(1)
+	}
+
+	cmdGoModTidy := exec.Command(build.GoBin, "mod", "tidy")
+	cmdGoModTidy.Dir = filepath.Join(wd, build.BuildPath)
+	log.Infof("You can add the '%s' directory to git.", cmdGoModTidy.Dir)
+	cmdGoModTidy.Env = append(os.Environ(),
+		"GO111MODULE=on",
+	)
+	cmdGoModTidy.Stderr = os.Stderr
+	cmdGoModTidy.Stdout = os.Stdout
+	err = cmdGoModTidy.Run()
+	if err != nil {
+		log.Errorf("Go mod tidy failed: %v\n", err)
+		os.Exit(1)
+	}
+}
+
+// findPubcachePath returns the absolute path for the pub-cache or an error.
+func findPubcachePath() (string, error) {
+	var path string
+	switch runtime.GOOS {
+	case "darwin", "linux":
+		home, err := homedir.Dir()
+		if err != nil {
+			return "", errors.Wrap(err, "failed to resolve user home dir")
+		}
+		path = filepath.Join(home, ".pub-cache")
+	case "windows":
+		path = filepath.Join(os.Getenv("APPDATA"), "Pub", "Cache")
+	}
+	return path, nil
+}
+
+// shouldRunPluginGet checks if the pubspec.yaml file is older than the
+// .packages file, if it is the case, prompt the user for a hover plugin get.
+func shouldRunPluginGet() (bool, error) {
+	file1Info, err := os.Stat("pubspec.yaml")
+	if err != nil {
+		return false, err
+	}
+
+	file2Info, err := os.Stat(".packages")
+	if err != nil {
+		if os.IsNotExist(err) {
+			return true, nil
+		}
+		return false, err
+	}
+	modTime1 := file1Info.ModTime()
+	modTime2 := file2Info.ModTime()
+
+	diff := modTime1.Sub(modTime2)
+
+	if diff > (time.Duration(0) * time.Second) {
+		return true, nil
+	}
+	return false, nil
 }
