@@ -14,11 +14,13 @@ import (
 	"github.com/otiai10/copy"
 	"github.com/spf13/cobra"
 
-	"github.com/go-flutter-desktop/hover/internal/enginecache"
-	"github.com/go-flutter-desktop/hover/internal/log"
-	"github.com/go-flutter-desktop/hover/internal/versioncheck"
 	"github.com/go-flutter-desktop/hover/internal/build"
+	"github.com/go-flutter-desktop/hover/internal/enginecache"
+	"github.com/go-flutter-desktop/hover/internal/fileutils"
+	"github.com/go-flutter-desktop/hover/internal/log"
 	"github.com/go-flutter-desktop/hover/internal/pubspec"
+	"github.com/go-flutter-desktop/hover/internal/androidmanifest"
+  "github.com/go-flutter-desktop/hover/internal/versioncheck"
 	"github.com/go-flutter-desktop/hover/cmd/packaging"
 )
 
@@ -53,7 +55,10 @@ func init() {
 	buildCmd.AddCommand(buildLinuxDebCmd)
 	buildCmd.AddCommand(buildLinuxAppImageCmd)
 	buildCmd.AddCommand(buildDarwinCmd)
+	buildCmd.AddCommand(buildDarwinBundleCmd)
+	buildCmd.AddCommand(buildDarwinPkgCmd)
 	buildCmd.AddCommand(buildWindowsCmd)
+	buildCmd.AddCommand(buildWindowsMsiCmd)
 	rootCmd.AddCommand(buildCmd)
 }
 
@@ -130,6 +135,38 @@ var buildDarwinCmd = &cobra.Command{
 	},
 }
 
+var buildDarwinBundleCmd = &cobra.Command{
+	Use:   "darwin-bundle",
+	Short: "Build a desktop release for darwin and package it for OSX bundle",
+	Run: func(cmd *cobra.Command, args []string) {
+		assertHoverInitialized()
+		packaging.AssertPackagingFormatInitialized("darwin-bundle")
+
+		if !packaging.DockerInstalled() {
+			os.Exit(1)
+		}
+
+		buildNormal("darwin", nil)
+		packaging.BuildDarwinBundle()
+	},
+}
+
+var buildDarwinPkgCmd = &cobra.Command{
+	Use:   "darwin-pkg",
+	Short: "Build a desktop release for darwin and package it for OSX pkg installer",
+	Run: func(cmd *cobra.Command, args []string) {
+		assertHoverInitialized()
+		packaging.AssertPackagingFormatInitialized("darwin-pkg")
+
+		if !packaging.DockerInstalled() {
+			os.Exit(1)
+		}
+
+		buildNormal("darwin", nil)
+		packaging.BuildDarwinPkg()
+	},
+}
+
 var buildWindowsCmd = &cobra.Command{
 	Use:   "windows",
 	Short: "Build a desktop release for windows",
@@ -138,6 +175,47 @@ var buildWindowsCmd = &cobra.Command{
 
 		buildNormal("windows", nil)
 	},
+}
+
+var buildWindowsMsiCmd = &cobra.Command{
+	Use:   "windows-msi",
+	Short: "Build a desktop release for windows and package it for msi",
+	Run: func(cmd *cobra.Command, args []string) {
+		assertHoverInitialized()
+		packaging.AssertPackagingFormatInitialized("windows-msi")
+
+		if !packaging.DockerInstalled() {
+			os.Exit(1)
+		}
+
+		buildNormal("windows", nil)
+		packaging.BuildWindowsMsi()
+	},
+}
+
+// checkForMainDesktop checks and adds the lib/main_desktop.dart dart entry
+// point if needed
+func checkForMainDesktop() {
+	if buildTarget != "lib/main_desktop.dart" {
+		return
+	}
+	_, err := os.Stat("lib/main_desktop.dart")
+	if os.IsNotExist(err) {
+		log.Warnf("Target file \"lib/main_desktop.dart\" not found.")
+		log.Warnf("Let hover add the \"lib/main_desktop.dart\" file? ")
+		if askForConfirmation() {
+			fileutils.CopyAsset("app/main_desktop.dart", filepath.Join("lib", "main_desktop.dart"), assetsBox)
+			log.Infof("Target file \"lib/main_desktop.dart\" has been created.")
+			log.Infof("       Depending on your project, you might want to tweak it.")
+			return
+		}
+		log.Printf("You can define a custom traget by using the %s flag.", log.Au().Magenta("--target"))
+		os.Exit(1)
+	}
+	if err != nil {
+		log.Errorf("Failed to stat lib/main_desktop.dart: %v\n", err)
+		os.Exit(1)
+	}
 }
 
 func buildInDocker(targetOS string, vmArguments []string) {
@@ -239,6 +317,7 @@ func buildInDocker(targetOS string, vmArguments []string) {
 }
 
 func buildNormal(targetOS string, vmArguments []string) {
+	checkForMainDesktop()
 	crossCompile = targetOS != runtime.GOOS
 	buildDocker = crossCompile || buildDocker
 
@@ -275,7 +354,7 @@ func buildNormal(targetOS string, vmArguments []string) {
 			ignoreWarning := os.Getenv("HOVER_IGNORE_CHANNEL_WARNING")
 			if match[1] != "beta" && ignoreWarning != "true" {
 				log.Warnf("⚠ The go-flutter project tries to stay compatible with the beta channel of Flutter.")
-				log.Warnf("⚠     It's advised to use the beta channel: %s", log.Au().Magenta("flutter channel beta"))
+				log.Warnf("⚠     It's advised to use the beta channel: `%s`", log.Au().Magenta("flutter channel beta"))
 			}
 		} else {
 			log.Warnf("Failed to check your flutter channel: Unrecognized output format")
@@ -285,6 +364,14 @@ func buildNormal(targetOS string, vmArguments []string) {
 	var trackWidgetCreation string
 	if buildDebug {
 		trackWidgetCreation = "--track-widget-creation"
+	}
+
+	// must be run before `flutter build bundle`
+	// because `build bundle` will update the file timestamp
+	runPluginGet, err := shouldRunPluginGet()
+	if err != nil {
+		log.Errorf("Failed to check if plugin get should be run: %v.\n", err)
+		os.Exit(1)
 	}
 
 	cmdFlutterBuild := exec.Command(build.FlutterBin, "build", "bundle",
@@ -301,6 +388,16 @@ func buildNormal(targetOS string, vmArguments []string) {
 		if err != nil {
 			log.Errorf("Flutter build failed: %v", err)
 			os.Exit(1)
+		}
+	}
+
+	if runPluginGet {
+		log.Printf("listing available plugins:")
+		if hoverPluginGet(true) {
+			log.Infof(fmt.Sprintf("run `%s`? ", log.Au().Magenta("hover plugins get")))
+			if askForConfirmation() {
+				hoverPluginGet(false)
+			}
 		}
 	}
 
@@ -495,7 +592,7 @@ func buildCommand(targetOS string, vmArguments []string, outputBinaryPath string
 		pubspec.GetPubSpec().Version,
 		currentTag,
 		pubspec.GetPubSpec().Name,
-		androidOrganizationName()))
+		androidmanifest.AndroidOrganizationName()))
 
 	outputCommand := []string{
 		"go",

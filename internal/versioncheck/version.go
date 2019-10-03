@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-flutter-desktop/hover/internal/fileutils"
 	"github.com/go-flutter-desktop/hover/internal/log"
 	"github.com/pkg/errors"
 	"github.com/tcnksm/go-latest"
@@ -40,7 +41,7 @@ func CheckForGoFlutterUpdate(goDirectoryPath string, currentTag string) {
 
 		// If needed, update the hover's .gitignore file with a new entry.
 		hoverGitignore := filepath.Join(goDirectoryPath, ".gitignore")
-		addLineToFile(hoverGitignore, ".last_goflutter_check")
+		fileutils.AddLineToFile(hoverGitignore, ".last_goflutter_check")
 
 		return
 	}
@@ -87,7 +88,7 @@ func CheckForGoFlutterUpdate(goDirectoryPath string, currentTag string) {
 		}
 		if res.Outdated {
 			log.Infof("The core library 'go-flutter' has an update available. (%s -> %s)", currentTag, res.Current)
-			log.Infof("              To update 'go-flutter' in this project run: $ hover upgrade")
+			log.Infof("              To update 'go-flutter' in this project run: `%s`", log.Au().Magenta("hover upgrade"))
 		}
 
 		if now.Sub(lastUpdateTimeStamp).Hours() > checkRate {
@@ -119,33 +120,4 @@ func CurrentGoFlutterTag(goDirectoryPath string) (currentTag string, err error) 
 	}
 	currentTag = match[1]
 	return
-}
-
-// addLineToFile appends a newLine to a file if the line isn't
-// already present.
-func addLineToFile(filePath, newLine string) {
-	f, err := os.OpenFile(filePath,
-		os.O_RDWR|os.O_APPEND, 0660)
-	if err != nil {
-		log.Errorf("Failed to open file %s: %v", filePath, err)
-		os.Exit(1)
-	}
-	defer f.Close()
-	content, err := ioutil.ReadAll(f)
-	if err != nil {
-		log.Errorf("Failed to read file %s: %v", filePath, err)
-		os.Exit(1)
-	}
-	words := make(map[string]struct{})
-	for _, w := range strings.Fields(strings.ToLower(string(content))) {
-		words[w] = struct{}{}
-	}
-	_, ok := words[newLine]
-	if ok {
-		return
-	}
-	if _, err := f.WriteString(newLine + "\n"); err != nil {
-		log.Errorf("Failed to append '%s' to the file (%s): %v", newLine, filePath, err)
-		os.Exit(1)
-	}
 }

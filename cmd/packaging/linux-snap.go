@@ -4,14 +4,16 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 
 	"github.com/otiai10/copy"
 
 	"github.com/go-flutter-desktop/hover/internal/build"
-	"github.com/go-flutter-desktop/hover/internal/pubspec"
 	"github.com/go-flutter-desktop/hover/internal/log"
+	"github.com/go-flutter-desktop/hover/internal/pubspec"
 )
 
+// InitLinuxSnap initialize the a linux snap packagingFormat
 func InitLinuxSnap() {
 	projectName := pubspec.GetPubSpec().Name
 	packagingFormat := "linux-snap"
@@ -41,7 +43,7 @@ func InitLinuxSnap() {
 		os.Exit(1)
 	}
 	snapcraftFileContent := []string{
-		"name: " + removeDashesAndUnderscores(projectName),
+		"name: " + strings.ToLower(removeDashesAndUnderscores(projectName)),
 		"base: core18",
 		"version: '" + pubspec.GetPubSpec().Version + "'",
 		"summary: " + pubspec.GetPubSpec().Description,
@@ -92,6 +94,7 @@ func InitLinuxSnap() {
 	printInitFinished(packagingFormat)
 }
 
+// BuildLinuxSnap uses the InitLinuxSnap template to create a snap package.
 func BuildLinuxSnap() {
 	projectName := pubspec.GetPubSpec().Name
 	packagingFormat := "linux-snap"
@@ -114,11 +117,11 @@ func BuildLinuxSnap() {
 		os.Exit(1)
 	}
 
-	outputFileName := removeDashesAndUnderscores(projectName) + "_" + pubspec.GetPubSpec().Version + "_" + runtime.GOARCH + ".snap"
+	outputFileName := strings.ToLower(removeDashesAndUnderscores(projectName)) + "_" + pubspec.GetPubSpec().Version + "_" + runtime.GOARCH + ".snap"
 	outputFilePath := filepath.Join(build.OutputDirectoryPath("linux-snap"), outputFileName)
 	runDockerPackaging(tmpPath, packagingFormat, []string{"snapcraft"})
 
-	err = os.Rename(filepath.Join(tmpPath, outputFileName), outputFilePath)
+	err = copy.Copy(filepath.Join(tmpPath, outputFileName), outputFilePath)
 	if err != nil {
 		log.Errorf("Could not move snap file: %v", err)
 		os.Exit(1)
