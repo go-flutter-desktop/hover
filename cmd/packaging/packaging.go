@@ -109,6 +109,11 @@ func createDockerfile(packagingFormat string) {
 		dockerFileContent = []string{
 			"FROM ubuntu:bionic",
 		}
+	} else if packagingFormat == "darwin-bundle" {
+		dockerFileContent = []string{
+			"FROM ubuntu:bionic",
+			"RUN apt-get update && apt-get install icnsutils -y",
+		}
 	} else {
 		log.Errorf("Tried to create Dockerfile for unknown packaging format %s", packagingFormat)
 		os.Exit(1)

@@ -9,6 +9,7 @@ import (
 func init() {
 	initPackagingCmd.AddCommand(initLinuxSnapCmd)
 	initPackagingCmd.AddCommand(initLinuxDebCmd)
+	initPackagingCmd.AddCommand(initDarwinBundleCmd)
 	rootCmd.AddCommand(initPackagingCmd)
 }
 
@@ -36,5 +37,16 @@ var initLinuxDebCmd = &cobra.Command{
 		packaging.DockerInstalled()
 
 		packaging.InitLinuxDeb()
+	},
+}
+
+var initDarwinBundleCmd = &cobra.Command{
+	Use:   "darwin-bundle",
+	Short: "Create configuration files for OSX bundle packaging",
+	Run: func(cmd *cobra.Command, args []string) {
+		assertHoverInitialized()
+		packaging.DockerInstalled()
+
+		packaging.InitDarwinBundle()
 	},
 }

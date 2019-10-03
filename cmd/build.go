@@ -52,6 +52,7 @@ func init() {
 	buildCmd.AddCommand(buildLinuxSnapCmd)
 	buildCmd.AddCommand(buildLinuxDebCmd)
 	buildCmd.AddCommand(buildDarwinCmd)
+	buildCmd.AddCommand(buildDarwinBundleCmd)
 	buildCmd.AddCommand(buildWindowsCmd)
 	rootCmd.AddCommand(buildCmd)
 }
@@ -110,6 +111,22 @@ var buildDarwinCmd = &cobra.Command{
 		assertHoverInitialized()
 
 		buildNormal("darwin", nil)
+	},
+}
+
+var buildDarwinBundleCmd = &cobra.Command{
+	Use:   "darwin-bundle",
+	Short: "Build a desktop release for darwin and package it for OSX bundle",
+	Run: func(cmd *cobra.Command, args []string) {
+		assertHoverInitialized()
+		packaging.AssertPackagingFormatInitialized("darwin-bundle")
+
+		if !packaging.DockerInstalled() {
+			os.Exit(1)
+		}
+
+		buildNormal("darwin", nil)
+		packaging.BuildDarwinBundle()
 	},
 }
 
