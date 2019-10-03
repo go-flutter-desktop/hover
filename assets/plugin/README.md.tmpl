@@ -1,0 +1,17 @@
+# {{.pluginName}}
+
+This Go package implements the host-side of the Flutter [{{.pluginName}}](https://{{.urlVSCRepo}}) plugin.
+
+## Usage
+
+Import as:
+
+```go
+import {{.pluginName}} "{{.urlVSCRepo}}/go"
+```
+
+Then add the following option to your go-flutter [application options](https://github.com/go-flutter-desktop/go-flutter/wiki/Plugin-info):
+
+```go
+flutter.AddPlugin(&{{.pluginName}}.{{.structName}}{}),
+```

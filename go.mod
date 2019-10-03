@@ -15,5 +15,5 @@ require (
 	github.com/spf13/cobra v0.0.5
 	github.com/tcnksm/go-latest v0.0.0-20170313132115-e3007ae9052e
 	golang.org/x/net v0.0.0-20190628185345-da137c7871d7 // indirect
-	gopkg.in/yaml.v2 v2.2.2
+	gopkg.in/yaml.v2 v2.2.4
 )

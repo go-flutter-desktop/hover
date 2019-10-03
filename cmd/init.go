@@ -2,14 +2,13 @@ package cmd
 
 import (
 	"errors"
-	"io"
 	"os"
-	"os/exec"
 	"path/filepath"
 
 	"github.com/spf13/cobra"
 
 	"github.com/go-flutter-desktop/hover/internal/build"
+	"github.com/go-flutter-desktop/hover/internal/fileutils"
 	"github.com/go-flutter-desktop/hover/internal/log"
 	"github.com/go-flutter-desktop/hover/internal/pubspec"
 )
@@ -43,6 +42,8 @@ var initCmd = &cobra.Command{
 				log.Errorf("A file or directory named '%s' already exists. Cannot continue init.", build.BuildPath)
 				os.Exit(1)
 			}
+			log.Errorf("Failed to create '%s' directory: %v", build.BuildPath, err)
+			os.Exit(1)
 		}
 
 		desktopCmdPath := filepath.Join(build.BuildPath, "cmd")
@@ -59,62 +60,13 @@ var initCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		copyAsset("app/main.go", filepath.Join(desktopCmdPath, "main.go"))
-		copyAsset("app/options.go", filepath.Join(desktopCmdPath, "options.go"))
-		copyAsset("app/icon.png", filepath.Join(desktopAssetsPath, "icon.png"))
-		copyAsset("app/gitignore", filepath.Join(build.BuildPath, ".gitignore"))
+		fileutils.CopyAsset("app/main.go", filepath.Join(desktopCmdPath, "main.go"), assetsBox)
+		fileutils.CopyAsset("app/options.go", filepath.Join(desktopCmdPath, "options.go"), assetsBox)
+		fileutils.CopyAsset("app/icon.png", filepath.Join(desktopAssetsPath, "icon.png"), assetsBox)
+		fileutils.CopyAsset("app/gitignore", filepath.Join(build.BuildPath, ".gitignore"), assetsBox)
 
-		wd, err := os.Getwd()
-		if err != nil {
-			log.Errorf("Failed to get working dir: %v", err)
-			os.Exit(1)
-		}
-
-		cmdGoModInit := exec.Command(build.GoBin, "mod", "init", projectPath+"/"+build.BuildPath)
-		cmdGoModInit.Dir = filepath.Join(wd, build.BuildPath)
-		cmdGoModInit.Env = append(os.Environ(),
-			"GO111MODULE=on",
-		)
-		cmdGoModInit.Stderr = os.Stderr
-		cmdGoModInit.Stdout = os.Stdout
-		err = cmdGoModInit.Run()
-		if err != nil {
-			log.Errorf("Go mod init failed: %v", err)
-			os.Exit(1)
-		}
-
-		cmdGoModTidy := exec.Command(build.GoBin, "mod", "tidy")
-		cmdGoModTidy.Dir = filepath.Join(wd, build.BuildPath)
-		log.Printf(cmdGoModTidy.Dir)
-		cmdGoModTidy.Env = append(os.Environ(),
-			"GO111MODULE=on",
-		)
-		cmdGoModTidy.Stderr = os.Stderr
-		cmdGoModTidy.Stdout = os.Stdout
-		err = cmdGoModTidy.Run()
-		if err != nil {
-			log.Errorf("Go mod tidy failed: %v", err)
-			os.Exit(1)
-		}
+		initializeGoModule(projectPath)
+		log.Printf("Available plugin for this project:")
+		pluginListCmd.Run(cmd, []string{})
 	},
-}
-
-func copyAsset(boxed, to string) {
-	file, err := os.Create(to)
-	if err != nil {
-		log.Errorf("Failed to create %s: %v", to, err)
-		os.Exit(1)
-	}
-	defer file.Close()
-	boxedFile, err := assetsBox.Open(boxed)
-	if err != nil {
-		log.Errorf("Failed to find boxed file %s: %v", boxed, err)
-		os.Exit(1)
-	}
-	defer boxedFile.Close()
-	_, err = io.Copy(file, boxedFile)
-	if err != nil {
-		log.Errorf("Failed to write file %s: %v", to, err)
-		os.Exit(1)
-	}
 }

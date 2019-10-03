@@ -5,13 +5,18 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
+	"runtime"
 	"strings"
+	"time"
 
 	"github.com/go-flutter-desktop/hover/internal/build"
 	"github.com/go-flutter-desktop/hover/internal/log"
 	"github.com/go-flutter-desktop/hover/internal/pubspec"
 )
 
+// initBinaries is used to ensure go and flutter exec are found in the
+// user's path
 func initBinaries() {
 	var err error
 	goAvailable := false
@@ -37,11 +42,23 @@ func initBinaries() {
 		log.Errorf("Failed to lookup 'flutter' executable. Please install flutter.\nhttps://flutter.dev/docs/get-started/install")
 		os.Exit(1)
 	}
+	gitBin, err = exec.LookPath("git")
+	if err != nil {
+		log.Warnf("Failed to lookup 'git' executable.")
+	}
 }
 
 // assertInFlutterProject asserts this command is executed in a flutter project
 func assertInFlutterProject() {
 	pubspec.GetPubSpec()
+}
+
+// assertInFlutterPluginProject asserts this command is executed in a flutter plugin project
+func assertInFlutterPluginProject() {
+	if _, ok := pubspec.GetPubSpec().Flutter["plugin"]; !ok {
+		log.Errorf("The directory doesn't appear to contain a plugin package.\nTo create a new plugin, first run `%s`, then run `%s`.", log.Au().Magenta("flutter create --template=plugin"), log.Au().Magenta("hover init-plugin"))
+		os.Exit(1)
+	}
 }
 
 func assertHoverInitialized() {
@@ -59,6 +76,7 @@ func assertHoverInitialized() {
 	}
 }
 
+// hoverMigration migrates from old hover buildPath directory to the new one ("desktop" -> "go")
 func hoverMigration() bool {
 	oldBuildPath := "desktop"
 	file, err := os.Open(filepath.Join(oldBuildPath, "go.mod"))
@@ -86,7 +104,7 @@ func hoverMigration() bool {
 
 // askForConfirmation asks the user for confirmation.
 func askForConfirmation() bool {
-	log.Printf("[y/N]: ")
+	fmt.Print(log.Au().Bold(log.Au().Cyan("hover: ")).String() + "[y/N]? ")
 	in := bufio.NewReader(os.Stdin)
 	s, err := in.ReadString('\n')
 	if err != nil {
