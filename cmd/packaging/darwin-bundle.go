@@ -1,13 +1,15 @@
 package packaging
 
 import (
-	"github.com/otiai10/copy"
 	"os"
 	"path/filepath"
+
+	"github.com/otiai10/copy"
 
 	"github.com/go-flutter-desktop/hover/internal/build"
 	"github.com/go-flutter-desktop/hover/internal/log"
 	"github.com/go-flutter-desktop/hover/internal/pubspec"
+	"github.com/go-flutter-desktop/hover/internal/androidmanifest"
 )
 
 func InitDarwinBundle() {
@@ -71,21 +73,21 @@ func InitDarwinBundle() {
 		`	<key>CFBundleIconFile</key>`,
 		`	<string>icon.icns</string>`,
 		`	<key>CFBundleIdentifier</key>`,
-		`	<string></string>`,
+		`	<string>` + androidmanifest.AndroidOrganizationName() + `</string>`,
 		`	<key>CFBundleInfoDictionaryVersion</key>`,
 		`	<string>6.0</string>`,
 		`	<key>CFBundleLongVersionString</key>`,
-		`	<string></string>`,
+		`	<string>` + pubspec.GetPubSpec().Version + `</string>`,
 		`	<key>CFBundleName</key>`,
-		`	<string></string>`,
+		`	<string>` + projectName + `</string>`,
 		`	<key>CFBundlePackageType</key>`,
 		`	<string>APPL</string>`,
 		`	<key>CFBundleShortVersionString</key>`,
-		`	<string></string>`,
+		`	<string>` + pubspec.GetPubSpec().Version + `</string>`,
 		`	<key>CFBundleSignature</key>`,
 		`	<string>????</string>`,
 		`	<key>CFBundleVersion</key>`,
-		`	<string></string>`,
+		`	<string>` + pubspec.GetPubSpec().Version + `</string>`,
 		`	<key>CSResourcesFileMapped</key>`,
 		`	<true/>`,
 		`	<key>NSHumanReadableCopyright</key>`,

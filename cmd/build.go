@@ -19,6 +19,7 @@ import (
 	"github.com/go-flutter-desktop/hover/internal/versioncheck"
 	"github.com/go-flutter-desktop/hover/internal/build"
 	"github.com/go-flutter-desktop/hover/internal/pubspec"
+	"github.com/go-flutter-desktop/hover/internal/androidmanifest"
 	"github.com/go-flutter-desktop/hover/cmd/packaging"
 )
 
@@ -53,6 +54,7 @@ func init() {
 	buildCmd.AddCommand(buildLinuxDebCmd)
 	buildCmd.AddCommand(buildDarwinCmd)
 	buildCmd.AddCommand(buildDarwinBundleCmd)
+	buildCmd.AddCommand(buildDarwinPkgCmd)
 	buildCmd.AddCommand(buildWindowsCmd)
 	rootCmd.AddCommand(buildCmd)
 }
@@ -127,6 +129,22 @@ var buildDarwinBundleCmd = &cobra.Command{
 
 		buildNormal("darwin", nil)
 		packaging.BuildDarwinBundle()
+	},
+}
+
+var buildDarwinPkgCmd = &cobra.Command{
+	Use:   "darwin-pkg",
+	Short: "Build a desktop release for darwin and package it for OSX pkg installer",
+	Run: func(cmd *cobra.Command, args []string) {
+		assertHoverInitialized()
+		packaging.AssertPackagingFormatInitialized("darwin-pkg")
+
+		if !packaging.DockerInstalled() {
+			os.Exit(1)
+		}
+
+		buildNormal("darwin", nil)
+		packaging.BuildDarwinPkg()
 	},
 }
 
@@ -495,7 +513,7 @@ func buildCommand(targetOS string, vmArguments []string, outputBinaryPath string
 		pubspec.GetPubSpec().Version,
 		currentTag,
 		pubspec.GetPubSpec().Name,
-		androidOrganizationName()))
+		androidmanifest.AndroidOrganizationName()))
 
 	outputCommand := []string{
 		"go",
