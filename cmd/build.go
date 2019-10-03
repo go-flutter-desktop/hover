@@ -14,13 +14,14 @@ import (
 	"github.com/otiai10/copy"
 	"github.com/spf13/cobra"
 
-	"github.com/go-flutter-desktop/hover/cmd/packaging"
 	"github.com/go-flutter-desktop/hover/internal/build"
 	"github.com/go-flutter-desktop/hover/internal/enginecache"
 	"github.com/go-flutter-desktop/hover/internal/fileutils"
 	"github.com/go-flutter-desktop/hover/internal/log"
 	"github.com/go-flutter-desktop/hover/internal/pubspec"
-	"github.com/go-flutter-desktop/hover/internal/versioncheck"
+	"github.com/go-flutter-desktop/hover/internal/androidmanifest"
+  "github.com/go-flutter-desktop/hover/internal/versioncheck"
+	"github.com/go-flutter-desktop/hover/cmd/packaging"
 )
 
 var dotSlash = string([]byte{'.', filepath.Separator})
@@ -53,6 +54,8 @@ func init() {
 	buildCmd.AddCommand(buildLinuxSnapCmd)
 	buildCmd.AddCommand(buildLinuxDebCmd)
 	buildCmd.AddCommand(buildDarwinCmd)
+	buildCmd.AddCommand(buildDarwinBundleCmd)
+	buildCmd.AddCommand(buildDarwinPkgCmd)
 	buildCmd.AddCommand(buildWindowsCmd)
 	rootCmd.AddCommand(buildCmd)
 }
@@ -111,6 +114,38 @@ var buildDarwinCmd = &cobra.Command{
 		assertHoverInitialized()
 
 		buildNormal("darwin", nil)
+	},
+}
+
+var buildDarwinBundleCmd = &cobra.Command{
+	Use:   "darwin-bundle",
+	Short: "Build a desktop release for darwin and package it for OSX bundle",
+	Run: func(cmd *cobra.Command, args []string) {
+		assertHoverInitialized()
+		packaging.AssertPackagingFormatInitialized("darwin-bundle")
+
+		if !packaging.DockerInstalled() {
+			os.Exit(1)
+		}
+
+		buildNormal("darwin", nil)
+		packaging.BuildDarwinBundle()
+	},
+}
+
+var buildDarwinPkgCmd = &cobra.Command{
+	Use:   "darwin-pkg",
+	Short: "Build a desktop release for darwin and package it for OSX pkg installer",
+	Run: func(cmd *cobra.Command, args []string) {
+		assertHoverInitialized()
+		packaging.AssertPackagingFormatInitialized("darwin-pkg")
+
+		if !packaging.DockerInstalled() {
+			os.Exit(1)
+		}
+
+		buildNormal("darwin", nil)
+		packaging.BuildDarwinPkg()
 	},
 }
 
@@ -523,7 +558,7 @@ func buildCommand(targetOS string, vmArguments []string, outputBinaryPath string
 		pubspec.GetPubSpec().Version,
 		currentTag,
 		pubspec.GetPubSpec().Name,
-		androidOrganizationName()))
+		androidmanifest.AndroidOrganizationName()))
 
 	outputCommand := []string{
 		"go",
