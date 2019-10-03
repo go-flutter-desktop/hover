@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"runtime"
+	"strings"
 
 	"github.com/otiai10/copy"
 
@@ -42,7 +43,7 @@ func InitLinuxSnap() {
 		os.Exit(1)
 	}
 	snapcraftFileContent := []string{
-		"name: " + removeDashesAndUnderscores(projectName),
+		"name: " + strings.ToLower(removeDashesAndUnderscores(projectName)),
 		"base: core18",
 		"version: '" + pubspec.GetPubSpec().Version + "'",
 		"summary: " + pubspec.GetPubSpec().Description,
