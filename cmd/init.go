@@ -5,9 +5,12 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/spf13/cobra"
+
+	"github.com/go-flutter-desktop/hover/internal/build"
 	"github.com/go-flutter-desktop/hover/internal/fileutils"
 	"github.com/go-flutter-desktop/hover/internal/log"
-	"github.com/spf13/cobra"
+	"github.com/go-flutter-desktop/hover/internal/pubspec"
 )
 
 func init() {
@@ -28,29 +31,29 @@ var initCmd = &cobra.Command{
 
 		var projectPath string
 		if len(args) == 0 || args[0] == "." {
-			projectPath = getPubSpec().Name
+			projectPath = pubspec.GetPubSpec().Name
 		} else {
 			projectPath = args[0]
 		}
 
-		err := os.Mkdir(buildPath, 0775)
+		err := os.Mkdir(build.BuildPath, 0775)
 		if err != nil {
 			if os.IsExist(err) {
-				log.Errorf("A file or directory named '%s' already exists. Cannot continue init.", buildPath)
+				log.Errorf("A file or directory named '%s' already exists. Cannot continue init.", build.BuildPath)
 				os.Exit(1)
 			}
-			log.Errorf("Failed to create '%s' directory: %v", buildPath, err)
+			log.Errorf("Failed to create '%s' directory: %v", build.BuildPath, err)
 			os.Exit(1)
 		}
 
-		desktopCmdPath := filepath.Join(buildPath, "cmd")
+		desktopCmdPath := filepath.Join(build.BuildPath, "cmd")
 		err = os.Mkdir(desktopCmdPath, 0775)
 		if err != nil {
 			log.Errorf("Failed to create '%s': %v", desktopCmdPath, err)
 			os.Exit(1)
 		}
 
-		desktopAssetsPath := filepath.Join(buildPath, "assets")
+		desktopAssetsPath := filepath.Join(build.BuildPath, "assets")
 		err = os.Mkdir(desktopAssetsPath, 0775)
 		if err != nil {
 			log.Errorf("Failed to create '%s': %v", desktopAssetsPath, err)
@@ -60,7 +63,7 @@ var initCmd = &cobra.Command{
 		fileutils.CopyAsset("app/main.go", filepath.Join(desktopCmdPath, "main.go"), assetsBox)
 		fileutils.CopyAsset("app/options.go", filepath.Join(desktopCmdPath, "options.go"), assetsBox)
 		fileutils.CopyAsset("app/icon.png", filepath.Join(desktopAssetsPath, "icon.png"), assetsBox)
-		fileutils.CopyAsset("app/gitignore", filepath.Join(buildPath, ".gitignore"), assetsBox)
+		fileutils.CopyAsset("app/gitignore", filepath.Join(build.BuildPath, ".gitignore"), assetsBox)
 
 		initializeGoModule(projectPath)
 		log.Printf("Available plugin for this project:")

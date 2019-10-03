@@ -5,8 +5,10 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/go-flutter-desktop/hover/internal/build"
 	"github.com/go-flutter-desktop/hover/internal/fileutils"
 	"github.com/go-flutter-desktop/hover/internal/log"
+	"github.com/go-flutter-desktop/hover/internal/pubspec"
 	"github.com/spf13/cobra"
 )
 
@@ -19,7 +21,7 @@ var createPluginCmd = &cobra.Command{
 	Short: "Initialize a go-flutter plugin in a existing flutter platform plugin",
 	Args: func(cmd *cobra.Command, args []string) error {
 		if len(args) != 1 {
-			return errors.New("requires one argument, the VCS repository path. e.g.: github.com/my-organization/" + getPubSpec().Name + "\n" +
+			return errors.New("requires one argument, the VCS repository path. e.g.: github.com/my-organization/" + pubspec.GetPubSpec().Name + "\n" +
 				"This path will be used by Golang to fetch the plugin, make sure it correspond to the code repository of the plugin!")
 		}
 		return nil
@@ -29,25 +31,25 @@ var createPluginCmd = &cobra.Command{
 
 		vcsPath := args[0]
 
-		err := os.Mkdir(buildPath, 0775)
+		err := os.Mkdir(build.BuildPath, 0775)
 		if err != nil {
 			if os.IsExist(err) {
-				log.Errorf("A file or directory named `" + buildPath + "` already exists. Cannot continue init-plugin.")
+				log.Errorf("A file or directory named `" + build.BuildPath + "` already exists. Cannot continue init-plugin.")
 				os.Exit(1)
 			}
-			log.Errorf("Failed to create '%s' directory: %v", buildPath, err)
+			log.Errorf("Failed to create '%s' directory: %v", build.BuildPath, err)
 			os.Exit(1)
 		}
 
 		templateData := map[string]string{
-			"pluginName": getPubSpec().Name,
-			"structName": toCamelCase(getPubSpec().Name + "Plugin"),
+			"pluginName": pubspec.GetPubSpec().Name,
+			"structName": toCamelCase(pubspec.GetPubSpec().Name + "Plugin"),
 			"urlVSCRepo": vcsPath,
 		}
 
-		fileutils.CopyTemplate("plugin/plugin.go.tmpl", filepath.Join(buildPath, "plugin.go"), assetsBox, templateData)
-		fileutils.CopyTemplate("plugin/README.md.tmpl", filepath.Join(buildPath, "README.md"), assetsBox, templateData)
-		fileutils.CopyTemplate("plugin/import.go.tmpl.tmpl", filepath.Join(buildPath, "import.go.tmpl"), assetsBox, templateData)
+		fileutils.CopyTemplate("plugin/plugin.go.tmpl", filepath.Join(build.BuildPath, "plugin.go"), assetsBox, templateData)
+		fileutils.CopyTemplate("plugin/README.md.tmpl", filepath.Join(build.BuildPath, "README.md"), assetsBox, templateData)
+		fileutils.CopyTemplate("plugin/import.go.tmpl.tmpl", filepath.Join(build.BuildPath, "import.go.tmpl"), assetsBox, templateData)
 
 		initializeGoModule(vcsPath)
 	},

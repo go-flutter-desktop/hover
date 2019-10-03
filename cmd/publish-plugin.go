@@ -10,7 +10,9 @@ import (
 	"regexp"
 	"strings"
 
+	"github.com/go-flutter-desktop/hover/internal/build"
 	"github.com/go-flutter-desktop/hover/internal/log"
+	"github.com/go-flutter-desktop/hover/internal/pubspec"
 	"github.com/spf13/cobra"
 )
 
@@ -36,29 +38,29 @@ var publishPluginCmd = &cobra.Command{
 		}
 
 		// check if dir 'go' is tracked
-		goCheckTrackedCmd := exec.Command(gitBin, "ls-files", "--error-unmatch", buildPath)
+		goCheckTrackedCmd := exec.Command(gitBin, "ls-files", "--error-unmatch", build.BuildPath)
 		goCheckTrackedCmd.Stderr = os.Stderr
 		err := goCheckTrackedCmd.Run()
 		if err != nil {
-			log.Errorf("The '%s' directory doesn't seems to be tracked by git. Error: %v", buildPath, err)
+			log.Errorf("The '%s' directory doesn't seems to be tracked by git. Error: %v", build.BuildPath, err)
 			os.Exit(1)
 		}
 
 		// check if dir 'go' is clean (all tracked files are commited)
-		goCheckCleanCmd := exec.Command(gitBin, "status", "--untracked-file=no", "--porcelain", buildPath)
+		goCheckCleanCmd := exec.Command(gitBin, "status", "--untracked-file=no", "--porcelain", build.BuildPath)
 		goCheckCleanCmd.Stderr = os.Stderr
 		cleanOut, err := goCheckCleanCmd.Output()
 		if err != nil {
-			log.Errorf("Failed to check if '%s' is clean.", buildPath, err)
+			log.Errorf("Failed to check if '%s' is clean.", build.BuildPath, err)
 			os.Exit(1)
 		}
 		if len(cleanOut) != 0 {
-			log.Errorf("The '%s' directory doesn't seems to be clean. (make sure tracked files are commited)", buildPath)
+			log.Errorf("The '%s' directory doesn't seems to be clean. (make sure tracked files are commited)", build.BuildPath)
 			os.Exit(1)
 		}
 
 		// check if one of the git remote urls equals the package import 'url'
-		pluginImportStr, err := readPluginGoImport(filepath.Join("go", "import.go.tmpl"), getPubSpec().Name)
+		pluginImportStr, err := readPluginGoImport(filepath.Join("go", "import.go.tmpl"), pubspec.GetPubSpec().Name)
 		if err != nil {
 			log.Errorf("Failed to read the plugin import url: %v", err)
 			log.Infof("The file go/import.go.tmpl should look something like this:")
@@ -70,7 +72,7 @@ import (
 )
 
 // .. [init function] ..
-      `, getPubSpec().Name, getPubSpec().Name)
+      `, pubspec.GetPubSpec().Name, pubspec.GetPubSpec().Name)
 			os.Exit(1)
 		}
 		url, err := url.Parse("https://" + pluginImportStr)
@@ -101,9 +103,9 @@ import (
 			os.Exit(1)
 		}
 
-		tag := "go/v" + getPubSpec().Version
+		tag := "go/v" + pubspec.GetPubSpec().Version
 
-		log.Infof("Your plugin at version '%s' is ready to be publish as a golang module.", getPubSpec().Version)
+		log.Infof("Your plugin at version '%s' is ready to be publish as a golang module.", pubspec.GetPubSpec().Version)
 		log.Infof("Please run: `%s`", log.Au().Magenta("git tag "+tag))
 		log.Infof("            `%s`", log.Au().Magenta("git push "+match[1]+" "+tag))
 

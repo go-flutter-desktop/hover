@@ -13,8 +13,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/go-flutter-desktop/hover/internal/build"
 	"github.com/go-flutter-desktop/hover/internal/fileutils"
 	"github.com/go-flutter-desktop/hover/internal/log"
+	"github.com/go-flutter-desktop/hover/internal/pubspec"
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 	yaml "gopkg.in/yaml.v2"
@@ -77,7 +79,7 @@ type PubDep struct {
 }
 
 func (p PubDep) imported() bool {
-	pluginImportOutPath := filepath.Join(buildPath, "cmd", fmt.Sprintf("import-%s-plugin.go", p.name))
+	pluginImportOutPath := filepath.Join(build.BuildPath, "cmd", fmt.Sprintf("import-%s-plugin.go", p.name))
 	if _, err := os.Stat(pluginImportOutPath); err == nil {
 		return true
 	}
@@ -93,7 +95,7 @@ func (p PubDep) platforms() []string {
 		platforms = append(platforms, "ios")
 	}
 	if p.desktop {
-		platforms = append(platforms, buildPath)
+		platforms = append(platforms, build.BuildPath)
 	}
 	return platforms
 }
@@ -168,7 +170,7 @@ var pluginTidyCmd = &cobra.Command{
 		assertInFlutterProject()
 		assertHoverInitialized()
 
-		desktopCmdPath := filepath.Join(buildPath, "cmd")
+		desktopCmdPath := filepath.Join(build.BuildPath, "cmd")
 		dependencyList, err := listPlatformPlugin()
 		if err != nil {
 			log.Errorf("%v", err)
@@ -214,7 +216,7 @@ var pluginTidyCmd = &cobra.Command{
 					if err != nil || pluginImportStr == "" {
 						log.Warnf("Couldn't clean the '%s' plugin from the 'go.mod' file. Error: %v", pluginName, err)
 					} else {
-						fileutils.RemoveLinesFromFile(filepath.Join(buildPath, "go.mod"), pluginImportStr)
+						fileutils.RemoveLinesFromFile(filepath.Join(build.BuildPath, "go.mod"), pluginImportStr)
 					}
 
 					// remove import file
@@ -273,7 +275,7 @@ func hoverPluginGet(dryRun bool) bool {
 			continue
 		}
 
-		pluginImportOutPath := filepath.Join(buildPath, "cmd", fmt.Sprintf("import-%s-plugin.go", dep.name))
+		pluginImportOutPath := filepath.Join(build.BuildPath, "cmd", fmt.Sprintf("import-%s-plugin.go", dep.name))
 
 		if dep.imported() && !reImport {
 			pluginImportStr, err := readPluginGoImport(pluginImportOutPath, dep.name)
@@ -321,7 +323,7 @@ func hoverPluginGet(dryRun bool) bool {
 					log.Errorf("Failed to resolve absolute path for plugin '%s': %v", dep.name, err)
 					os.Exit(1)
 				}
-				fileutils.AddLineToFile(filepath.Join(buildPath, "go.mod"), fmt.Sprintf("replace %s => %s", pluginImportStr, path))
+				fileutils.AddLineToFile(filepath.Join(build.BuildPath, "go.mod"), fmt.Sprintf("replace %s => %s", pluginImportStr, path))
 			}
 
 			fmt.Printf("       plugin: [%s] imported\n", dep.name)
@@ -372,7 +374,7 @@ func listPlatformPlugin() ([]PubDep, error) {
 		}
 
 		pluginPubspecPath := filepath.Join(pluginPath, "pubspec.yaml")
-		pluginPubspec, err := readPubSpecFile(pluginPubspecPath)
+		pluginPubspec, err := pubspec.ReadPubSpecFile(pluginPubspecPath)
 		if err != nil {
 			continue
 		}
@@ -406,13 +408,13 @@ func listPlatformPlugin() ([]PubDep, error) {
 		if err != nil {
 			return nil, err
 		}
-		entry.desktop, err = detectPlatformPlugin(buildPath)
+		entry.desktop, err = detectPlatformPlugin(build.BuildPath)
 		if err != nil {
 			return nil, err
 		}
 
 		if entry.desktop {
-			entry.pluginGoSource = filepath.Join(pluginPath, buildPath)
+			entry.pluginGoSource = filepath.Join(pluginPath, build.BuildPath)
 			autoImportTemplate := filepath.Join(entry.pluginGoSource, "import.go.tmpl")
 			_, err := os.Stat(autoImportTemplate)
 			entry.autoImport = true
@@ -524,7 +526,7 @@ func fetchStandaloneImplementationList() ([]StandaloneImplementation, error) {
 // goGetModuleSuccess updates a module at a version, if it fails, return false.
 func goGetModuleSuccess(pluginImportStr, version string) bool {
 	cmdGoGetU := exec.Command(goBin, "get", "-u", pluginImportStr+"@v"+version)
-	cmdGoGetU.Dir = filepath.Join(buildPath)
+	cmdGoGetU.Dir = filepath.Join(build.BuildPath)
 	cmdGoGetU.Env = append(os.Environ(),
 		"GOPROXY=direct", // github.com/golang/go/issues/32955 (allows '/' in branch name)
 		"GO111MODULE=on",
