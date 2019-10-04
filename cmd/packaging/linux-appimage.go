@@ -7,6 +7,7 @@ import (
 	"github.com/otiai10/copy"
 
 	"github.com/go-flutter-desktop/hover/internal/build"
+	"github.com/go-flutter-desktop/hover/internal/fileutils"
 	"github.com/go-flutter-desktop/hover/internal/log"
 	"github.com/go-flutter-desktop/hover/internal/pubspec"
 )
@@ -16,45 +17,22 @@ func InitLinuxAppImage() {
 	packagingFormat := "linux-appimage"
 	createPackagingFormatDirectory(packagingFormat)
 	appImageDirectoryPath := packagingFormatPath(packagingFormat)
-	appRunFilePath, err := filepath.Abs(filepath.Join(appImageDirectoryPath, "AppRun"))
-	if err != nil {
-		log.Errorf("Failed to resolve absolute path for AppRun file %s: %v", appRunFilePath, err)
-		os.Exit(1)
+
+	templateData := map[string]string{
+		"projectName": projectName,
 	}
 
-	appRunFile, err := os.Create(appRunFilePath)
-	if err != nil {
-		log.Errorf("Failed to create AppRun file %s: %v", appRunFilePath, err)
-		os.Exit(1)
-	}
-	appRunFileContent := []string{
-		`#!/bin/sh`,
-		`cd "$(dirname "$0")"`,
-		`exec ./build/` + projectName,
-	}
-	for _, line := range appRunFileContent {
-		if _, err := appRunFile.WriteString(line + "\n"); err != nil {
-			log.Errorf("Could not write AppRun file: %v", err)
-			os.Exit(1)
-		}
-	}
-	err = appRunFile.Close()
-	if err != nil {
-		log.Errorf("Could not close AppRun file: %v", err)
-		os.Exit(1)
-	}
-	err = os.Chmod(appRunFilePath, 0777)
+	appRunFilePath := filepath.Join(appImageDirectoryPath, "AppRun")
+
+	fileutils.CopyTemplate("packaging/AppRun.tmpl", filepath.Join(appImageDirectoryPath, "AppRun"), fileutils.AssetsBox, templateData)
+
+	err := os.Chmod(appRunFilePath, 0777)
 	if err != nil {
 		log.Errorf("Failed to change file permissions for AppRun file: %v", err)
 		os.Exit(1)
 	}
 
-	desktopFilePath, err := filepath.Abs(filepath.Join(appImageDirectoryPath, projectName+".desktop"))
-	if err != nil {
-		log.Errorf("Failed to resolve absolute path for desktop file %s: %v", desktopFilePath, err)
-		os.Exit(1)
-	}
-	createLinuxDesktopFile(desktopFilePath, packagingFormat, "", "/build/assets/icon")
+	createLinuxDesktopFile(filepath.Join(appImageDirectoryPath, projectName+".desktop"), "", "/build/assets/icon")
 	createDockerfile(packagingFormat)
 
 	printInitFinished(packagingFormat)

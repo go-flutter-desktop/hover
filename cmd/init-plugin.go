@@ -5,11 +5,12 @@ import (
 	"os"
 	"path/filepath"
 
+	"github.com/spf13/cobra"
+
 	"github.com/go-flutter-desktop/hover/internal/build"
 	"github.com/go-flutter-desktop/hover/internal/fileutils"
 	"github.com/go-flutter-desktop/hover/internal/log"
 	"github.com/go-flutter-desktop/hover/internal/pubspec"
-	"github.com/spf13/cobra"
 )
 
 func init() {
@@ -47,9 +48,9 @@ var createPluginCmd = &cobra.Command{
 			"urlVSCRepo": vcsPath,
 		}
 
-		fileutils.CopyTemplate("plugin/plugin.go.tmpl", filepath.Join(build.BuildPath, "plugin.go"), assetsBox, templateData)
-		fileutils.CopyTemplate("plugin/README.md.tmpl", filepath.Join(build.BuildPath, "README.md"), assetsBox, templateData)
-		fileutils.CopyTemplate("plugin/import.go.tmpl.tmpl", filepath.Join(build.BuildPath, "import.go.tmpl"), assetsBox, templateData)
+		fileutils.CopyTemplate("plugin/plugin.go.tmpl", filepath.Join(build.BuildPath, "plugin.go"), fileutils.AssetsBox, templateData)
+		fileutils.CopyTemplate("plugin/README.md.tmpl", filepath.Join(build.BuildPath, "README.md"), fileutils.AssetsBox, templateData)
+		fileutils.CopyTemplate("plugin/import.go.tmpl.tmpl", filepath.Join(build.BuildPath, "import.go.tmpl"), fileutils.AssetsBox, templateData)
 
 		initializeGoModule(vcsPath)
 	},

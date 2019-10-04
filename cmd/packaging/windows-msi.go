@@ -1,7 +1,6 @@
 package packaging
 
 import (
-	"fmt"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -10,6 +9,7 @@ import (
 	"github.com/otiai10/copy"
 
 	"github.com/go-flutter-desktop/hover/internal/build"
+	"github.com/go-flutter-desktop/hover/internal/fileutils"
 	"github.com/go-flutter-desktop/hover/internal/log"
 	"github.com/go-flutter-desktop/hover/internal/pubspec"
 )
@@ -24,88 +24,14 @@ func InitWindowsMsi() {
 	createPackagingFormatDirectory(packagingFormat)
 	msiDirectoryPath := packagingFormatPath(packagingFormat)
 
-	wxsFilePath, err := filepath.Abs(filepath.Join(msiDirectoryPath, projectName+".wxs"))
-	if err != nil {
-		log.Errorf("Failed to resolve absolute path for %s.wxs file %s: %v", projectName, wxsFilePath, err)
-		os.Exit(1)
-	}
-	wxsFile, err := os.Create(wxsFilePath)
-	if err != nil {
-		log.Errorf("Failed to create %s.wxs file %s: %v", projectName, wxsFilePath, err)
-		os.Exit(1)
-	}
-	wxsFileContent := []string{
-		`<?xml version="1.0" encoding="UTF-8"?>`,
-		`<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">`,
-		fmt.Sprintf(`    <Product Id="*" UpgradeCode="*" Version="%s" Language="1033" Name="%s" Manufacturer="%s">`, pubspec.GetPubSpec().Version, projectName, getAuthor()),
-		`        <Package InstallerVersion="300" Compressed="yes"/>`,
-		fmt.Sprintf(`        <Media Id="1" Cabinet="%s.cab" EmbedCab="yes" />`, projectName),
-		`        <Directory Id="TARGETDIR" Name="SourceDir">`,
-		`            <Directory Id="ProgramFilesFolder">`,
-		fmt.Sprintf(`                <Directory Id="APPLICATIONROOTDIRECTORY" Name="%s">`, projectName),
-		`                    <Directory Id="ASSETSDIRECTORY" Name="assets"/>`,
-		`                    <Directory Id="FLUTTERASSETSDIRECTORY" Name="flutter_assets">`,
-		`                        <?include directories.wxi ?>`,
-		`                    </Directory>`,
-		`                </Directory>`,
-		`            </Directory>`,
-		`            <Directory Id="ProgramMenuFolder">`,
-		fmt.Sprintf(`                <Directory Id="ApplicationProgramsFolder" Name="%s"/>`, projectName),
-		`            </Directory>`,
-		`        </Directory>`,
-		`        <Icon Id="ShortcutIcon" SourceFile="build/assets/icon.ico"/>`,
-		`        <DirectoryRef Id="APPLICATIONROOTDIRECTORY">`,
-		fmt.Sprintf(`            <Component Id="%s.exe" Guid="*">`, projectName),
-		fmt.Sprintf(`                <File Id="%s.exe" Source="build/%s.exe" KeyPath="yes"/>`, projectName, projectName),
-		`            </Component>`,
-		`            <Component Id="flutter_engine.dll" Guid="*">`,
-		`                <File Id="flutter_engine.dll" Source="build/flutter_engine.dll" KeyPath="yes"/>`,
-		`            </Component>`,
-		`            <Component Id="icudtl.dat" Guid="*">`,
-		`                <File Id="icudtl.dat" Source="build/icudtl.dat" KeyPath="yes"/>`,
-		`            </Component>`,
-		`        </DirectoryRef>`,
-		`        <DirectoryRef Id="ASSETSDIRECTORY">`,
-		`            <Component Id="icon.png" Guid="*">`,
-		`                <File Id="icon.png" Source="build/assets/icon.png" KeyPath="yes"/>`,
-		`            </Component>`,
-		`        </DirectoryRef>`,
-		`        <?include directory_refs.wxi ?>`,
-		`        <DirectoryRef Id="ApplicationProgramsFolder">`,
-		`            <Component Id="ApplicationShortcut" Guid="*">`,
-		`                <Shortcut Id="ApplicationStartMenuShortcut"`,
-		fmt.Sprintf(`                        Name="%s"`, projectName),
-		fmt.Sprintf(`                        Description="%s"`, pubspec.GetPubSpec().Description),
-		fmt.Sprintf(`                        Target="[#%s.exe]"`, projectName),
-		`                        WorkingDirectory="APPLICATIONROOTDIRECTORY"`,
-		`                        Icon="ShortcutIcon"/>`,
-		`                <RemoveFolder Id="CleanUpShortCut" On="uninstall"/>`,
-		fmt.Sprintf(`                <RegistryValue Root="HKCU" Key="Software\%s\%s" Name="installed" Type="integer" Value="1" KeyPath="yes"/>`, getAuthor(), projectName),
-		`            </Component>`,
-		`        </DirectoryRef>`,
-		fmt.Sprintf(`        <Feature Id="MainApplication" Title="%s" Level="1">`, projectName),
-		fmt.Sprintf(`            <ComponentRef Id="%s.exe"/>`, projectName),
-		`            <ComponentRef Id="flutter_engine.dll"/>`,
-		`            <ComponentRef Id="icudtl.dat"/>`,
-		`            <ComponentRef Id="icon.png"/>`,
-		`            <ComponentRef Id="ApplicationShortcut"/>`,
-		`            <?include component_refs.wxi ?>`,
-		`        </Feature>`,
-		`    </Product>`,
-		`</Wix>`,
+	templateData := map[string]string{
+		"projectName": projectName,
+		"version":     pubspec.GetPubSpec().Version,
+		"author":      getAuthor(),
+		"description": pubspec.GetPubSpec().Description,
 	}
 
-	for _, line := range wxsFileContent {
-		if _, err := wxsFile.WriteString(line + "\n"); err != nil {
-			log.Errorf("Could not write %s.wxs: %v", projectName, err)
-			os.Exit(1)
-		}
-	}
-	err = wxsFile.Close()
-	if err != nil {
-		log.Errorf("Could not close %s.wxs: %v", projectName, err)
-		os.Exit(1)
-	}
+	fileutils.CopyTemplate("packaging/app.wxs.tmpl", filepath.Join(msiDirectoryPath, projectName+".wxs"), fileutils.AssetsBox, templateData)
 
 	createDockerfile(packagingFormat)
 

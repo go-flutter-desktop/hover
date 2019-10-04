@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-flutter-desktop/hover/internal/androidmanifest"
 	"github.com/go-flutter-desktop/hover/internal/build"
+	"github.com/go-flutter-desktop/hover/internal/fileutils"
 	"github.com/go-flutter-desktop/hover/internal/log"
 	"github.com/go-flutter-desktop/hover/internal/pubspec"
 )
@@ -33,72 +34,14 @@ func InitDarwinPkg() {
 		os.Exit(1)
 	}
 
-	packageInfoFilePath, err := filepath.Abs(filepath.Join(basePkgDirectoryPath, "PackageInfo"))
-	if err != nil {
-		log.Errorf("Failed to resolve absolute path for PackageInfo file %s: %v", packageInfoFilePath, err)
-		os.Exit(1)
-	}
-	packageInfoFile, err := os.Create(packageInfoFilePath)
-	if err != nil {
-		log.Errorf("Failed to create PackageInfo file %s: %v", packageInfoFilePath, err)
-		os.Exit(1)
-	}
-	packageInfoFileContent := []string{
-		`<pkg-info format-version="2" identifier="` + androidmanifest.AndroidOrganizationName() + `.base.pkg" version="` + pubspec.GetPubSpec().Version + `" install-location="/" auth="root">`,
-		`	<bundle-version>`,
-		`		<bundle id="` + androidmanifest.AndroidOrganizationName() + `" CFBundleIdentifier="` + androidmanifest.AndroidOrganizationName() + `" path="./Applications/` + projectName + `.app" CFBundleVersion="` + pubspec.GetPubSpec().Version + `"/>`,
-		`	</bundle-version>`,
-		`</pkg-info>`,
+	templateData := map[string]string{
+		"projectName":      projectName,
+		"organizationName": androidmanifest.AndroidOrganizationName(),
+		"version":          pubspec.GetPubSpec().Version,
 	}
 
-	for _, line := range packageInfoFileContent {
-		if _, err := packageInfoFile.WriteString(line + "\n"); err != nil {
-			log.Errorf("Could not write PackageInfo file: %v", err)
-			os.Exit(1)
-		}
-	}
-	err = packageInfoFile.Close()
-	if err != nil {
-		log.Errorf("Could not close PackageInfo file: %v", err)
-		os.Exit(1)
-	}
-
-	distributionFilePath, err := filepath.Abs(filepath.Join(pkgDirectoryPath, "flat", "Distribution"))
-	if err != nil {
-		log.Errorf("Failed to resolve absolute path for Distribution file %s: %v", distributionFilePath, err)
-		os.Exit(1)
-	}
-	distributionFile, err := os.Create(distributionFilePath)
-	if err != nil {
-		log.Errorf("Failed to create Distribution file %s: %v", packageInfoFilePath, err)
-		os.Exit(1)
-	}
-	distributionFileContent := []string{
-		`<?xml version="1.0" encoding="utf-8"?>`,
-		`<installer-gui-script minSpecVersion="1">`,
-		`	<title>` + projectName + `</title>`,
-		`	<background alignment="topleft" file="root/Applications/` + projectName + `.app/Contents/MacOS/assets/icon.png"/>`,
-		`	<choices-outline>`,
-		`		<line choice="choiceBase"/>`,
-		`	</choices-outline>`,
-		`	<choice id="choiceBase" title="base">`,
-		`		<pkg-ref id="` + androidmanifest.AndroidOrganizationName() + `.base.pkg"/>`,
-		`	</choice>`,
-		`	<pkg-ref id="` + androidmanifest.AndroidOrganizationName() + `.base.pkg" version="` + pubspec.GetPubSpec().Version + `" auth="Root">#base.pkg</pkg-ref>`,
-		`</installer-gui-script>`,
-	}
-
-	for _, line := range distributionFileContent {
-		if _, err := distributionFile.WriteString(line + "\n"); err != nil {
-			log.Errorf("Could not write Distribution file: %v", err)
-			os.Exit(1)
-		}
-	}
-	err = distributionFile.Close()
-	if err != nil {
-		log.Errorf("Could not close Distribution file: %v", err)
-		os.Exit(1)
-	}
+	fileutils.CopyTemplate("packaging/Info.plist.tmpl", filepath.Join(basePkgDirectoryPath, "PackageInfo"), fileutils.AssetsBox, templateData)
+	fileutils.CopyTemplate("packaging/Distribution.tmpl", filepath.Join(pkgDirectoryPath, "flat", "Distribution"), fileutils.AssetsBox, templateData)
 
 	createDockerfile(packagingFormat)
 

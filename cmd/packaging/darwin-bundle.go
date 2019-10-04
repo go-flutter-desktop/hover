@@ -8,6 +8,7 @@ import (
 
 	"github.com/go-flutter-desktop/hover/internal/androidmanifest"
 	"github.com/go-flutter-desktop/hover/internal/build"
+	"github.com/go-flutter-desktop/hover/internal/fileutils"
 	"github.com/go-flutter-desktop/hover/internal/log"
 	"github.com/go-flutter-desktop/hover/internal/pubspec"
 )
@@ -48,65 +49,15 @@ func InitDarwinBundle() {
 		os.Exit(1)
 	}
 
-	infoFilePath, err := filepath.Abs(filepath.Join(bundleContentsDirectoryPath, "Info.plist"))
-	if err != nil {
-		log.Errorf("Failed to resolve absolute path for Info.plist file %s: %v", infoFilePath, err)
-		os.Exit(1)
+	templateData := map[string]string{
+		"projectName":      projectName,
+		"organizationName": androidmanifest.AndroidOrganizationName(),
+		"version":          pubspec.GetPubSpec().Version,
+		"description":      pubspec.GetPubSpec().Description,
 	}
 
-	infoFile, err := os.Create(infoFilePath)
-	if err != nil {
-		log.Errorf("Failed to create Info.plist file %s: %v", infoFilePath, err)
-		os.Exit(1)
-	}
-	infoFileContent := []string{
-		`<?xml version="1.0" encoding="UTF-8"?>`,
-		`<!DOCTYPE plist PUBLIC "-//Apple Computer//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">`,
-		`<plist version="1.0">`,
-		`<dict>`,
-		`	<key>CFBundleDevelopmentRegion</key>`,
-		`	<string>English</string>`,
-		`	<key>CFBundleExecutable</key>`,
-		`	<string>` + projectName + `</string>`,
-		`	<key>CFBundleGetInfoString</key>`,
-		`	<string>` + projectName + `</string>`,
-		`	<key>CFBundleIconFile</key>`,
-		`	<string>icon.icns</string>`,
-		`	<key>CFBundleIdentifier</key>`,
-		`	<string>` + androidmanifest.AndroidOrganizationName() + `</string>`,
-		`	<key>CFBundleInfoDictionaryVersion</key>`,
-		`	<string>6.0</string>`,
-		`	<key>CFBundleLongVersionString</key>`,
-		`	<string>` + pubspec.GetPubSpec().Version + `</string>`,
-		`	<key>CFBundleName</key>`,
-		`	<string>` + projectName + `</string>`,
-		`	<key>CFBundlePackageType</key>`,
-		`	<string>APPL</string>`,
-		`	<key>CFBundleShortVersionString</key>`,
-		`	<string>` + pubspec.GetPubSpec().Version + `</string>`,
-		`	<key>CFBundleSignature</key>`,
-		`	<string>????</string>`,
-		`	<key>CFBundleVersion</key>`,
-		`	<string>` + pubspec.GetPubSpec().Version + `</string>`,
-		`	<key>CSResourcesFileMapped</key>`,
-		`	<true/>`,
-		`	<key>NSHumanReadableCopyright</key>`,
-		`	<string></string>`,
-		`</dict>`,
-		`</plist>`,
-	}
+	fileutils.CopyTemplate("packaging/Info.plist.tmpl", filepath.Join(bundleContentsDirectoryPath, "Info.plist"), fileutils.AssetsBox, templateData)
 
-	for _, line := range infoFileContent {
-		if _, err := infoFile.WriteString(line + "\n"); err != nil {
-			log.Errorf("Could not write Info.plist file: %v", err)
-			os.Exit(1)
-		}
-	}
-	err = infoFile.Close()
-	if err != nil {
-		log.Errorf("Could not close Info.plist file: %v", err)
-		os.Exit(1)
-	}
 	createDockerfile(packagingFormat)
 
 	printInitFinished(packagingFormat)
