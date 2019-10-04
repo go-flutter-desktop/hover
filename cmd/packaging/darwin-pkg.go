@@ -40,7 +40,7 @@ func InitDarwinPkg() {
 		"version":          pubspec.GetPubSpec().Version,
 	}
 
-	fileutils.CopyTemplate("packaging/Info.plist.tmpl", filepath.Join(basePkgDirectoryPath, "PackageInfo"), fileutils.AssetsBox, templateData)
+	fileutils.CopyTemplate("packaging/PackageInfo.tmpl", filepath.Join(basePkgDirectoryPath, "PackageInfo"), fileutils.AssetsBox, templateData)
 	fileutils.CopyTemplate("packaging/Distribution.tmpl", filepath.Join(pkgDirectoryPath, "flat", "Distribution"), fileutils.AssetsBox, templateData)
 
 	createDockerfile(packagingFormat)
