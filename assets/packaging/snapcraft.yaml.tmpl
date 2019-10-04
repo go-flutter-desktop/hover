@@ -1,0 +1,24 @@
+name: {{.strippedProjectName}}
+base: core18
+version: '{{.version}}'
+summary: {{.description}}
+description: |
+  {{.description}}
+confinement: devmode
+grade: devel
+apps:
+  {{.strippedProjectName}}:
+    command: {{.projectName}}
+    desktop: local/{{.projectName}}.desktop
+parts:
+  desktop:
+    plugin: dump
+    source: snap
+  assets:
+    plugin: dump
+    source: assets
+  app:
+    plugin: dump
+    source: build
+    stage-packages:
+      - {{.dependencies}}

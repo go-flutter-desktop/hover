@@ -9,6 +9,7 @@ import (
 	"github.com/otiai10/copy"
 
 	"github.com/go-flutter-desktop/hover/internal/build"
+	"github.com/go-flutter-desktop/hover/internal/fileutils"
 	"github.com/go-flutter-desktop/hover/internal/log"
 	"github.com/go-flutter-desktop/hover/internal/pubspec"
 )
@@ -51,77 +52,27 @@ func InitLinuxDeb() {
 		os.Exit(1)
 	}
 
-	controlFilePath, err := filepath.Abs(filepath.Join(debDebianDirectoryPath, "control"))
-	if err != nil {
-		log.Errorf("Failed to resolve absolute path for control file %s: %v", controlFilePath, err)
-		os.Exit(1)
+	templateData := map[string]string{
+		"projectName":         projectName,
+		"strippedProjectName": removeDashesAndUnderscores(projectName),
+		"author":              getAuthor(),
+		"version":             pubspec.GetPubSpec().Version,
+		"description":         pubspec.GetPubSpec().Description,
+		"dependencies":        strings.Join(linuxPackagingDependencies, ","),
 	}
 
-	controlFile, err := os.Create(controlFilePath)
-	if err != nil {
-		log.Errorf("Failed to create control file %s: %v", controlFilePath, err)
-		os.Exit(1)
-	}
-	controlFileContent := []string{
-		"Package: " + removeDashesAndUnderscores(projectName),
-		"Architecture: amd64",
-		"Maintainer: @" + getAuthor(),
-		"Priority: optional",
-		"Version: " + pubspec.GetPubSpec().Version,
-		"Description: " + pubspec.GetPubSpec().Description,
-		"Depends: " + strings.Join(linuxPackagingDependencies, ","),
-	}
+	binFilePath := filepath.Join(binDirectoryPath, removeDashesAndUnderscores(projectName))
 
-	for _, line := range controlFileContent {
-		if _, err := controlFile.WriteString(line + "\n"); err != nil {
-			log.Errorf("Could not write control file: %v", err)
-			os.Exit(1)
-		}
-	}
-	err = controlFile.Close()
-	if err != nil {
-		log.Errorf("Could not close control file: %v", err)
-		os.Exit(1)
-	}
+	fileutils.CopyTemplate("packaging/control.tmpl", filepath.Join(debDebianDirectoryPath, "control"), fileutils.AssetsBox, templateData)
+	fileutils.CopyTemplate("packaging/bin.tmpl", binFilePath, fileutils.AssetsBox, templateData)
 
-	binFilePath, err := filepath.Abs(filepath.Join(binDirectoryPath, removeDashesAndUnderscores(projectName)))
-	if err != nil {
-		log.Errorf("Failed to resolve absolute path for bin file %s: %v", binFilePath, err)
-		os.Exit(1)
-	}
-
-	binFile, err := os.Create(binFilePath)
-	if err != nil {
-		log.Errorf("Failed to create bin file %s: %v", controlFilePath, err)
-		os.Exit(1)
-	}
-	binFileContent := []string{
-		"#!/bin/sh",
-		"/usr/lib/" + projectName + "/" + projectName,
-	}
-	for _, line := range binFileContent {
-		if _, err := binFile.WriteString(line + "\n"); err != nil {
-			log.Errorf("Could not write bin file: %v", err)
-			os.Exit(1)
-		}
-	}
-	err = binFile.Close()
-	if err != nil {
-		log.Errorf("Could not close bin file: %v", err)
-		os.Exit(1)
-	}
 	err = os.Chmod(binFilePath, 0777)
 	if err != nil {
 		log.Errorf("Failed to change file permissions for bin file: %v", err)
 		os.Exit(1)
 	}
 
-	desktopFilePath, err := filepath.Abs(filepath.Join(applicationsDirectoryPath, projectName+".desktop"))
-	if err != nil {
-		log.Errorf("Failed to resolve absolute path for desktop file %s: %v", desktopFilePath, err)
-		os.Exit(1)
-	}
-	createLinuxDesktopFile(desktopFilePath, packagingFormat, "/usr/bin/"+projectName, "/usr/lib/"+projectName+"/assets/icon.png")
+	createLinuxDesktopFile(filepath.Join(applicationsDirectoryPath, projectName+".desktop"), "/usr/bin/"+projectName, "/usr/lib/"+projectName+"/assets/icon.png")
 	createDockerfile(packagingFormat)
 
 	printInitFinished(packagingFormat)
