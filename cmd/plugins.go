@@ -346,6 +346,10 @@ func listPlatformPlugin() ([]PubDep, error) {
 
 	var list []PubDep
 	pubLock, err := readPubSpecLock()
+	if err != nil {
+		log.Infof("Run `%s` (or equivalent) first", log.Au().Magenta("flutter build bundle"))
+		return nil, err
+	}
 
 	for name, entry := range pubLock.Packages {
 		entry.name = name

@@ -32,7 +32,7 @@ var publishPluginCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		assertInFlutterPluginProject()
 
-		if build.GoBin == "" {
+		if build.GitBin == "" {
 			log.Errorf("Failed to lookup `git` executable. Please install git")
 			os.Exit(1)
 		}
