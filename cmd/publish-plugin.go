@@ -96,11 +96,14 @@ import (
 		}
 		match := re.FindStringSubmatch(string(remoteOut))
 		if len(match) < 1 {
-			log.Errorf("At least one git remote urls must matchs the plugin golang import URL.")
+			log.Warnf("At least one git remote urls must matchs the plugin golang import URL.")
 			log.Printf("go import URL: %s", pluginImportStr)
 			log.Printf("git remote -v:\n%s\n", string(remoteOut))
 			goCheckRemote.Stdout = os.Stdout
-			os.Exit(1)
+			//default to origin
+			log.Warnf("Assuming origin is where the plugin code is stored")
+			log.Printf(" This warning can occur because the git repo name dosn't match the plugin name in pubspec.yaml")
+			match = []string{"", "origin"}
 		}
 
 		tag := "go/v" + pubspec.GetPubSpec().Version
