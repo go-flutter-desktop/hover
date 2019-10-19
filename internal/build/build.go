@@ -54,3 +54,20 @@ func OutputBinaryPath(projectName string, targetOS string) string {
 	outputBinaryPath := filepath.Join(OutputDirectoryPath(targetOS), OutputBinaryName(projectName, targetOS))
 	return outputBinaryPath
 }
+
+// EngineFile returns the name of the engine file from flutter for the
+// specified platform.
+func EngineFile(targetOS string) string {
+	switch targetOS {
+	case "darwin":
+		return "FlutterEmbedder.framework"
+	case "linux":
+		return "libflutter_engine.so"
+	case "windows":
+		return "flutter_engine.dll"
+	default:
+		log.Errorf("%s has no implemented engine file", targetOS)
+		os.Exit(1)
+		return ""
+	}
+}

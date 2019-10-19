@@ -285,7 +285,12 @@ func buildInDocker(targetOS string, vmArguments []string) {
 	if runtime.GOOS != "windows" {
 		chownStr = fmt.Sprintf(" && chown %s:%s ./ -R", u.Uid, u.Gid)
 	}
-	args = append(args, "bash", "-c", fmt.Sprintf("%s%s", strings.Join(buildCommand(targetOS, vmArguments, "build/outputs/"+targetOS+"/"+build.OutputBinaryName(pubspec.GetPubSpec().Name, targetOS)), " "), chownStr))
+	stripStr := ""
+	if targetOS == "linux" {
+		outputEngineFile := filepath.Join("/app", build.BuildPath, "build", "outputs", targetOS, build.EngineFile(targetOS))
+		stripStr = fmt.Sprintf("strip -s %s && ", outputEngineFile)
+	}
+	args = append(args, "bash", "-c", fmt.Sprintf("%s%s%s", stripStr, strings.Join(buildCommand(targetOS, vmArguments, "build/outputs/"+targetOS+"/"+build.OutputBinaryName(pubspec.GetPubSpec().Name, targetOS)), " "), chownStr))
 	dockerRunCmd := exec.Command(build.DockerBin, args...)
 	dockerRunCmd.Stderr = os.Stderr
 	dockerRunCmd.Stdout = os.Stdout
@@ -383,31 +388,14 @@ func buildNormal(targetOS string, vmArguments []string) {
 		}
 	}
 
-	var engineFile string
-	switch targetOS {
-	case "darwin":
-		engineFile = "FlutterEmbedder.framework"
-	case "linux":
-		engineFile = "libflutter_engine.so"
-	case "windows":
-		engineFile = "flutter_engine.dll"
-	}
-
-	outputEngineFile := filepath.Join(build.OutputDirectoryPath(targetOS), engineFile)
+	outputEngineFile := filepath.Join(build.OutputDirectoryPath(targetOS), build.EngineFile(targetOS))
 	err = copy.Copy(
-		filepath.Join(engineCachePath, engineFile),
+		filepath.Join(engineCachePath, build.EngineFile(targetOS)),
 		outputEngineFile,
 	)
 	if err != nil {
-		log.Errorf("Failed to copy %s: %v", engineFile, err)
+		log.Errorf("Failed to copy %s: %v", build.EngineFile(targetOS), err)
 		os.Exit(1)
-	}
-	if !buildDebug && targetOS == "linux" {
-		err = exec.Command("strip", "-s", outputEngineFile).Run()
-		if err != nil {
-			log.Errorf("Failed to strip %s: %v", outputEngineFile, err)
-			os.Exit(1)
-		}
 	}
 
 	err = copy.Copy(
@@ -487,6 +475,14 @@ func buildNormal(targetOS string, vmArguments []string) {
 		}
 		buildInDocker(targetOS, vmArguments)
 		return
+	}
+
+	if !buildDebug && targetOS == "linux" {
+		err = exec.Command("strip", "-s", outputEngineFile).Run()
+		if err != nil {
+			log.Errorf("Failed to strip %s: %v", outputEngineFile, err)
+			os.Exit(1)
+		}
 	}
 
 	buildCommandString := buildCommand(targetOS, vmArguments, build.OutputBinaryPath(pubspec.GetPubSpec().Name, targetOS))
