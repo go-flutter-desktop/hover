@@ -15,7 +15,11 @@ const BuildPath = "go"
 // binaries blobs will be stored for a particular platform.
 // If needed, the directory is create at the returned path.
 func OutputDirectoryPath(targetOS string) string {
-	outputDirectoryPath := filepath.Join(BuildPath, "build", "outputs", targetOS)
+	outputDirectoryPath, err := filepath.Abs(filepath.Join(BuildPath, "build", "outputs", targetOS))
+	if err != nil {
+		log.Errorf("Failed to resolve absolute path for output directory: %v", err)
+		os.Exit(1)
+	}
 	if _, err := os.Stat(outputDirectoryPath); os.IsNotExist(err) {
 		err = os.MkdirAll(outputDirectoryPath, 0775)
 		if err != nil {

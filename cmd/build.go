@@ -287,7 +287,7 @@ func buildInDocker(targetOS string, vmArguments []string) {
 	}
 	stripStr := ""
 	if targetOS == "linux" {
-		outputEngineFile := filepath.Join("/app", build.OutputDirectoryPath(targetOS), build.EngineFile(targetOS))
+		outputEngineFile := filepath.Join("/app", build.BuildPath, "build", "outputs", targetOS, build.EngineFile(targetOS))
 		stripStr = fmt.Sprintf("strip -s %s && ", outputEngineFile)
 	}
 	args = append(args, "bash", "-c", fmt.Sprintf("%s%s%s", stripStr, strings.Join(buildCommand(targetOS, vmArguments, "build/outputs/"+targetOS+"/"+build.OutputBinaryName(pubspec.GetPubSpec().Name, targetOS)), " "), chownStr))
