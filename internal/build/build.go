@@ -15,11 +15,7 @@ const BuildPath = "go"
 // binaries blobs will be stored for a particular platform.
 // If needed, the directory is create at the returned path.
 func OutputDirectoryPath(targetOS string) string {
-	outputDirectoryPath, err := filepath.Abs(filepath.Join(BuildPath, "build", "outputs", targetOS))
-	if err != nil {
-		log.Errorf("Failed to resolve absolute path for output directory: %v", err)
-		os.Exit(1)
-	}
+	outputDirectoryPath := filepath.Join(BuildPath, "build", "outputs", targetOS)
 	if _, err := os.Stat(outputDirectoryPath); os.IsNotExist(err) {
 		err = os.MkdirAll(outputDirectoryPath, 0775)
 		if err != nil {
@@ -53,4 +49,19 @@ func OutputBinaryName(projectName string, targetOS string) string {
 func OutputBinaryPath(projectName string, targetOS string) string {
 	outputBinaryPath := filepath.Join(OutputDirectoryPath(targetOS), OutputBinaryName(projectName, targetOS))
 	return outputBinaryPath
+}
+
+func EngineFile(targetOS string) string {
+	switch targetOS {
+	case "darwin":
+		return "FlutterEmbedder.framework"
+	case "linux":
+		return "libflutter_engine.so"
+	case "windows":
+		return "flutter_engine.dll"
+	default:
+		log.Errorf("%s has no implemented engine file", targetOS)
+		os.Exit(1)
+		return ""
+	}
 }
