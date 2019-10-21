@@ -202,8 +202,8 @@ func checkForMainDesktop() {
 }
 
 func buildInDocker(targetOS string, vmArguments []string) {
-	crossCompilingDir, err := filepath.Abs(filepath.Join(build.BuildPath, "cross-compiling"))
-	err = os.MkdirAll(crossCompilingDir, 0755)
+	crossCompilingDir, _ := filepath.Abs(filepath.Join(build.BuildPath, "cross-compiling"))
+	err := os.MkdirAll(crossCompilingDir, 0755)
 	if err != nil {
 		log.Errorf("Cannot create the cross-compiling directory: %v", err)
 		os.Exit(1)

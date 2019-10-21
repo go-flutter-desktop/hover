@@ -46,7 +46,7 @@ var publishPluginCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		// check if dir 'go' is clean (all tracked files are commited)
+		// check if dir 'go' is clean (all tracked files are committed)
 		goCheckCleanCmd := exec.Command(build.GitBin, "status", "--untracked-file=no", "--porcelain", build.BuildPath)
 		goCheckCleanCmd.Stderr = os.Stderr
 		cleanOut, err := goCheckCleanCmd.Output()
@@ -55,7 +55,7 @@ var publishPluginCmd = &cobra.Command{
 			os.Exit(1)
 		}
 		if len(cleanOut) != 0 {
-			log.Errorf("The '%s' directory doesn't seems to be clean. (make sure tracked files are commited)", build.BuildPath)
+			log.Errorf("The '%s' directory doesn't seems to be clean. (make sure tracked files are committed)", build.BuildPath)
 			os.Exit(1)
 		}
 
