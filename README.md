@@ -103,14 +103,14 @@ It's possible to zip the whole dir `go/build/outputs/linux` and ship it to a dif
 You can package your application for different packaging formats.  
 First initialize the packaging format:
 ```bash
-hover init-packaging linux-snap
+hover init-packaging linux-appimage
 ```
-Update the configuration files located in `go/packaging/linux-snap/`to your needs.  
+Update the configuration files located in `go/packaging/linux-appimage/`to your needs.  
 Then create a build and package it using this command:
 ```bash
-hover build linux-snap
+hover build linux-appimage
 ```
-The packaging output will be located in `go/build/outputs/linux-snap/`
+The packaging output will be located in `go/build/outputs/linux-appimage/`
 
 To get a list of all available packaging formats run:
 ```bash

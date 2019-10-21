@@ -17,6 +17,7 @@ import (
 	"github.com/go-flutter-desktop/hover/cmd/packaging"
 	"github.com/go-flutter-desktop/hover/internal/androidmanifest"
 	"github.com/go-flutter-desktop/hover/internal/build"
+	"github.com/go-flutter-desktop/hover/internal/config"
 	"github.com/go-flutter-desktop/hover/internal/enginecache"
 	"github.com/go-flutter-desktop/hover/internal/fileutils"
 	"github.com/go-flutter-desktop/hover/internal/log"
@@ -44,11 +45,11 @@ var crossCompile = false
 var engineCachePath string
 
 func init() {
-	buildCmd.PersistentFlags().StringVarP(&buildTarget, "target", "t", "lib/main_desktop.dart", "The main entry-point file of the application.")
-	buildCmd.PersistentFlags().StringVarP(&buildBranch, "branch", "b", "", "The 'go-flutter' version to use. (@master or @v0.20.0 for example)")
+	buildCmd.PersistentFlags().StringVarP(&buildTarget, "target", "t", config.BuildTargetDefault, "The main entry-point file of the application.")
+	buildCmd.PersistentFlags().StringVarP(&buildBranch, "branch", "b", config.BuildBranchDefault, "The 'go-flutter' version to use. (@master or @v0.20.0 for example)")
 	buildCmd.PersistentFlags().BoolVar(&buildDebug, "debug", false, "Build a debug version of the app.")
-	buildCmd.PersistentFlags().StringVarP(&buildCachePath, "cache-path", "", "", "The path that hover uses to cache dependencies such as the Flutter engine .so/.dll (defaults to the standard user cache directory)")
-	buildCmd.PersistentFlags().StringVar(&buildOpenGlVersion, "opengl", "3.3", "The OpenGL version specified here is only relevant for external texture plugin (i.e. video_plugin).\nIf 'none' is provided, texture won't be supported. Note: the Flutter Engine still needs a OpenGL compatible context.")
+	buildCmd.PersistentFlags().StringVarP(&buildCachePath, "cache-path", "", config.BuildCachePathDefault, "The path that hover uses to cache dependencies such as the Flutter engine .so/.dll (defaults to the standard user cache directory)")
+	buildCmd.PersistentFlags().StringVar(&buildOpenGlVersion, "opengl", config.BuildOpenGlVersionDefault, "The OpenGL version specified here is only relevant for external texture plugin (i.e. video_plugin).\nIf 'none' is provided, texture won't be supported. Note: the Flutter Engine still needs a OpenGL compatible context.")
 	buildCmd.PersistentFlags().BoolVar(&buildDocker, "docker", false, "Compile in Docker container only. No need to install go")
 	buildCmd.AddCommand(buildLinuxCmd)
 	buildCmd.AddCommand(buildLinuxSnapCmd)
@@ -201,8 +202,8 @@ func checkForMainDesktop() {
 }
 
 func buildInDocker(targetOS string, vmArguments []string) {
-	crossCompilingDir, err := filepath.Abs(filepath.Join(build.BuildPath, "cross-compiling"))
-	err = os.MkdirAll(crossCompilingDir, 0755)
+	crossCompilingDir, _ := filepath.Abs(filepath.Join(build.BuildPath, "cross-compiling"))
+	err := os.MkdirAll(crossCompilingDir, 0755)
 	if err != nil {
 		log.Errorf("Cannot create the cross-compiling directory: %v", err)
 		os.Exit(1)
@@ -304,6 +305,21 @@ func buildInDocker(targetOS string, vmArguments []string) {
 }
 
 func buildNormal(targetOS string, vmArguments []string) {
+	if buildTarget == config.BuildTargetDefault && config.GetConfig().Target != "" {
+		buildTarget = config.GetConfig().Target
+	}
+	if buildBranch == config.BuildBranchDefault && config.GetConfig().Branch != "" {
+		buildBranch = config.GetConfig().Branch
+	}
+	if buildCachePath == config.BuildCachePathDefault && config.GetConfig().CachePath != "" {
+		buildCachePath = config.GetConfig().CachePath
+	}
+	if buildOpenGlVersion == config.BuildOpenGlVersionDefault && config.GetConfig().OpenGL != "" {
+		buildOpenGlVersion = config.GetConfig().OpenGL
+	}
+	if !buildDocker && config.GetConfig().Docker {
+		buildDocker = config.GetConfig().Docker
+	}
 	checkForMainDesktop()
 	crossCompile = targetOS != runtime.GOOS
 	buildDocker = crossCompile || buildDocker

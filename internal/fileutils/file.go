@@ -87,7 +87,7 @@ func CopyFile(src, to string) {
 	}
 }
 
-// CopyTemplate create file from a tempalte asset
+// CopyTemplate create file from a template asset
 func CopyTemplate(boxed, to string, assetsBox *rice.Box, templateData interface{}) {
 	templateString, err := assetsBox.String(boxed)
 	if err != nil {
