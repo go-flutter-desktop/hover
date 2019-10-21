@@ -194,6 +194,14 @@ func runDockerPackaging(path string, packagingFormat string, command []string) {
 	err = dockerRunCmd.Run()
 	if err != nil {
 		log.Errorf("Docker run failed: %v", err)
+		log.Warnf("Packaging is very experimental and has only been tested on Linux.")
+		log.Infof("To help us debuging this error, please zip the content of:\n       \"%s\"\n       %s",
+			log.Au().Blue(path),
+			log.Au().Green("and try to package on another OS. You can also share this zip with the go-flutter team."))
+		log.Infof("You can package the app without hover by running:")
+		log.Infof("  `%s`", log.Au().Magenta("cd "+path))
+		log.Infof("  docker build: `%s`", log.Au().Magenta(dockerBuildCmd.String()))
+		log.Infof("  docker run: `%s`", log.Au().Magenta(dockerRunCmd.String()))
 		os.Exit(1)
 	}
 }
