@@ -87,7 +87,7 @@ func BuildDarwinBundle() {
 		os.Exit(1)
 	}
 
-	runDockerPackaging(tmpPath, packagingFormat, []string{"mkdir", projectName + ".app/Contents/Resources", "&&", "png2icns", projectName + ".app/Contents/Resources/icon.icns", projectName + ".app/Contents/MacOS/assets/icon.png"})
+	runDockerPackaging(tmpPath, packagingFormat, []string{"mkdir", "-p", projectName + ".app/Contents/Resources", "&&", "png2icns", projectName + ".app/Contents/Resources/icon.icns", projectName + ".app/Contents/MacOS/assets/icon.png"})
 
 	outputFileName := projectName + ".app"
 	outputFilePath := filepath.Join(build.OutputDirectoryPath("darwin-bundle"), outputFileName)
