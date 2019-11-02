@@ -17,32 +17,33 @@ import (
 
 var packagingPath = filepath.Join(build.BuildPath, "packaging")
 
-func packagingFormatPath(packagingFormat string) string {
-	directoryPath, err := filepath.Abs(filepath.Join(packagingPath, packagingFormat))
+func PackagingFormatPath(buildTarget build.Target) string {
+	directoryPath, err := filepath.Abs(filepath.Join(packagingPath, fmt.Sprintf("%s-%s", buildTarget.Platform, buildTarget.PackagingFormat)))
 	if err != nil {
-		log.Errorf("Failed to resolve absolute path for %s directory: %v", packagingFormat, err)
+		log.Errorf("Failed to resolve absolute path for %s-%s directory: %v", buildTarget.Platform, buildTarget.PackagingFormat, err)
 		os.Exit(1)
 	}
 	return directoryPath
 }
 
-func createPackagingFormatDirectory(packagingFormat string) {
-	if _, err := os.Stat(packagingFormatPath(packagingFormat)); !os.IsNotExist(err) {
-		log.Errorf("A file or directory named `%s` already exists. Cannot continue packaging init for %s.", packagingFormat, packagingFormat)
-		os.Exit(1)
-	}
-	err := os.MkdirAll(packagingFormatPath(packagingFormat), 0775)
-	if err != nil {
-		log.Errorf("Failed to create %s directory %s: %v", packagingFormat, packagingFormatPath(packagingFormat), err)
-		os.Exit(1)
+func createPackagingFormatDirectory(buildTarget build.Target) {
+	if _, err := os.Stat(PackagingFormatPath(buildTarget)); !os.IsNotExist(err) {
+		log.Warnf("A file or directory named `%s-%s` already exists. Cannot continue packaging init for %s-%s.", buildTarget.Platform, buildTarget.PackagingFormat, buildTarget.Platform, buildTarget.PackagingFormat)
+	} else {
+		err := os.MkdirAll(PackagingFormatPath(buildTarget), 0775)
+		if err != nil {
+			log.Errorf("Failed to create %s-%s directory %s: %v", buildTarget.Platform, buildTarget.PackagingFormat, PackagingFormatPath(buildTarget), err)
+			os.Exit(1)
+		}
+		log.Infof("go/packaging/%s-%s has been created. You can modify the configuration files and add it to git.", buildTarget.Platform, buildTarget.PackagingFormat)
 	}
 }
 
 // AssertPackagingFormatInitialized exits hover if the requested
-// packagingFormat isn't initialized.
-func AssertPackagingFormatInitialized(packagingFormat string) {
-	if _, err := os.Stat(packagingFormatPath(packagingFormat)); os.IsNotExist(err) {
-		log.Errorf("%s is not initialized for packaging. Please run `hover init-packaging %s` first.", packagingFormat, packagingFormat)
+// packaging format isn`t initialized.
+func AssertPackagingFormatInitialized(buildTarget build.Target) {
+	if _, err := os.Stat(PackagingFormatPath(buildTarget)); os.IsNotExist(err) {
+		log.Errorf("%s-%s is not initialized for packaging. Please run `hover init-packaging %s-%s` first.", buildTarget.Platform, buildTarget.PackagingFormat, buildTarget.Platform, buildTarget.PackagingFormat)
 		os.Exit(1)
 	}
 }
@@ -51,19 +52,18 @@ func removeDashesAndUnderscores(projectName string) string {
 	return strings.ReplaceAll(strings.ReplaceAll(projectName, "-", ""), "_", "")
 }
 
-func printInitFinished(packagingFormat string) {
-	log.Infof("go/packaging/%s has been created. You can modify the configuration files and add it to git.", packagingFormat)
-	log.Infof(fmt.Sprintf("You now can package the %s using `%s`", strings.Split(packagingFormat, "-")[0], log.Au().Magenta("hover build "+packagingFormat)))
+func printInitFinished(buildTarget build.Target) {
+	log.Infof(fmt.Sprintf("You now can package the %s using `%s`", buildTarget.PackagingFormat, log.Au().Magenta(fmt.Sprintf("hover build %s-%s", buildTarget.Platform, buildTarget.PackagingFormat))))
 }
 
-func printPackagingFinished(packagingFormat string) {
-	log.Infof("Successfully packaged %s", strings.Split(packagingFormat, "-")[1])
+func printPackagingFinished(buildTarget build.Target) {
+	log.Infof("Successfully packaged %s", buildTarget.PackagingFormat)
 }
 
-func getTemporaryBuildDirectory(projectName string, packagingFormat string) string {
-	tmpPath, err := ioutil.TempDir("", "hover-build-"+projectName+"-"+packagingFormat)
+func getTemporaryBuildDirectory(projectName string, buildTarget build.Target) string {
+	tmpPath, err := ioutil.TempDir("", fmt.Sprintf("hover-build-%s-%s-%s", projectName, buildTarget.Platform, buildTarget.PackagingFormat))
 	if err != nil {
-		log.Errorf("Couldn't get temporary build directory: %v", err)
+		log.Errorf("Couldn`t get temporary build directory: %v", err)
 		os.Exit(1)
 	}
 	return tmpPath
@@ -83,7 +83,7 @@ func getAuthor() string {
 		log.Warnf("Missing author field in pubspec.yaml")
 		u, err := user.Current()
 		if err != nil {
-			log.Errorf("Couldn't get current user: %v", err)
+			log.Errorf("Couldn`t get current user: %v", err)
 			os.Exit(1)
 		}
 		author = u.Username
@@ -92,8 +92,8 @@ func getAuthor() string {
 	return author
 }
 
-func createDockerfile(packagingFormat string) {
-	dockerFilePath, err := filepath.Abs(filepath.Join(packagingFormatPath(packagingFormat), "Dockerfile"))
+func createDockerfile(buildTarget build.Target) {
+	dockerFilePath, err := filepath.Abs(filepath.Join(PackagingFormatPath(buildTarget), "Dockerfile"))
 	if err != nil {
 		log.Errorf("Failed to resolve absolute path for Dockerfile %s: %v", dockerFilePath, err)
 		os.Exit(1)
@@ -104,15 +104,16 @@ func createDockerfile(packagingFormat string) {
 		os.Exit(1)
 	}
 	dockerFileContent := []string{}
-	if packagingFormat == "linux-snap" {
+	switch buildTarget.PackagingFormat {
+	case build.TargetPackagingFormats.Snap:
 		dockerFileContent = []string{
 			"FROM snapcore/snapcraft",
 		}
-	} else if packagingFormat == "linux-deb" {
+	case build.TargetPackagingFormats.Deb:
 		dockerFileContent = []string{
 			"FROM ubuntu:bionic",
 		}
-	} else if packagingFormat == "linux-appimage" {
+	case build.TargetPackagingFormats.AppImage:
 		dockerFileContent = []string{
 			"FROM ubuntu:bionic",
 			"WORKDIR /opt",
@@ -125,17 +126,17 @@ func createDockerfile(packagingFormat string) {
 			"rm appimagetool-x86_64.AppImage",
 			"ENV PATH=/opt/appimagetool/usr/bin:$PATH",
 		}
-	} else if packagingFormat == "windows-msi" {
+	case build.TargetPackagingFormats.Msi:
 		dockerFileContent = []string{
 			"FROM ubuntu:bionic",
 			"RUN apt-get update && apt-get install wixl imagemagick -y",
 		}
-	} else if packagingFormat == "darwin-bundle" {
+	case build.TargetPackagingFormats.Bundle:
 		dockerFileContent = []string{
 			"FROM ubuntu:bionic",
 			"RUN apt-get update && apt-get install icnsutils -y",
 		}
-	} else if packagingFormat == "darwin-pkg" {
+	case build.TargetPackagingFormats.Pkg:
 		dockerFileContent = []string{
 			"FROM ubuntu:bionic",
 			"RUN apt-get update && apt-get install cpio git make g++ wget libxml2-dev libssl1.0-dev zlib1g-dev -y",
@@ -143,8 +144,8 @@ func createDockerfile(packagingFormat string) {
 			"RUN git clone https://github.com/hogliux/bomutils && cd bomutils && make > /dev/null && make install > /dev/null",
 			"RUN wget https://storage.googleapis.com/google-code-archive-downloads/v2/code.google.com/xar/xar-1.5.2.tar.gz && tar -zxvf xar-1.5.2.tar.gz > /dev/null && cd xar-1.5.2 && ./configure > /dev/null && make > /dev/null && make install > /dev/null",
 		}
-	} else {
-		log.Errorf("Tried to create Dockerfile for unknown packaging format %s", packagingFormat)
+	default:
+		log.Errorf("Tried to create Dockerfile for unknown packaging format %s-%s", buildTarget.Platform, buildTarget.PackagingFormat)
 		os.Exit(1)
 	}
 
@@ -161,11 +162,11 @@ func createDockerfile(packagingFormat string) {
 	}
 }
 
-func runDockerPackaging(path string, packagingFormat string, command []string) {
-	dockerBuildCmd := exec.Command(build.DockerBin, "build", "-t", "hover-build-packaging-"+packagingFormat, ".")
-	dockerBuildCmd.Stdout = os.Stdout
-	dockerBuildCmd.Stderr = os.Stderr
-	dockerBuildCmd.Dir = packagingFormatPath(packagingFormat)
+func runDockerPackaging(path string, buildTarget build.Target, command []string) {
+	containerName := fmt.Sprintf("hover-build-packaging-%s-%s", buildTarget.Platform, buildTarget.PackagingFormat)
+	log.Printf("Building docker image")
+	dockerBuildCmd := exec.Command(build.DockerBin, "build", "-t", containerName, ".")
+	dockerBuildCmd.Dir = PackagingFormatPath(buildTarget)
 	err := dockerBuildCmd.Run()
 	if err != nil {
 		log.Errorf("Docker build failed: %v", err)
@@ -173,7 +174,7 @@ func runDockerPackaging(path string, packagingFormat string, command []string) {
 	}
 	u, err := user.Current()
 	if err != nil {
-		log.Errorf("Couldn't get current user: %v", err)
+		log.Errorf("Couldn`t get current user: %v", err)
 		os.Exit(1)
 	}
 	args := []string{
@@ -181,7 +182,7 @@ func runDockerPackaging(path string, packagingFormat string, command []string) {
 		"-w", "/app",
 		"-v", path + ":/app",
 	}
-	args = append(args, "hover-build-packaging-"+packagingFormat)
+	args = append(args, containerName)
 	chownStr := ""
 	if runtime.GOOS != "windows" {
 		chownStr = fmt.Sprintf(" && chown %s:%s * -R", u.Uid, u.Gid)

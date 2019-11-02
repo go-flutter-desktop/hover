@@ -12,11 +12,10 @@ import (
 	"github.com/go-flutter-desktop/hover/internal/pubspec"
 )
 
-func InitLinuxAppImage() {
+func InitLinuxAppImage(buildTarget build.Target) {
 	projectName := pubspec.GetPubSpec().Name
-	packagingFormat := "linux-appimage"
-	createPackagingFormatDirectory(packagingFormat)
-	appImageDirectoryPath := packagingFormatPath(packagingFormat)
+	createPackagingFormatDirectory(buildTarget)
+	appImageDirectoryPath := PackagingFormatPath(buildTarget)
 
 	templateData := map[string]string{
 		"projectName": projectName,
@@ -33,15 +32,14 @@ func InitLinuxAppImage() {
 	}
 
 	createLinuxDesktopFile(filepath.Join(appImageDirectoryPath, projectName+".desktop"), "", "/build/assets/icon")
-	createDockerfile(packagingFormat)
+	createDockerfile(buildTarget)
 
-	printInitFinished(packagingFormat)
+	printInitFinished(buildTarget)
 }
 
-func BuildLinuxAppImage() {
+func BuildLinuxAppImage(buildTarget build.Target) {
 	projectName := pubspec.GetPubSpec().Name
-	packagingFormat := "linux-appimage"
-	tmpPath := getTemporaryBuildDirectory(projectName, packagingFormat)
+	tmpPath := getTemporaryBuildDirectory(projectName, buildTarget)
 	defer func() {
 		err := os.RemoveAll(tmpPath)
 		if err != nil {
@@ -51,26 +49,26 @@ func BuildLinuxAppImage() {
 	}()
 	log.Infof("Packaging AppImage in %s", tmpPath)
 
-	err := copy.Copy(build.OutputDirectoryPath("linux"), filepath.Join(tmpPath, "build"))
+	err := copy.Copy(build.OutputDirectoryPath(buildTarget, false), filepath.Join(tmpPath, "build"))
 	if err != nil {
 		log.Errorf("Could not copy build folder: %v", err)
 		os.Exit(1)
 	}
-	err = copy.Copy(packagingFormatPath(packagingFormat), filepath.Join(tmpPath))
+	err = copy.Copy(PackagingFormatPath(buildTarget), filepath.Join(tmpPath))
 	if err != nil {
 		log.Errorf("Could not copy packaging configuration folder: %v", err)
 		os.Exit(1)
 	}
 
-	runDockerPackaging(tmpPath, packagingFormat, []string{"appimagetool", "."})
+	runDockerPackaging(tmpPath, buildTarget, []string{"appimagetool", "."})
 
 	outputFileName := projectName + "-x86_64.AppImage"
-	outputFilePath := filepath.Join(build.OutputDirectoryPath("linux-appimage"), outputFileName)
+	outputFilePath := filepath.Join(build.OutputDirectoryPath(buildTarget, true), outputFileName)
 	err = copy.Copy(filepath.Join(tmpPath, outputFileName), outputFilePath)
 	if err != nil {
 		log.Errorf("Could not move AppImage file: %v", err)
 		os.Exit(1)
 	}
 
-	printPackagingFinished(packagingFormat)
+	printPackagingFinished(buildTarget)
 }

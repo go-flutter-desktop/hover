@@ -9,6 +9,7 @@ import (
 	"text/template"
 
 	rice "github.com/GeertJohan/go.rice"
+
 	"github.com/go-flutter-desktop/hover/internal/log"
 )
 
@@ -31,24 +32,24 @@ func RemoveLinesFromFile(filePath, text string) {
 	output := strings.Join(tmp, "\n")
 	err = ioutil.WriteFile(filePath, []byte(output), 0644)
 	if err != nil {
-		log.Errorf("Failed to write file %s: %v\n", filePath, err)
+		log.Errorf("Failed to write file %s: %v", filePath, err)
 		os.Exit(1)
 	}
 }
 
-// AddLineToFile appends a newLine to a file if the line isn't
+// AddLineToFile appends a newLine to a file if the line isn`t
 // already present.
 func AddLineToFile(filePath, newLine string) {
 	f, err := os.OpenFile(filePath,
 		os.O_RDWR|os.O_APPEND, 0660)
 	if err != nil {
-		log.Errorf("Failed to open file %s: %v\n", filePath, err)
+		log.Errorf("Failed to open file %s: %v", filePath, err)
 		os.Exit(1)
 	}
 	defer f.Close()
 	content, err := ioutil.ReadAll(f)
 	if err != nil {
-		log.Errorf("Failed to read file %s: %v\n", filePath, err)
+		log.Errorf("Failed to read file %s: %v", filePath, err)
 		os.Exit(1)
 	}
 	lines := make(map[string]struct{})
@@ -60,7 +61,7 @@ func AddLineToFile(filePath, newLine string) {
 		return
 	}
 	if _, err := f.WriteString(newLine + "\n"); err != nil {
-		log.Errorf("Failed to append '%s' to the file (%s): %v\n", newLine, filePath, err)
+		log.Errorf("Failed to append `%s` to the file (%s): %v", newLine, filePath, err)
 		os.Exit(1)
 	}
 }
@@ -69,20 +70,20 @@ func AddLineToFile(filePath, newLine string) {
 func CopyFile(src, to string) {
 	in, err := os.Open(src)
 	if err != nil {
-		log.Errorf("Failed to read %s: %v\n", src, err)
+		log.Errorf("Failed to read %s: %v", src, err)
 		os.Exit(1)
 	}
 	defer in.Close()
 	file, err := os.Create(to)
 	if err != nil {
-		log.Errorf("Failed to create %s: %v\n", to, err)
+		log.Errorf("Failed to create %s: %v", to, err)
 		os.Exit(1)
 	}
 	defer file.Close()
 
 	_, err = io.Copy(file, in)
 	if err != nil {
-		log.Errorf("Failed to copy %s to %s: %v\n", src, to, err)
+		log.Errorf("Failed to copy %s to %s: %v", src, to, err)
 		os.Exit(1)
 	}
 }
@@ -91,18 +92,18 @@ func CopyFile(src, to string) {
 func CopyTemplate(boxed, to string, assetsBox *rice.Box, templateData interface{}) {
 	templateString, err := assetsBox.String(boxed)
 	if err != nil {
-		log.Errorf("Failed to find plugin template file: %v\n", err)
+		log.Errorf("Failed to find plugin template file: %v", err)
 		os.Exit(1)
 	}
 	tmplFile, err := template.New("").Parse(templateString)
 	if err != nil {
-		log.Errorf("Failed to parse plugin template file: %v\n", err)
+		log.Errorf("Failed to parse plugin template file: %v", err)
 		os.Exit(1)
 	}
 
 	toFile, err := os.Create(to)
 	if err != nil {
-		log.Errorf("Failed to create '%s': %v\n", to, err)
+		log.Errorf("Failed to create `%s`: %v", to, err)
 		os.Exit(1)
 	}
 	defer toFile.Close()
@@ -135,21 +136,21 @@ func CopyAsset(boxed, to string, assetsBox *rice.Box) {
 func DownloadFile(url string, filepath string) {
 	resp, err := http.Get(url)
 	if err != nil {
-		log.Errorf("Failed to download '%v': %v\n", url, err)
+		log.Errorf("Failed to download `%v`: %v", url, err)
 		os.Exit(1)
 	}
 	defer resp.Body.Close()
 
 	out, err := os.Create(filepath)
 	if err != nil {
-		log.Errorf("Failed to create file '%s': %v\n", filepath, err)
+		log.Errorf("Failed to create file `%s`: %v", filepath, err)
 		os.Exit(1)
 	}
 	defer out.Close()
 
 	_, err = io.Copy(out, resp.Body)
 	if err != nil {
-		log.Errorf("Failed to write file '%s': %v\n", filepath, err)
+		log.Errorf("Failed to write file `%s`: %v", filepath, err)
 		os.Exit(1)
 	}
 }

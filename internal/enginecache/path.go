@@ -5,8 +5,9 @@ import (
 	"path/filepath"
 	"runtime"
 
+	"github.com/mitchellh/go-homedir"
+
 	"github.com/go-flutter-desktop/hover/internal/log"
-	homedir "github.com/mitchellh/go-homedir"
 )
 
 func cachePath() string {

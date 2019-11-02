@@ -16,11 +16,11 @@ type AndroidManifest struct {
 }
 
 // AndroidOrganizationName fetch the android package name (default:
-// 'com.example').
+// `com.example`).
 // Can by set upon flutter create (--org flag)
 //
 // If errors occurs when reading the android package name, the string value
-// will correspond to 'hover.failed.to.retrieve.package.name'
+// will correspond to `hover.failed.to.retrieve.package.name`
 func AndroidOrganizationName() string {
 	// Default value
 	androidManifestFile := "android/app/src/main/AndroidManifest.xml"

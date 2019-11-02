@@ -39,24 +39,24 @@ var initCmd = &cobra.Command{
 		err := os.Mkdir(build.BuildPath, 0775)
 		if err != nil {
 			if os.IsExist(err) {
-				log.Errorf("A file or directory named '%s' already exists. Cannot continue init.", build.BuildPath)
+				log.Errorf("A file or directory named `%s` already exists. Cannot continue init.", build.BuildPath)
 				os.Exit(1)
 			}
-			log.Errorf("Failed to create '%s' directory: %v", build.BuildPath, err)
+			log.Errorf("Failed to create `%s` directory: %v", build.BuildPath, err)
 			os.Exit(1)
 		}
 
 		desktopCmdPath := filepath.Join(build.BuildPath, "cmd")
 		err = os.Mkdir(desktopCmdPath, 0775)
 		if err != nil {
-			log.Errorf("Failed to create '%s': %v", desktopCmdPath, err)
+			log.Errorf("Failed to create `%s`: %v", desktopCmdPath, err)
 			os.Exit(1)
 		}
 
 		desktopAssetsPath := filepath.Join(build.BuildPath, "assets")
 		err = os.Mkdir(desktopAssetsPath, 0775)
 		if err != nil {
-			log.Errorf("Failed to create '%s': %v", desktopAssetsPath, err)
+			log.Errorf("Failed to create `%s`: %v", desktopAssetsPath, err)
 			os.Exit(1)
 		}
 

@@ -38,7 +38,7 @@ var createPluginCmd = &cobra.Command{
 				log.Errorf("A file or directory named `" + build.BuildPath + "` already exists. Cannot continue init-plugin.")
 				os.Exit(1)
 			}
-			log.Errorf("Failed to create '%s' directory: %v", build.BuildPath, err)
+			log.Errorf("Failed to create `%s` directory: %v", build.BuildPath, err)
 			os.Exit(1)
 		}
 

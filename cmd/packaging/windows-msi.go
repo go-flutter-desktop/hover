@@ -18,11 +18,10 @@ var directoriesFileContent = []string{}
 var directoryRefsFileContent = []string{}
 var componentRefsFileContent = []string{}
 
-func InitWindowsMsi() {
+func InitWindowsMsi(buildTarget build.Target) {
 	projectName := pubspec.GetPubSpec().Name
-	packagingFormat := "windows-msi"
-	createPackagingFormatDirectory(packagingFormat)
-	msiDirectoryPath := packagingFormatPath(packagingFormat)
+	createPackagingFormatDirectory(buildTarget)
+	msiDirectoryPath := PackagingFormatPath(buildTarget)
 
 	templateData := map[string]string{
 		"projectName": projectName,
@@ -33,15 +32,14 @@ func InitWindowsMsi() {
 
 	fileutils.CopyTemplate("packaging/app.wxs.tmpl", filepath.Join(msiDirectoryPath, projectName+".wxs"), fileutils.AssetsBox, templateData)
 
-	createDockerfile(packagingFormat)
+	createDockerfile(buildTarget)
 
-	printInitFinished(packagingFormat)
+	printInitFinished(buildTarget)
 }
 
-func BuildWindowsMsi() {
+func BuildWindowsMsi(buildTarget build.Target) {
 	projectName := pubspec.GetPubSpec().Name
-	packagingFormat := "windows-msi"
-	tmpPath := getTemporaryBuildDirectory(projectName, packagingFormat)
+	tmpPath := getTemporaryBuildDirectory(projectName, buildTarget)
 	defer func() {
 		err := os.RemoveAll(tmpPath)
 		if err != nil {
@@ -56,12 +54,12 @@ func BuildWindowsMsi() {
 		log.Errorf("Failed to resolve absolute path for build directory: %v", err)
 		os.Exit(1)
 	}
-	err = copy.Copy(build.OutputDirectoryPath("windows"), filepath.Join(buildDirectoryPath))
+	err = copy.Copy(build.OutputDirectoryPath(buildTarget, false), filepath.Join(buildDirectoryPath))
 	if err != nil {
 		log.Errorf("Could not copy build folder: %v", err)
 		os.Exit(1)
 	}
-	err = copy.Copy(packagingFormatPath(packagingFormat), filepath.Join(tmpPath))
+	err = copy.Copy(PackagingFormatPath(buildTarget), filepath.Join(tmpPath))
 	if err != nil {
 		log.Errorf("Could not copy packaging configuration folder: %v", err)
 		os.Exit(1)
@@ -138,17 +136,17 @@ func BuildWindowsMsi() {
 		os.Exit(1)
 	}
 
-	runDockerPackaging(tmpPath, packagingFormat, []string{"convert", "-resize", "x16", "build/assets/icon.png", "build/assets/icon.ico", "&&", "wixl", "-v", projectName + ".wxs"})
+	runDockerPackaging(tmpPath, buildTarget, []string{"convert", "-resize", "x16", "build/assets/icon.png", "build/assets/icon.ico", "&&", "wixl", "-v", projectName + ".wxs"})
 
 	outputFileName := projectName + ".msi"
-	outputFilePath := filepath.Join(build.OutputDirectoryPath("windows-msi"), outputFileName)
+	outputFilePath := filepath.Join(build.OutputDirectoryPath(buildTarget, true), outputFileName)
 	err = copy.Copy(filepath.Join(tmpPath, outputFileName), outputFilePath)
 	if err != nil {
 		log.Errorf("Could not move msi file: %v", err)
 		os.Exit(1)
 	}
 
-	printPackagingFinished(packagingFormat)
+	printPackagingFinished(buildTarget)
 }
 
 func processFiles(path string) {

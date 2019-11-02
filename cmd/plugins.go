@@ -13,13 +13,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/pkg/errors"
+	"github.com/spf13/cobra"
+	"gopkg.in/yaml.v2"
+
 	"github.com/go-flutter-desktop/hover/internal/build"
 	"github.com/go-flutter-desktop/hover/internal/fileutils"
 	"github.com/go-flutter-desktop/hover/internal/log"
 	"github.com/go-flutter-desktop/hover/internal/pubspec"
-	"github.com/pkg/errors"
-	"github.com/spf13/cobra"
-	yaml "gopkg.in/yaml.v2"
 )
 
 const standaloneImplementationListAPI = "https://raw.githubusercontent.com/go-flutter-desktop/plugins/master/list.json"
@@ -134,7 +135,7 @@ var pluginListCmd = &cobra.Command{
 			fmt.Printf("         platforms: [%s]\n", strings.Join(dep.platforms(), ", "))
 			if dep.desktop {
 				if dep.standaloneImpl {
-					fmt.Printf("         source:    This go plugin isn't maintained by the official plugin creator.\n")
+					fmt.Printf("         source:    This go plugin isn`t maintained by the official plugin creator.\n")
 				}
 				if dep.imported() {
 					fmt.Println("         import:    [OK] The plugin is already imported in the project.")
@@ -147,7 +148,7 @@ var pluginListCmd = &cobra.Command{
 					fmt.Println("         import:    [Manual import] The plugin is missing the import.go.tmpl file required for hover import.")
 				}
 				if dep.path != "" {
-					fmt.Printf("         dev:       Plugin replaced in go.mod to path: '%s'\n", dep.path)
+					fmt.Printf("         dev:       Plugin replaced in go.mod to path: `%s`\n", dep.path)
 				}
 			}
 		}
@@ -209,12 +210,12 @@ var pluginTidyCmd = &cobra.Command{
 
 					// clean-up go.mod
 					pluginImportStr, _ := readPluginGoImport(pluginImportPath, pluginName)
-					// Delete the 'replace' and 'require' import strings from go.mod.
+					// Delete the `replace` and `require` import strings from go.mod.
 					// Not mission critical, if the plugins not correctly removed from
 					// the go.mod file, the project still works and the plugin is
 					// successfully removed from the flutter.Application.
 					if err != nil || pluginImportStr == "" {
-						log.Warnf("Couldn't clean the '%s' plugin from the 'go.mod' file. Error: %v", pluginName, err)
+						log.Warnf("Couldn`t clean the `%s` plugin from the `go.mod` file. Error: %v", pluginName, err)
 					} else {
 						fileutils.RemoveLinesFromFile(filepath.Join(build.BuildPath, "go.mod"), pluginImportStr)
 					}
@@ -222,7 +223,7 @@ var pluginTidyCmd = &cobra.Command{
 					// remove import file
 					err = os.Remove(pluginImportPath)
 					if err != nil {
-						log.Warnf("Couldn't remove plugin %s: %v", pluginName, err)
+						log.Warnf("Couldn`t remove plugin %s: %v", pluginName, err)
 						continue
 					}
 					fmt.Printf("       plugin: [%s] removed\n", pluginName)
@@ -262,7 +263,7 @@ func hoverPluginGet(dryRun bool) bool {
 		}
 
 		if !dep.autoImport {
-			fmt.Printf("       plugin: [%s] couldn't be imported, check the plugin's README for manual instructions\n", dep.name)
+			fmt.Printf("       plugin: [%s] couldn`t be imported, check the plugin`s README for manual instructions\n", dep.name)
 			continue
 		}
 
@@ -280,13 +281,13 @@ func hoverPluginGet(dryRun bool) bool {
 		if dep.imported() && !reImport {
 			pluginImportStr, err := readPluginGoImport(pluginImportOutPath, dep.name)
 			if err != nil {
-				log.Warnf("Couldn't read the plugin '%s' import URL", dep.name)
+				log.Warnf("Couldn`t read the plugin `%s` import URL", dep.name)
 				log.Warnf("Fallback to the latest version installed.")
 				continue
 			}
 
 			if !goGetModuleSuccess(pluginImportStr, dep.Version) {
-				log.Warnf("Couldn't download version '%s' of plugin '%s'", dep.Version, dep.name)
+				log.Warnf("Couldn`t download version `%s` of plugin `%s`", dep.Version, dep.name)
 				log.Warnf("Fallback to the latest version installed.")
 				continue
 			}
@@ -303,7 +304,7 @@ func hoverPluginGet(dryRun bool) bool {
 
 			pluginImportStr, err := readPluginGoImport(pluginImportOutPath, dep.name)
 			if err != nil {
-				log.Warnf("Couldn't read the plugin '%s' import URL", dep.name)
+				log.Warnf("Couldn`t read the plugin `%s` import URL", dep.name)
 				log.Warnf("Fallback to the latest version available on github.")
 				continue
 			}
@@ -311,7 +312,7 @@ func hoverPluginGet(dryRun bool) bool {
 			// if remote plugin, get the correct version
 			if dep.path == "" {
 				if !goGetModuleSuccess(pluginImportStr, dep.Version) {
-					log.Warnf("Couldn't download version '%s' of plugin '%s'", dep.Version, dep.name)
+					log.Warnf("Couldn`t download version `%s` of plugin `%s`", dep.Version, dep.name)
 					log.Warnf("Fallback to the latest version available on github.")
 				}
 			}
@@ -320,7 +321,7 @@ func hoverPluginGet(dryRun bool) bool {
 			if dep.path != "" {
 				path, err := filepath.Abs(filepath.Join(dep.path, build.BuildPath))
 				if err != nil {
-					log.Errorf("Failed to resolve absolute path for plugin '%s': %v", dep.name, err)
+					log.Errorf("Failed to resolve absolute path for plugin `%s`: %v", dep.name, err)
 					os.Exit(1)
 				}
 				fileutils.AddLineToFile(filepath.Join(build.BuildPath, "go.mod"), fmt.Sprintf("replace %s => %s", pluginImportStr, path))
@@ -336,7 +337,7 @@ func hoverPluginGet(dryRun bool) bool {
 func listPlatformPlugin() ([]PubDep, error) {
 	onlineList, err := fetchStandaloneImplementationList()
 	if err != nil {
-		log.Warnf("Warning, couldn't read the online plugin list: %v", err)
+		log.Warnf("Warning, couldn`t read the online plugin list: %v", err)
 	}
 
 	pubcachePath, err := findPubcachePath()
@@ -384,10 +385,10 @@ func listPlatformPlugin() ([]PubDep, error) {
 		}
 
 		// Non plugin package are likely to contain android/ios folders (even
-		// through they aren't used).
+		// through they aren`t used).
 		// To check if the package is really a platform plugin, we need to read
 		// the pubspec.yaml file. If he contains a Flutter/plugin entry, then
-		// it's a platform plugin.
+		// it`s a platform plugin.
 		if _, ok := pluginPubspec.Flutter["plugin"]; !ok {
 			continue
 		}
@@ -488,7 +489,7 @@ type onlineList struct {
 }
 
 // StandaloneImplementation contains the go-flutter compatible plugins that
-// aren't merged into original VSC repo.
+// aren`t merged into original VSC repo.
 type StandaloneImplementation struct {
 	Name       string `json:"name"`
 	ImportFile string `json:"importFile"`
@@ -532,7 +533,7 @@ func goGetModuleSuccess(pluginImportStr, version string) bool {
 	cmdGoGetU := exec.Command(build.GoBin, "get", "-u", pluginImportStr+"@v"+version)
 	cmdGoGetU.Dir = filepath.Join(build.BuildPath)
 	cmdGoGetU.Env = append(os.Environ(),
-		"GOPROXY=direct", // github.com/golang/go/issues/32955 (allows '/' in branch name)
+		"GOPROXY=direct", // github.com/golang/go/issues/32955 (allows `/` in branch name)
 		"GO111MODULE=on",
 	)
 	cmdGoGetU.Stderr = os.Stderr

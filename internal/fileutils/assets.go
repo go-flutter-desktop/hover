@@ -4,6 +4,7 @@ import (
 	"os"
 
 	rice "github.com/GeertJohan/go.rice"
+
 	"github.com/go-flutter-desktop/hover/internal/log"
 )
 

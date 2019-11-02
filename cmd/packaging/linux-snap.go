@@ -14,12 +14,11 @@ import (
 	"github.com/go-flutter-desktop/hover/internal/pubspec"
 )
 
-// InitLinuxSnap initialize the a linux snap packagingFormat
-func InitLinuxSnap() {
+// InitLinuxSnap initialize the a linux snap packaging format
+func InitLinuxSnap(buildTarget build.Target) {
 	projectName := pubspec.GetPubSpec().Name
-	packagingFormat := "linux-snap"
-	createPackagingFormatDirectory(packagingFormat)
-	snapDirectoryPath := packagingFormatPath(packagingFormat)
+	createPackagingFormatDirectory(buildTarget)
+	snapDirectoryPath := PackagingFormatPath(buildTarget)
 
 	snapLocalDirectoryPath, err := filepath.Abs(filepath.Join(snapDirectoryPath, "snap", "local"))
 	if err != nil {
@@ -43,16 +42,15 @@ func InitLinuxSnap() {
 	fileutils.CopyTemplate("packaging/snapcraft.yaml.tmpl", filepath.Join(snapDirectoryPath, "snap", "snapcraft.yaml"), fileutils.AssetsBox, templateData)
 
 	createLinuxDesktopFile(filepath.Join(snapLocalDirectoryPath, projectName+".desktop"), "/"+projectName, "/icon.png")
-	createDockerfile(packagingFormat)
+	createDockerfile(buildTarget)
 
-	printInitFinished(packagingFormat)
+	printInitFinished(buildTarget)
 }
 
 // BuildLinuxSnap uses the InitLinuxSnap template to create a snap package.
-func BuildLinuxSnap() {
+func BuildLinuxSnap(buildTarget build.Target) {
 	projectName := pubspec.GetPubSpec().Name
-	packagingFormat := "linux-snap"
-	tmpPath := getTemporaryBuildDirectory(projectName, packagingFormat)
+	tmpPath := getTemporaryBuildDirectory(projectName, buildTarget)
 	defer func() {
 		err := os.RemoveAll(tmpPath)
 		if err != nil {
@@ -67,26 +65,26 @@ func BuildLinuxSnap() {
 		log.Errorf("Could not copy assets folder: %v", err)
 		os.Exit(1)
 	}
-	err = copy.Copy(build.OutputDirectoryPath("linux"), filepath.Join(tmpPath, "build"))
+	err = copy.Copy(build.OutputDirectoryPath(buildTarget, false), filepath.Join(tmpPath, "build"))
 	if err != nil {
 		log.Errorf("Could not copy build folder: %v", err)
 		os.Exit(1)
 	}
-	err = copy.Copy(packagingFormatPath(packagingFormat), filepath.Join(tmpPath))
+	err = copy.Copy(PackagingFormatPath(buildTarget), filepath.Join(tmpPath))
 	if err != nil {
 		log.Errorf("Could not copy packaging configuration folder: %v", err)
 		os.Exit(1)
 	}
 
-	runDockerPackaging(tmpPath, packagingFormat, []string{"snapcraft"})
+	runDockerPackaging(tmpPath, buildTarget, []string{"snapcraft"})
 
 	outputFileName := strings.ToLower(removeDashesAndUnderscores(projectName)) + "_" + pubspec.GetPubSpec().Version + "_" + runtime.GOARCH + ".snap"
-	outputFilePath := filepath.Join(build.OutputDirectoryPath("linux-snap"), outputFileName)
+	outputFilePath := filepath.Join(build.OutputDirectoryPath(buildTarget, true), outputFileName)
 	err = copy.Copy(filepath.Join(tmpPath, outputFileName), outputFilePath)
 	if err != nil {
 		log.Errorf("Could not move snap file: %v", err)
 		os.Exit(1)
 	}
 
-	printPackagingFinished(packagingFormat)
+	printPackagingFinished(buildTarget)
 }

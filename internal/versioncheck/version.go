@@ -9,13 +9,14 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-flutter-desktop/hover/internal/fileutils"
-	"github.com/go-flutter-desktop/hover/internal/log"
 	"github.com/pkg/errors"
 	"github.com/tcnksm/go-latest"
+
+	"github.com/go-flutter-desktop/hover/internal/fileutils"
+	"github.com/go-flutter-desktop/hover/internal/log"
 )
 
-// CheckForGoFlutterUpdate check the last 'go-flutter' timestamp we have cached
+// CheckForGoFlutterUpdate check the last `go-flutter` timestamp we have cached
 // for the current project. If the last update comes back to more than X days,
 // fetch the last Github release semver. If the Github semver is more recent
 // than the current one, display the update notice.
@@ -39,7 +40,7 @@ func CheckForGoFlutterUpdate(goDirectoryPath string, currentTag string) {
 			log.Warnf("Failed to write the update timestamp: %v", err)
 		}
 
-		// If needed, update the hover's .gitignore file with a new entry.
+		// If needed, update the hover`s .gitignore file with a new entry.
 		hoverGitignore := filepath.Join(goDirectoryPath, ".gitignore")
 		fileutils.AddLineToFile(hoverGitignore, ".last_goflutter_check")
 
@@ -72,10 +73,10 @@ func CheckForGoFlutterUpdate(goDirectoryPath string, currentTag string) {
 
 		res, err := latest.Check(githubTag, currentTag)
 		if err != nil {
-			log.Warnf("Failed to check the latest release of 'go-flutter': %v", err)
+			log.Warnf("Failed to check the latest release of `go-flutter`: %v", err)
 
 			// update the timestamp
-			// don't spam people who don't have access to internet
+			// don`t spam people who don`t have access to internet
 			now := time.Now().Add(time.Duration(checkRate) * time.Hour)
 			nowString := strconv.FormatInt(now.Unix(), 10)
 
@@ -87,8 +88,8 @@ func CheckForGoFlutterUpdate(goDirectoryPath string, currentTag string) {
 			return
 		}
 		if res.Outdated {
-			log.Infof("The core library 'go-flutter' has an update available. (%s -> %s)", currentTag, res.Current)
-			log.Infof("              To update 'go-flutter' in this project run: `%s`", log.Au().Magenta("hover upgrade"))
+			log.Infof("The core library `go-flutter` has an update available. (%s -> %s)", currentTag, res.Current)
+			log.Infof("              To update `go-flutter` in this project run: `%s`", log.Au().Magenta("hover upgrade"))
 		}
 
 		if now.Sub(lastUpdateTimeStamp).Hours() > checkRate {
@@ -102,12 +103,12 @@ func CheckForGoFlutterUpdate(goDirectoryPath string, currentTag string) {
 
 }
 
-// CurrentGoFlutterTag retrieve the semver of go-flutter in 'go.mod'
+// CurrentGoFlutterTag retrieve the semver of go-flutter in `go.mod`
 func CurrentGoFlutterTag(goDirectoryPath string) (currentTag string, err error) {
 	goModPath := filepath.Join(goDirectoryPath, "go.mod")
 	goModBytes, err := ioutil.ReadFile(goModPath)
 	if err != nil && !os.IsNotExist(err) {
-		err = errors.Wrap(err, "Failed to read the 'go.mod' file: %v")
+		err = errors.Wrap(err, "Failed to read the `go.mod` file: %v")
 		return
 	}
 
@@ -115,7 +116,7 @@ func CurrentGoFlutterTag(goDirectoryPath string) (currentTag string, err error) 
 
 	match := re.FindStringSubmatch(string(goModBytes))
 	if len(match) < 2 {
-		err = errors.New("Failed to parse the 'go-flutter' version in go.mod")
+		err = errors.New("Failed to parse the `go-flutter` version in go.mod")
 		return
 	}
 	currentTag = match[1]

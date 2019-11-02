@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"os"
 
+	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
 
 	"github.com/go-flutter-desktop/hover/internal/log"
-	"github.com/pkg/errors"
 )
 
 // PubSpec contains the parsed contents of pubspec.yaml

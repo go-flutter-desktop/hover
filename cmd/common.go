@@ -37,17 +37,17 @@ func initBinaries() {
 		os.Exit(1)
 	}
 	if dockerAvailable && !goAvailable && !buildDocker {
-		log.Errorf("Failed to lookup `go` executable. Please install go or add '--docker' to force running in Docker container.\nhttps://golang.org/doc/install")
+		log.Errorf("Failed to lookup `go` executable. Please install go or add `--docker` to force running in Docker container.\nhttps://golang.org/doc/install")
 		os.Exit(1)
 	}
 	build.FlutterBin, err = exec.LookPath("flutter")
 	if err != nil {
-		log.Errorf("Failed to lookup 'flutter' executable. Please install flutter.\nhttps://flutter.dev/docs/get-started/install")
+		log.Errorf("Failed to lookup `flutter` executable. Please install flutter.\nhttps://flutter.dev/docs/get-started/install")
 		os.Exit(1)
 	}
 	build.GitBin, err = exec.LookPath("git")
 	if err != nil {
-		log.Warnf("Failed to lookup 'git' executable.")
+		log.Warnf("Failed to lookup `git` executable.")
 	}
 }
 
@@ -59,7 +59,7 @@ func assertInFlutterProject() {
 // assertInFlutterPluginProject asserts this command is executed in a flutter plugin project
 func assertInFlutterPluginProject() {
 	if _, ok := pubspec.GetPubSpec().Flutter["plugin"]; !ok {
-		log.Errorf("The directory doesn't appear to contain a plugin package.\nTo create a new plugin, first run `%s`, then run `%s`.", log.Au().Magenta("flutter create --template=plugin"), log.Au().Magenta("hover init-plugin"))
+		log.Errorf("The directory doesn`t appear to contain a plugin package.\nTo create a new plugin, first run `%s`, then run `%s`.", log.Au().Magenta("flutter create --template=plugin"), log.Au().Magenta("hover init-plugin"))
 		os.Exit(1)
 	}
 }
@@ -70,7 +70,7 @@ func assertHoverInitialized() {
 		if hoverMigration() {
 			return
 		}
-		log.Errorf("Directory '%s' is missing. Please init go-flutter first: %s", build.BuildPath, log.Au().Magenta("hover init"))
+		log.Errorf("Directory `%s` is missing. Please init go-flutter first: %s", build.BuildPath, log.Au().Magenta("hover init"))
 		os.Exit(1)
 	}
 	if err != nil {
@@ -88,8 +88,8 @@ func hoverMigration() bool {
 	}
 	defer file.Close()
 
-	log.Warnf("⚠ Found older hover directory layout, hover is now expecting a 'go' directory instead of 'desktop'.")
-	log.Warnf("⚠    To migrate, rename the 'desktop' directory to 'go'.")
+	log.Warnf("⚠ Found older hover directory layout, hover is now expecting a `go` directory instead of `desktop`.")
+	log.Warnf("⚠    To migrate, rename the `desktop` directory to `go`.")
 	log.Warnf("     Let hover do the migration? ")
 
 	if askForConfirmation() {
@@ -136,7 +136,7 @@ func toCamelCase(str string) string {
 func initializeGoModule(projectPath string) {
 	wd, err := os.Getwd()
 	if err != nil {
-		log.Errorf("Failed to get working dir: %v\n", err)
+		log.Errorf("Failed to get working dir: %v", err)
 		os.Exit(1)
 	}
 
@@ -149,13 +149,13 @@ func initializeGoModule(projectPath string) {
 	cmdGoModInit.Stdout = os.Stdout
 	err = cmdGoModInit.Run()
 	if err != nil {
-		log.Errorf("Go mod init failed: %v\n", err)
+		log.Errorf("Go mod init failed: %v", err)
 		os.Exit(1)
 	}
 
 	cmdGoModTidy := exec.Command(build.GoBin, "mod", "tidy")
 	cmdGoModTidy.Dir = filepath.Join(wd, build.BuildPath)
-	log.Infof("You can add the '%s' directory to git.", cmdGoModTidy.Dir)
+	log.Infof("You can add the `%s` directory to git.", cmdGoModTidy.Dir)
 	cmdGoModTidy.Env = append(os.Environ(),
 		"GO111MODULE=on",
 	)
@@ -163,7 +163,7 @@ func initializeGoModule(projectPath string) {
 	cmdGoModTidy.Stdout = os.Stdout
 	err = cmdGoModTidy.Run()
 	if err != nil {
-		log.Errorf("Go mod tidy failed: %v\n", err)
+		log.Errorf("Go mod tidy failed: %v", err)
 		os.Exit(1)
 	}
 }

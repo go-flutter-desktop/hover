@@ -13,8 +13,10 @@ import (
 	"strings"
 	"time"
 
-	"github.com/go-flutter-desktop/hover/internal/log"
 	"github.com/pkg/errors"
+
+	"github.com/go-flutter-desktop/hover/internal/build"
+	"github.com/go-flutter-desktop/hover/internal/log"
 )
 
 func createSymLink(oldname, newname string) error {
@@ -104,7 +106,7 @@ func printDownloadPercent(done chan chan struct{}, path string, expectedSize int
 
 		var percent = float64(size) / float64(expectedSize) * 100
 
-		// We use '\033[2K\r' to avoid carriage return, it will print above previous.
+		// We use `\033[2K\r` to avoid carriage return, it will print above previous.
 		fmt.Printf("\033[2K\r %.0f %% / 100 %%", percent)
 
 		if completedCh != nil {
@@ -122,7 +124,7 @@ func printDownloadPercent(done chan chan struct{}, path string, expectedSize int
 func moveFile(srcPath, destPath string) error {
 	srcFile, err := os.Open(srcPath)
 	if err != nil {
-		return fmt.Errorf("Couldn't open src file: %s", err)
+		return fmt.Errorf("Couldn`t open src file: %s", err)
 	}
 	srcFileInfo, err := srcFile.Stat()
 	if err != nil {
@@ -133,7 +135,7 @@ func moveFile(srcPath, destPath string) error {
 	destFile, err := os.OpenFile(destPath, flag, perm)
 	if err != nil {
 		srcFile.Close()
-		return fmt.Errorf("Couldn't open dest file: %s", err)
+		return fmt.Errorf("Couldn`t open dest file: %s", err)
 	}
 	defer destFile.Close()
 	_, err = io.Copy(destFile, srcFile)
@@ -152,7 +154,7 @@ func moveFile(srcPath, destPath string) error {
 // Function to download file with given path and url.
 func downloadFile(filepath string, url string) error {
 	// // Printf download url in case user needs it.
-	// log.Printf("Downloading file from\n '%s'\n to '%s'", url, filepath)
+	// log.Printf("Downloading file from\n `%s`\n to `%s`", url, filepath)
 
 	start := time.Now()
 
@@ -183,7 +185,7 @@ func downloadFile(filepath string, url string) error {
 		return err
 	}
 
-	// close channel to indicate we're done
+	// close channel to indicate we`re done
 	doneCompletedCh := make(chan struct{})
 	doneCh <- doneCompletedCh // signal that download is done
 	<-doneCompletedCh         // wait for signal that printing has completed
@@ -196,11 +198,11 @@ func downloadFile(filepath string, url string) error {
 // ValidateOrUpdateEngineAtPath validates the engine we have cached matches the
 // flutter version, or otherwise downloads a new engine. The engine cache
 // location is set by the the user.
-func ValidateOrUpdateEngineAtPath(targetOS string, cachePath string) (engineCachePath string) {
-	engineCachePath = filepath.Join(cachePath, "hover", "engine", targetOS)
+func ValidateOrUpdateEngineAtPath(buildTarget build.Target, cachePath string) (engineCachePath string) {
+	engineCachePath = filepath.Join(cachePath, "hover", "engine", buildTarget.Platform)
 
 	if strings.Contains(engineCachePath, " ") {
-		log.Errorf("Cannot save the engine to '%s', engine cache is not compatible with path containing spaces.", cachePath)
+		log.Errorf("Cannot save the engine to `%s`, engine cache is not compatible with path containing spaces.", cachePath)
 		log.Errorf("       Please run hover with a another engine cache path. Example:")
 		log.Errorf("              %s", log.Au().Magenta("hover run --cache-path \"C:\\cache\""))
 		log.Errorf("       The --cache-path flag will have to be provided to every build and run command.")
@@ -283,20 +285,20 @@ func ValidateOrUpdateEngineAtPath(targetOS string, cachePath string) (engineCach
 	}
 	var requiredEngineVersionFullHash = apiResponse.Sha
 
-	// TODO: support more arch's than x64?
-	var platform = targetOS + "-x64"
+	// TODO: support more arch`s than x64?
+	var platform = buildTarget.Platform + "-x64"
 
 	// Build the URL for downloading the correct engine
 	var engineDownloadURL = fmt.Sprintf(targetedDomain+"/flutter_infra/flutter/%s/%s/", requiredEngineVersionFullHash, platform)
-	switch targetOS {
-	case "darwin":
+	switch buildTarget.Platform {
+	case build.TargetPlatforms.Darwin:
 		engineDownloadURL += "FlutterEmbedder.framework.zip"
-	case "linux":
+	case build.TargetPlatforms.Linux:
 		engineDownloadURL += platform + "-embedder"
-	case "windows":
+	case build.TargetPlatforms.Windows:
 		engineDownloadURL += platform + "-embedder.zip"
 	default:
-		log.Errorf("Cannot run on %s, download engine not implemented.", targetOS)
+		log.Errorf("Cannot run on %s, download engine not implemented.", buildTarget.Platform)
 		os.Exit(1)
 	}
 
@@ -325,8 +327,8 @@ func ValidateOrUpdateEngineAtPath(targetOS string, cachePath string) (engineCach
 		os.Exit(1)
 	}
 
-	// TODO: make artifacts download a separate function, it doesn't need to be
-	// downloaded with engine because it's OS independent.
+	// TODO: make artifacts download a separate function, it doesn`t need to be
+	// downloaded with engine because it`s OS independent.
 	log.Printf("Downloading artifacts at version %s...", requiredEngineVersion)
 	err = downloadFile(artifactsZipPath, icudtlDownloadURL)
 	if err != nil {
@@ -394,7 +396,7 @@ func ValidateOrUpdateEngineAtPath(targetOS string, cachePath string) (engineCach
 // ValidateOrUpdateEngine validates the engine we have cached matches the
 // flutter version, or otherwise downloads a new engine. The returned path is
 // that of the engine location.
-func ValidateOrUpdateEngine(targetOS string) (engineCachePath string) {
-	engineCachePath = ValidateOrUpdateEngineAtPath(targetOS, cachePath())
+func ValidateOrUpdateEngine(buildTarget build.Target) (engineCachePath string) {
+	engineCachePath = ValidateOrUpdateEngineAtPath(buildTarget, cachePath())
 	return
 }

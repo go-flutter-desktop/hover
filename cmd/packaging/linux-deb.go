@@ -14,12 +14,11 @@ import (
 	"github.com/go-flutter-desktop/hover/internal/pubspec"
 )
 
-// InitLinuxDeb initialize the a linux deb packagingFormat.
-func InitLinuxDeb() {
+// InitLinuxDeb initialize the a linux deb packaging format.
+func InitLinuxDeb(buildTarget build.Target) {
 	projectName := pubspec.GetPubSpec().Name
-	packagingFormat := "linux-deb"
-	createPackagingFormatDirectory(packagingFormat)
-	debDirectoryPath := packagingFormatPath(packagingFormat)
+	createPackagingFormatDirectory(buildTarget)
+	debDirectoryPath := PackagingFormatPath(buildTarget)
 	debDebianDirectoryPath, err := filepath.Abs(filepath.Join(debDirectoryPath, "DEBIAN"))
 	if err != nil {
 		log.Errorf("Failed to resolve absolute path for DEBIAN directory: %v", err)
@@ -73,16 +72,15 @@ func InitLinuxDeb() {
 	}
 
 	createLinuxDesktopFile(filepath.Join(applicationsDirectoryPath, projectName+".desktop"), "/usr/bin/"+projectName, "/usr/lib/"+projectName+"/assets/icon.png")
-	createDockerfile(packagingFormat)
+	createDockerfile(buildTarget)
 
-	printInitFinished(packagingFormat)
+	printInitFinished(buildTarget)
 }
 
 // BuildLinuxDeb uses the InitLinuxDeb template to create a deb package.
-func BuildLinuxDeb() {
+func BuildLinuxDeb(buildTarget build.Target) {
 	projectName := pubspec.GetPubSpec().Name
-	packagingFormat := "linux-deb"
-	tmpPath := getTemporaryBuildDirectory(projectName, packagingFormat)
+	tmpPath := getTemporaryBuildDirectory(projectName, buildTarget)
 	defer func() {
 		err := os.RemoveAll(tmpPath)
 		if err != nil {
@@ -97,26 +95,26 @@ func BuildLinuxDeb() {
 		log.Errorf("Failed to resolve absolute path for lib directory: %v", err)
 		os.Exit(1)
 	}
-	err = copy.Copy(build.OutputDirectoryPath("linux"), filepath.Join(libDirectoryPath, projectName))
+	err = copy.Copy(build.OutputDirectoryPath(buildTarget, false), filepath.Join(libDirectoryPath, projectName))
 	if err != nil {
 		log.Errorf("Could not copy build folder: %v", err)
 		os.Exit(1)
 	}
-	err = copy.Copy(packagingFormatPath(packagingFormat), filepath.Join(tmpPath))
+	err = copy.Copy(PackagingFormatPath(buildTarget), filepath.Join(tmpPath))
 	if err != nil {
 		log.Errorf("Could not copy packaging configuration folder: %v", err)
 		os.Exit(1)
 	}
 
 	outputFileName := removeDashesAndUnderscores(projectName) + "_" + runtime.GOARCH + ".deb"
-	runDockerPackaging(tmpPath, packagingFormat, []string{"dpkg-deb", "--build", ".", outputFileName})
+	runDockerPackaging(tmpPath, buildTarget, []string{"dpkg-deb", "--build", ".", outputFileName})
 
-	outputFilePath := filepath.Join(build.OutputDirectoryPath("linux-deb"), outputFileName)
+	outputFilePath := filepath.Join(build.OutputDirectoryPath(buildTarget, true), outputFileName)
 	err = copy.Copy(filepath.Join(tmpPath, outputFileName), outputFilePath)
 	if err != nil {
 		log.Errorf("Could not move deb file: %v", err)
 		os.Exit(1)
 	}
 
-	printPackagingFinished(packagingFormat)
+	printPackagingFinished(buildTarget)
 }

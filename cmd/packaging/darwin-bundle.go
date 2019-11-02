@@ -13,11 +13,10 @@ import (
 	"github.com/go-flutter-desktop/hover/internal/pubspec"
 )
 
-func InitDarwinBundle() {
+func InitDarwinBundle(buildTarget build.Target) {
 	projectName := pubspec.GetPubSpec().Name
-	packagingFormat := "darwin-bundle"
-	createPackagingFormatDirectory(packagingFormat)
-	bundleDirectoryPath := packagingFormatPath(packagingFormat)
+	createPackagingFormatDirectory(buildTarget)
+	bundleDirectoryPath := PackagingFormatPath(buildTarget)
 	bundleContentsDirectoryPath, err := filepath.Abs(filepath.Join(bundleDirectoryPath, projectName+".app", "Contents"))
 	if err != nil {
 		log.Errorf("Failed to resolve absolute path for Contents directory: %v", err)
@@ -58,15 +57,14 @@ func InitDarwinBundle() {
 
 	fileutils.CopyTemplate("packaging/Info.plist.tmpl", filepath.Join(bundleContentsDirectoryPath, "Info.plist"), fileutils.AssetsBox, templateData)
 
-	createDockerfile(packagingFormat)
+	createDockerfile(buildTarget)
 
-	printInitFinished(packagingFormat)
+	printInitFinished(buildTarget)
 }
 
-func BuildDarwinBundle() {
+func BuildDarwinBundle(buildTarget build.Target) {
 	projectName := pubspec.GetPubSpec().Name
-	packagingFormat := "darwin-bundle"
-	tmpPath := getTemporaryBuildDirectory(projectName, packagingFormat)
+	tmpPath := getTemporaryBuildDirectory(projectName, buildTarget)
 	defer func() {
 		err := os.RemoveAll(tmpPath)
 		if err != nil {
@@ -76,21 +74,21 @@ func BuildDarwinBundle() {
 	}()
 	log.Infof("Packaging bundle in %s", tmpPath)
 
-	err := copy.Copy(build.OutputDirectoryPath("darwin"), filepath.Join(tmpPath, projectName+".app", "Contents", "MacOS"))
+	err := copy.Copy(build.OutputDirectoryPath(buildTarget, false), filepath.Join(tmpPath, projectName+".app", "Contents", "MacOS"))
 	if err != nil {
 		log.Errorf("Could not copy build folder: %v", err)
 		os.Exit(1)
 	}
-	err = copy.Copy(packagingFormatPath(packagingFormat), filepath.Join(tmpPath))
+	err = copy.Copy(PackagingFormatPath(buildTarget), filepath.Join(tmpPath))
 	if err != nil {
 		log.Errorf("Could not copy packaging configuration folder: %v", err)
 		os.Exit(1)
 	}
 
-	runDockerPackaging(tmpPath, packagingFormat, []string{"mkdir", "-p", projectName + ".app/Contents/Resources", "&&", "png2icns", projectName + ".app/Contents/Resources/icon.icns", projectName + ".app/Contents/MacOS/assets/icon.png"})
+	runDockerPackaging(tmpPath, buildTarget, []string{"mkdir", "-p", projectName + ".app/Contents/Resources", "&&", "png2icns", projectName + ".app/Contents/Resources/icon.icns", projectName + ".app/Contents/MacOS/assets/icon.png"})
 
 	outputFileName := projectName + ".app"
-	outputFilePath := filepath.Join(build.OutputDirectoryPath("darwin-bundle"), outputFileName)
+	outputFilePath := filepath.Join(build.OutputDirectoryPath(buildTarget, true), outputFileName)
 	err = os.RemoveAll(outputFilePath)
 	if err != nil {
 		log.Errorf("Could not remove previous bundle directory: %v", err)
@@ -102,5 +100,5 @@ func BuildDarwinBundle() {
 		os.Exit(1)
 	}
 
-	printPackagingFinished(packagingFormat)
+	printPackagingFinished(buildTarget)
 }

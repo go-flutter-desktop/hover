@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -23,46 +22,35 @@ func init() {
 
 var upgradeCmd = &cobra.Command{
 	Use:   "upgrade",
-	Short: "upgrade the 'go-flutter' core library",
+	Short: "upgrade the `go-flutter` core library",
 	Run: func(cmd *cobra.Command, args []string) {
 		assertInFlutterProject()
-		// Hardcode target to the current OS (no cross-compile support yet)
-		targetOS := runtime.GOOS
-
-		err := upgrade(targetOS)
+		// Can only run on host OS
+		buildTarget := build.Target{
+			Platform:        runtime.GOOS,
+			PackagingFormat: "",
+		}
+		err := upgrade(buildTarget)
 		if err != nil {
 			os.Exit(1)
 		}
 	},
 }
 
-func upgrade(targetOS string) (err error) {
+func upgrade(buildTarget build.Target) (err error) {
 	var engineCachePath string
 	if buildCachePath != "" {
-		engineCachePath = enginecache.ValidateOrUpdateEngineAtPath(targetOS, buildCachePath)
+		engineCachePath = enginecache.ValidateOrUpdateEngineAtPath(buildTarget, buildCachePath)
 	} else {
-		engineCachePath = enginecache.ValidateOrUpdateEngine(targetOS)
+		engineCachePath = enginecache.ValidateOrUpdateEngine(buildTarget)
 	}
-	return upgradeGoFlutter(targetOS, engineCachePath)
+	return upgradeGoFlutter(buildTarget, engineCachePath)
 }
 
-func upgradeGoFlutter(targetOS string, engineCachePath string) (err error) {
+func upgradeGoFlutter(buildTarget build.Target, engineCachePath string) (err error) {
 	wd, err := os.Getwd()
 	if err != nil {
 		log.Errorf("Failed to get working dir: %v", err)
-		return
-	}
-
-	var cgoLdflags string
-	switch targetOS {
-	case "darwin":
-		cgoLdflags = fmt.Sprintf("-F%s -Wl,-rpath,@executable_path", engineCachePath)
-	case "linux":
-		cgoLdflags = fmt.Sprintf("-L%s", engineCachePath)
-	case "windows":
-		cgoLdflags = fmt.Sprintf("-L%s", engineCachePath)
-	default:
-		log.Errorf("Target platform %s is not supported, cgo_ldflags not implemented.", targetOS)
 		return
 	}
 
@@ -73,9 +61,9 @@ func upgradeGoFlutter(targetOS string, engineCachePath string) (err error) {
 	cmdGoGetU := exec.Command(build.GoBin, "get", "-u", "github.com/go-flutter-desktop/go-flutter"+buildBranch)
 	cmdGoGetU.Dir = filepath.Join(wd, build.BuildPath)
 	cmdGoGetU.Env = append(os.Environ(),
-		"GOPROXY=direct", // github.com/golang/go/issues/32955 (allows '/' in branch name)
+		"GOPROXY=direct", // github.com/golang/go/issues/32955 (allows `/` in branch name)
 		"GO111MODULE=on",
-		"CGO_LDFLAGS="+cgoLdflags,
+		"CGO_LDFLAGS="+build.CGoLdFlags(buildTarget, engineCachePath),
 	)
 	cmdGoGetU.Stderr = os.Stderr
 	cmdGoGetU.Stdout = os.Stdout
@@ -106,7 +94,7 @@ func upgradeGoFlutter(targetOS string, engineCachePath string) (err error) {
 		os.Exit(1)
 	}
 
-	log.Printf("'go-flutter' is on version: %s", currentTag)
+	log.Printf("`go-flutter` is on version: %s", currentTag)
 
 	return nil
 

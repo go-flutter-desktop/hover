@@ -3,7 +3,6 @@ package cmd
 import (
 	"bufio"
 	"fmt"
-	"github.com/go-flutter-desktop/hover/internal/config"
 	"io"
 	"os"
 	"os/exec"
@@ -14,6 +13,7 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/go-flutter-desktop/hover/internal/build"
+	"github.com/go-flutter-desktop/hover/internal/config"
 	"github.com/go-flutter-desktop/hover/internal/log"
 	"github.com/go-flutter-desktop/hover/internal/pubspec"
 )
@@ -24,14 +24,14 @@ var (
 )
 
 func init() {
-	runCmd.Flags().StringVarP(&buildTarget, "target", "t", config.BuildTargetDefault, "The main entry-point file of the application.")
-	runCmd.Flags().StringVarP(&buildBranch, "branch", "b", config.BuildBranchDefault, "The 'go-flutter' version to use. (@master or @v0.20.0 for example)")
+	runCmd.Flags().StringVarP(&buildTargetFile, "target", "t", config.BuildTargetFileDefault, "The main entry-point file of the application.")
+	runCmd.Flags().StringVarP(&buildBranch, "branch", "b", config.BuildBranchDefault, "The `go-flutter` version to use. (@master or @v0.20.0 for example)")
 	runCmd.Flags().StringVarP(&buildCachePath, "cache-path", "", config.BuildCachePathDefault, "The path that hover uses to cache dependencies such as the Flutter engine .so/.dll (defaults to the standard user cache directory)")
-	runCmd.Flags().StringVar(&buildOpenGlVersion, "opengl", config.BuildOpenGlVersionDefault, "The OpenGL version specified here is only relevant for external texture plugin (i.e. video_plugin).\nIf 'none' is provided, texture won't be supported. Note: the Flutter Engine still needs a OpenGL compatible context.")
+	runCmd.Flags().StringVar(&buildOpenGlVersion, "opengl", config.BuildOpenGlVersionDefault, "The OpenGL version specified here is only relevant for external texture plugin (i.e. video_plugin).\nIf `none` is provided, texture won`t be supported. Note: the Flutter Engine still needs a OpenGL compatible context.")
 	runCmd.Flags().StringVar(&runInitialRoute, "route", "", "Which route to load when running the app.")
 	runCmd.Flags().StringVarP(&runObservatoryPort, "observatory-port", "", "50300", "The observatory port used to connect hover to VM services (hot-reload/debug/..)")
-	runCmd.Flags().BoolVar(&buildOmitEmbedder, "omit-embedder", false, "Don't (re)compile 'go-flutter' source code, useful when only working with Dart code")
-	runCmd.Flags().BoolVar(&buildOmitFlutterBundle, "omit-flutter", false, "Don't (re)compile the current Flutter project, useful when only working with Golang code (plugin)")
+	runCmd.Flags().BoolVar(&buildOmitEmbedder, "omit-embedder", false, "Don`t (re)compile `go-flutter` source code, useful when only working with Dart code")
+	runCmd.Flags().BoolVar(&buildOmitFlutterBundle, "omit-flutter", false, "Don`t (re)compile the current Flutter project, useful when only working with Golang code (plugin)")
 	runCmd.PersistentFlags().BoolVar(&buildDocker, "docker", false, "Compile and run in Docker container only. No need to install go")
 	rootCmd.AddCommand(runCmd)
 }
@@ -50,19 +50,22 @@ var runCmd = &cobra.Command{
 		}
 
 		// Can only run on host OS
-		targetOS := runtime.GOOS
+		buildTarget := build.Target{
+			Platform:        runtime.GOOS,
+			PackagingFormat: "",
+		}
 
-		// forcefully enable --debug (which is not an option for 'hover run')
+		// forcefully enable --debug (which is not an option for `hover run`)
 		buildDebug = true
 
-		buildNormal(targetOS, []string{"--observatory-port=" + runObservatoryPort})
+		buildNormal(buildTarget, []string{"--observatory-port=" + runObservatoryPort})
 		log.Infof("Build finished, starting app...")
-		runAndAttach(projectName, targetOS)
+		runAndAttach(projectName, buildTarget)
 	},
 }
 
-func runAndAttach(projectName string, targetOS string) {
-	cmdApp := exec.Command(dotSlash + filepath.Join(build.BuildPath, "build", "outputs", targetOS, projectName))
+func runAndAttach(projectName string, buildTarget build.Target) {
+	cmdApp := exec.Command(dotSlash + filepath.Join(build.BuildPath, "build", "outputs", buildTarget.Platform, projectName))
 	cmdApp.Env = append(os.Environ(),
 		"GOFLUTTER_ROUTE="+runInitialRoute)
 	cmdFlutterAttach := exec.Command("flutter", "attach")
@@ -88,7 +91,7 @@ func runAndAttach(projectName string, targetOS string) {
 			fmt.Println(text)
 			match := re.FindStringSubmatch(text)
 			if len(match) == 1 {
-				startHotReloadProcess(cmdFlutterAttach, buildTarget, match[0])
+				startHotReloadProcess(cmdFlutterAttach, buildTargetFile, match[0])
 				break
 			}
 		}
@@ -102,16 +105,16 @@ func runAndAttach(projectName string, targetOS string) {
 	log.Infof("Running %s in debug mode", projectName)
 	err = cmdApp.Start()
 	if err != nil {
-		log.Errorf("Failed to start app '%s': %v", projectName, err)
+		log.Errorf("Failed to start app `%s`: %v", projectName, err)
 		os.Exit(1)
 	}
 
 	err = cmdApp.Wait()
 	if err != nil {
-		log.Errorf("App '%s' exited with error: %v", projectName, err)
+		log.Errorf("App `%s` exited with error: %v", projectName, err)
 		os.Exit(cmdApp.ProcessState.ExitCode())
 	}
-	log.Infof("App '%s' exited.", projectName)
+	log.Infof("App `%s` exited.", projectName)
 	log.Printf("Closing the flutter attach sub process..")
 	cmdFlutterAttach.Wait()
 	os.Exit(0)
@@ -130,6 +133,6 @@ func startHotReloadProcess(cmdFlutterAttach *exec.Cmd, buildTargetMainDart strin
 	}
 	err := cmdFlutterAttach.Start()
 	if err != nil {
-		log.Warnf("The command 'flutter attach' failed: %v Hotreload disabled", err)
+		log.Warnf("The command `flutter attach` failed: %v Hotreload disabled", err)
 	}
 }

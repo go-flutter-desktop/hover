@@ -5,8 +5,9 @@ import (
 	"os"
 	"os/signal"
 
-	"github.com/go-flutter-desktop/hover/internal/log"
 	"github.com/spf13/cobra"
+
+	"github.com/go-flutter-desktop/hover/internal/log"
 )
 
 var colors bool

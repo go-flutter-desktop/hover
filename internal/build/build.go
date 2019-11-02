@@ -1,6 +1,7 @@
 package build
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -11,11 +12,17 @@ import (
 // Much like android and ios are already used.
 const BuildPath = "go"
 
+var BundlePath = filepath.Join(BuildPath, "build", "bundle")
+
 // OutputDirectoryPath returns the path where the go-flutter binary and flutter
 // binaries blobs will be stored for a particular platform.
 // If needed, the directory is create at the returned path.
-func OutputDirectoryPath(targetOS string) string {
-	outputDirectoryPath, err := filepath.Abs(filepath.Join(BuildPath, "build", "outputs", targetOS))
+func OutputDirectoryPath(buildTarget Target, withPackagingFormat bool) string {
+	targetName := buildTarget.Platform
+	if buildTarget.PackagingFormat != "" && withPackagingFormat {
+		targetName += fmt.Sprintf("-%s", buildTarget.PackagingFormat)
+	}
+	outputDirectoryPath, err := filepath.Abs(filepath.Join(BuildPath, "build", "outputs", targetName))
 	if err != nil {
 		log.Errorf("Failed to resolve absolute path for output directory: %v", err)
 		os.Exit(1)
@@ -32,17 +39,17 @@ func OutputDirectoryPath(targetOS string) string {
 
 // OutputBinaryName returns the string of the executable used to launch the
 // main desktop app. (appends .exe for windows)
-func OutputBinaryName(projectName string, targetOS string) string {
+func OutputBinaryName(projectName string, buildTarget Target) string {
 	var outputBinaryName = projectName
-	switch targetOS {
-	case "darwin":
+	switch buildTarget.Platform {
+	case TargetPlatforms.Darwin:
 		// no special filename
-	case "linux":
+	case TargetPlatforms.Linux:
 		// no special filename
-	case "windows":
+	case TargetPlatforms.Windows:
 		outputBinaryName += ".exe"
 	default:
-		log.Errorf("Target platform %s is not supported.", targetOS)
+		log.Errorf("target platform %s is not supported.", buildTarget.Platform)
 		os.Exit(1)
 	}
 	return outputBinaryName
@@ -50,24 +57,40 @@ func OutputBinaryName(projectName string, targetOS string) string {
 
 // OutputBinaryPath returns the path to the go-flutter Application for a
 // specified platform.
-func OutputBinaryPath(projectName string, targetOS string) string {
-	outputBinaryPath := filepath.Join(OutputDirectoryPath(targetOS), OutputBinaryName(projectName, targetOS))
+func OutputBinaryPath(projectName string, buildTarget Target, withPackagingFormat bool) string {
+	outputBinaryPath := filepath.Join(OutputDirectoryPath(buildTarget, withPackagingFormat), OutputBinaryName(projectName, buildTarget))
 	return outputBinaryPath
 }
 
 // EngineFile returns the name of the engine file from flutter for the
 // specified platform.
-func EngineFile(targetOS string) string {
-	switch targetOS {
-	case "darwin":
+func EngineFile(buildTarget Target) string {
+	switch buildTarget.Platform {
+	case TargetPlatforms.Darwin:
 		return "FlutterEmbedder.framework"
-	case "linux":
+	case TargetPlatforms.Linux:
 		return "libflutter_engine.so"
-	case "windows":
+	case TargetPlatforms.Windows:
 		return "flutter_engine.dll"
 	default:
-		log.Errorf("%s has no implemented engine file", targetOS)
+		log.Errorf("%s has no implemented engine file", buildTarget.Platform)
 		os.Exit(1)
 		return ""
 	}
+}
+
+func CGoLdFlags(buildTarget Target, engineCachePath string) string {
+	var cgoLdflags string
+	switch buildTarget.Platform {
+	case TargetPlatforms.Darwin:
+		cgoLdflags = fmt.Sprintf("-F%s -Wl,-rpath,@executable_path", engineCachePath)
+	case TargetPlatforms.Linux:
+		cgoLdflags = fmt.Sprintf("-L%s", engineCachePath)
+	case TargetPlatforms.Windows:
+		cgoLdflags = fmt.Sprintf("-L%s", engineCachePath)
+	default:
+		log.Errorf("target platform %s is not supported, cgo_ldflags not implemented.", buildTarget.Platform)
+		os.Exit(1)
+	}
+	return cgoLdflags
 }

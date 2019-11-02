@@ -10,7 +10,7 @@ import (
 	"github.com/go-flutter-desktop/hover/internal/build"
 )
 
-const BuildTargetDefault = "lib/main_desktop.dart"
+const BuildTargetFileDefault = "lib/main_desktop.dart"
 const BuildBranchDefault = ""
 const BuildCachePathDefault = ""
 const BuildOpenGlVersionDefault = "3.3"
