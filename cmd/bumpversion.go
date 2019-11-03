@@ -22,11 +22,11 @@ func init() {
 }
 
 var upgradeCmd = &cobra.Command{
-	Use:   "upgrade",
-	Short: "upgrade the 'go-flutter' core library",
+	Use:   "bumpversion",
+	Short: "upgrade the 'go-flutter' golang library in this project",
 	Run: func(cmd *cobra.Command, args []string) {
 		assertInFlutterProject()
-		// Hardcode target to the current OS (no cross-compile support yet)
+		// Hardcode target to the current OS (no cross-compile for this command)
 		targetOS := runtime.GOOS
 
 		err := upgrade(targetOS)
