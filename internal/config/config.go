@@ -46,7 +46,7 @@ func ReadConfigFile(configPath string) (*Config, error) {
 	file, err := os.Open(configPath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return nil, errors.Wrap(err, "Error: No hover.yaml file found")
+			return nil, errors.Wrap(err, "Warning: No hover.yaml file found")
 		}
 		return nil, errors.Wrap(err, "Failed to open hover.yaml")
 	}

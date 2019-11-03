@@ -214,7 +214,7 @@ func ValidateOrUpdateEngineAtPath(targetOS string, cachePath string) (engineCach
 		os.Exit(1)
 	}
 	cachedEngineVersion := string(cachedEngineVersionBytes)
-	requiredEngineVersion := flutterRequiredEngineVersion()
+	requiredEngineVersion := FlutterRequiredEngineVersion()
 
 	if cachedEngineVersion != "" {
 		if cachedEngineVersion == requiredEngineVersion {
