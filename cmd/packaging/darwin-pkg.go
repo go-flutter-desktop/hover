@@ -84,7 +84,7 @@ func BuildDarwinPkg() {
 	outputFilePath := filepath.Join(build.OutputDirectoryPath("darwin-pkg"), outputFileName)
 	err = copy.Copy(filepath.Join(tmpPath, outputFileName), outputFilePath)
 	if err != nil {
-		log.Errorf("Could not move pkg directory: %v", err)
+		log.Errorf("Could not move pkg: %v", err)
 		os.Exit(1)
 	}
 

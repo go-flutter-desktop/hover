@@ -58,6 +58,7 @@ func init() {
 	buildCmd.AddCommand(buildDarwinCmd)
 	buildCmd.AddCommand(buildDarwinBundleCmd)
 	buildCmd.AddCommand(buildDarwinPkgCmd)
+	buildCmd.AddCommand(buildDarwinDmgCmd)
 	buildCmd.AddCommand(buildWindowsCmd)
 	buildCmd.AddCommand(buildWindowsMsiCmd)
 	rootCmd.AddCommand(buildCmd)
@@ -150,6 +151,19 @@ var buildDarwinPkgCmd = &cobra.Command{
 
 		buildNormal("darwin", nil)
 		packaging.BuildDarwinPkg()
+	},
+}
+
+var buildDarwinDmgCmd = &cobra.Command{
+	Use:   "darwin-dmg",
+	Short: "Build a desktop release for darwin and package it for OSX dmg",
+	Run: func(cmd *cobra.Command, args []string) {
+		assertHoverInitialized()
+		packaging.AssertPackagingFormatInitialized("darwin-dmg")
+		packaging.AssertDockerInstalled()
+
+		buildNormal("darwin", nil)
+		packaging.BuildDarwinDmg()
 	},
 }
 

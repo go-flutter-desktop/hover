@@ -13,6 +13,7 @@ func init() {
 	initPackagingCmd.AddCommand(initWindowsMsiCmd)
 	initPackagingCmd.AddCommand(initDarwinBundleCmd)
 	initPackagingCmd.AddCommand(initDarwinPkgCmd)
+	initPackagingCmd.AddCommand(initDarwinDmgCmd)
 	rootCmd.AddCommand(initPackagingCmd)
 }
 
@@ -79,11 +80,21 @@ var initDarwinBundleCmd = &cobra.Command{
 var initDarwinPkgCmd = &cobra.Command{
 	Use:   "darwin-pkg",
 	Short: "Create configuration files for OSX pkg installer packaging",
-
 	Run: func(cmd *cobra.Command, args []string) {
 		assertHoverInitialized()
 		packaging.AssertDockerInstalled()
 
 		packaging.InitDarwinPkg()
+	},
+}
+
+var initDarwinDmgCmd = &cobra.Command{
+	Use:   "darwin-dmg",
+	Short: "Create configuration files for OSX dmg packaging",
+	Run: func(cmd *cobra.Command, args []string) {
+		assertHoverInitialized()
+		packaging.AssertDockerInstalled()
+
+		packaging.InitDarwinDmg()
 	},
 }
