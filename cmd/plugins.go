@@ -129,25 +129,25 @@ var pluginListCmd = &cobra.Command{
 			}
 			hasPlugins = true
 
-			fmt.Printf("     - %s\n", dep.name)
-			fmt.Printf("         version:   %s\n", dep.Version)
-			fmt.Printf("         platforms: [%s]\n", strings.Join(dep.platforms(), ", "))
+			log.Infof("     - %s", dep.name)
+			log.Infof("         version:   %s", dep.Version)
+			log.Infof("         platforms: [%s]", strings.Join(dep.platforms(), ", "))
 			if dep.desktop {
 				if dep.standaloneImpl {
-					fmt.Printf("         source:    This go plugin isn't maintained by the official plugin creator.\n")
+					log.Infof("         source:    This go plugin isn't maintained by the official plugin creator.")
 				}
 				if dep.imported() {
-					fmt.Println("         import:    [OK] The plugin is already imported in the project.")
+					log.Infof("         import:    [OK] The plugin is already imported in the project.")
 					continue
 				}
 				if dep.autoImport || dep.standaloneImpl {
 					hasNewPlugin = true
-					fmt.Println("         import:    [Missing] The plugin can be imported by hover.")
+					log.Infof("         import:    [Missing] The plugin can be imported by hover.")
 				} else {
-					fmt.Println("         import:    [Manual import] The plugin is missing the import.go.tmpl file required for hover import.")
+					log.Infof("         import:    [Manual import] The plugin is missing the import.go.tmpl file required for hover import.")
 				}
 				if dep.path != "" {
-					fmt.Printf("         dev:       Plugin replaced in go.mod to path: '%s'\n", dep.path)
+					log.Infof("         dev:       Plugin replaced in go.mod to path: '%s'", dep.path)
 				}
 			}
 		}
@@ -202,7 +202,7 @@ var pluginTidyCmd = &cobra.Command{
 
 				if !pluginInUse || tidyPurge {
 					if dryRun {
-						fmt.Printf("       plugin: [%s] can be removed\n", pluginName)
+						log.Infof("       plugin: [%s] can be removed", pluginName)
 						continue
 					}
 					pluginImportPath := filepath.Join(desktopCmdPath, f.Name())
@@ -225,7 +225,7 @@ var pluginTidyCmd = &cobra.Command{
 						log.Warnf("Couldn't remove plugin %s: %v", pluginName, err)
 						continue
 					}
-					fmt.Printf("       plugin: [%s] removed\n", pluginName)
+					log.Infof("       plugin: [%s] removed", pluginName)
 				}
 			}
 		}
@@ -262,15 +262,15 @@ func hoverPluginGet(dryRun bool) bool {
 		}
 
 		if !dep.autoImport {
-			fmt.Printf("       plugin: [%s] couldn't be imported, check the plugin's README for manual instructions\n", dep.name)
+			log.Infof("       plugin: [%s] couldn't be imported, check the plugin's README for manual instructions", dep.name)
 			continue
 		}
 
 		if dryRun {
 			if dep.imported() {
-				fmt.Printf("       plugin: [%s] can be updated\n", dep.name)
+				log.Infof("       plugin: [%s] can be updated", dep.name)
 			} else {
-				fmt.Printf("       plugin: [%s] can be imported\n", dep.name)
+				log.Infof("       plugin: [%s] can be imported", dep.name)
 			}
 			continue
 		}
@@ -291,7 +291,7 @@ func hoverPluginGet(dryRun bool) bool {
 				continue
 			}
 
-			fmt.Printf("       plugin: [%s] updated\n", dep.name)
+			log.Infof("       plugin: [%s] updated", dep.name)
 			continue
 		}
 
@@ -326,7 +326,7 @@ func hoverPluginGet(dryRun bool) bool {
 				fileutils.AddLineToFile(filepath.Join(build.BuildPath, "go.mod"), fmt.Sprintf("replace %s => %s", pluginImportStr, path))
 			}
 
-			fmt.Printf("       plugin: [%s] imported\n", dep.name)
+			log.Infof("       plugin: [%s] imported", dep.name)
 		}
 	}
 
