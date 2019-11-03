@@ -13,11 +13,11 @@ Hover uses [Go](https://golang.org) to build your Flutter application to desktop
 Then install hover like this:
 
 ```bash
-go get -u github.com/go-flutter-desktop/hover
+$ go version
+go version go1.13 XX/YYY
+$ go get -u github.com/go-flutter-desktop/hover
 ```
-
-If you get this error: `cmdApp.ProcessState.ExitCode undefined (type *os.ProcessState has no field or method ExitCode)`,
-then update Go to at least version 1.12.
+Go 1.13 is required!
 
 Run the same command to update when a newer version becomes available.
 
