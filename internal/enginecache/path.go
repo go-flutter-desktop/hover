@@ -6,11 +6,10 @@ import (
 	"runtime"
 
 	"github.com/go-flutter-desktop/hover/internal/log"
-	homedir "github.com/mitchellh/go-homedir"
 )
 
 func cachePath() string {
-	homePath, err := homedir.Dir()
+	homePath, err := os.UserHomeDir()
 	if err != nil {
 		log.Errorf("Failed to resolve home path: %v", err)
 		os.Exit(1)

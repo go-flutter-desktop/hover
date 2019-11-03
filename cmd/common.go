@@ -14,7 +14,6 @@ import (
 	"github.com/go-flutter-desktop/hover/internal/build"
 	"github.com/go-flutter-desktop/hover/internal/log"
 	"github.com/go-flutter-desktop/hover/internal/pubspec"
-	"github.com/mitchellh/go-homedir"
 	"github.com/pkg/errors"
 )
 
@@ -173,7 +172,7 @@ func findPubcachePath() (string, error) {
 	var path string
 	switch runtime.GOOS {
 	case "darwin", "linux":
-		home, err := homedir.Dir()
+		home, err := os.UserHomeDir()
 		if err != nil {
 			return "", errors.Wrap(err, "failed to resolve user home dir")
 		}
