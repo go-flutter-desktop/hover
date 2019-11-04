@@ -73,7 +73,9 @@ func InitLinuxDeb() {
 	}
 
 	createLinuxDesktopFile(filepath.Join(applicationsDirectoryPath, projectName+".desktop"), "/usr/bin/"+projectName, "/usr/lib/"+projectName+"/assets/icon.png")
-	createDockerfile(packagingFormat)
+	createDockerfile(packagingFormat, []string{
+		"FROM ubuntu:bionic",
+	})
 
 	printInitFinished(packagingFormat)
 }

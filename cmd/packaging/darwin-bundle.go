@@ -58,7 +58,10 @@ func InitDarwinBundle() {
 
 	fileutils.CopyTemplate("packaging/Info.plist.tmpl", filepath.Join(bundleContentsDirectoryPath, "Info.plist"), fileutils.AssetsBox, templateData)
 
-	createDockerfile(packagingFormat)
+	createDockerfile(packagingFormat, []string{
+		"FROM ubuntu:bionic",
+		"RUN apt-get update && apt-get install icnsutils -y",
+	})
 
 	printInitFinished(packagingFormat)
 }

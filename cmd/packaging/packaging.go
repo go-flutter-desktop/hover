@@ -92,7 +92,7 @@ func getAuthor() string {
 	return author
 }
 
-func createDockerfile(packagingFormat string) {
+func createDockerfile(packagingFormat string, dockerFileContent []string) {
 	dockerFilePath, err := filepath.Abs(filepath.Join(packagingFormatPath(packagingFormat), "Dockerfile"))
 	if err != nil {
 		log.Errorf("Failed to resolve absolute path for Dockerfile %s: %v", dockerFilePath, err)
@@ -103,56 +103,6 @@ func createDockerfile(packagingFormat string) {
 		log.Errorf("Failed to create Dockerfile %s: %v", dockerFilePath, err)
 		os.Exit(1)
 	}
-	dockerFileContent := []string{}
-	if packagingFormat == "linux-snap" {
-		dockerFileContent = []string{
-			"FROM snapcore/snapcraft",
-		}
-	} else if packagingFormat == "linux-deb" {
-		dockerFileContent = []string{
-			"FROM ubuntu:bionic",
-		}
-	} else if packagingFormat == "linux-appimage" {
-		dockerFileContent = []string{
-			"FROM ubuntu:bionic",
-			"WORKDIR /opt",
-			"RUN apt-get update && \\",
-			"apt-get install libglib2.0-0 curl file -y",
-			"RUN curl -LO https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage && \\",
-			"chmod a+x appimagetool-x86_64.AppImage && \\",
-			"./appimagetool-x86_64.AppImage --appimage-extract && \\",
-			"mv squashfs-root appimagetool && \\",
-			"rm appimagetool-x86_64.AppImage",
-			"ENV PATH=/opt/appimagetool/usr/bin:$PATH",
-		}
-	} else if packagingFormat == "windows-msi" {
-		dockerFileContent = []string{
-			"FROM ubuntu:bionic",
-			"RUN apt-get update && apt-get install wixl imagemagick -y",
-		}
-	} else if packagingFormat == "darwin-bundle" {
-		dockerFileContent = []string{
-			"FROM ubuntu:bionic",
-			"RUN apt-get update && apt-get install icnsutils -y",
-		}
-	} else if packagingFormat == "darwin-pkg" {
-		dockerFileContent = []string{
-			"FROM ubuntu:bionic",
-			"RUN apt-get update && apt-get install cpio git make g++ wget libxml2-dev libssl1.0-dev zlib1g-dev -y",
-			"WORKDIR /tmp",
-			"RUN git clone https://github.com/hogliux/bomutils && cd bomutils && make > /dev/null && make install > /dev/null",
-			"RUN wget https://storage.googleapis.com/google-code-archive-downloads/v2/code.google.com/xar/xar-1.5.2.tar.gz && tar -zxvf xar-1.5.2.tar.gz > /dev/null && cd xar-1.5.2 && ./configure > /dev/null && make > /dev/null && make install > /dev/null",
-		}
-	} else if packagingFormat == "darwin-dmg" {
-		dockerFileContent = []string{
-			"FROM ubuntu:bionic",
-			"RUN apt-get update && apt-get install genisoimage -y ",
-		}
-	} else {
-		log.Errorf("Tried to create Dockerfile for unknown packaging format %s", packagingFormat)
-		os.Exit(1)
-	}
-
 	for _, line := range dockerFileContent {
 		if _, err := dockerFile.WriteString(line + "\n"); err != nil {
 			log.Errorf("Could not write Dockerfile: %v", err)
