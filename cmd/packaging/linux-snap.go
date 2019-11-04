@@ -43,7 +43,9 @@ func InitLinuxSnap() {
 	fileutils.CopyTemplate("packaging/snapcraft.yaml.tmpl", filepath.Join(snapDirectoryPath, "snap", "snapcraft.yaml"), fileutils.AssetsBox, templateData)
 
 	createLinuxDesktopFile(filepath.Join(snapLocalDirectoryPath, projectName+".desktop"), "/"+projectName, "/icon.png")
-	createDockerfile(packagingFormat)
+	createDockerfile(packagingFormat, []string{
+		"FROM snapcore/snapcraft",
+	})
 
 	printInitFinished(packagingFormat)
 }

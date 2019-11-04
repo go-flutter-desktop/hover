@@ -19,7 +19,10 @@ func InitDarwinDmg() {
 	}
 	createPackagingFormatDirectory(packagingFormat)
 
-	createDockerfile(packagingFormat)
+	createDockerfile(packagingFormat, []string{
+		"FROM ubuntu:bionic",
+		"RUN apt-get update && apt-get install genisoimage -y ",
+	})
 
 	printInitFinished(packagingFormat)
 }
