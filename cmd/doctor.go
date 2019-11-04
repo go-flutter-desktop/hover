@@ -9,13 +9,14 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/davecgh/go-spew/spew"
+	"github.com/pkg/errors"
+	"github.com/spf13/cobra"
+	"gopkg.in/yaml.v2"
+
 	"github.com/go-flutter-desktop/hover/internal/build"
 	"github.com/go-flutter-desktop/hover/internal/config"
 	"github.com/go-flutter-desktop/hover/internal/enginecache"
 	"github.com/go-flutter-desktop/hover/internal/log"
-	"github.com/pkg/errors"
-	"github.com/spf13/cobra"
 )
 
 func init() {
@@ -81,7 +82,12 @@ var doctorCmd = &cobra.Command{
 			log.Warnf("%v", err)
 		} else {
 			log.Infof("Sharing the content of hover.yaml")
-			spew.Dump(hoverConfig)
+			dump, err := yaml.Marshal(hoverConfig)
+			if err != nil {
+				log.Warnf("%v", err)
+			} else {
+				fmt.Print(string(dump))
+			}
 		}
 
 		log.Infof("Sharing the content of go/cmd")
