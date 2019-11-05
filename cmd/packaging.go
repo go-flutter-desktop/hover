@@ -10,6 +10,7 @@ func init() {
 	initPackagingCmd.AddCommand(initLinuxSnapCmd)
 	initPackagingCmd.AddCommand(initLinuxDebCmd)
 	initPackagingCmd.AddCommand(initLinuxAppImageCmd)
+	initPackagingCmd.AddCommand(initLinuxRpmCmd)
 	initPackagingCmd.AddCommand(initWindowsMsiCmd)
 	initPackagingCmd.AddCommand(initDarwinBundleCmd)
 	initPackagingCmd.AddCommand(initDarwinPkgCmd)
@@ -54,7 +55,16 @@ var initLinuxAppImageCmd = &cobra.Command{
 		packaging.InitLinuxAppImage()
 	},
 }
+var initLinuxRpmCmd = &cobra.Command{
+	Use:   "linux-rpm",
+	Short: "Create configuration files for rpm packaging",
+	Run: func(cmd *cobra.Command, args []string) {
+		assertHoverInitialized()
+		packaging.AssertDockerInstalled()
 
+		packaging.InitLinuxRpm()
+	},
+}
 var initWindowsMsiCmd = &cobra.Command{
 	Use:   "windows-msi",
 	Short: "Create configuration files for msi packaging",
