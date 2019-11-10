@@ -17,7 +17,7 @@ $ go version
 go version go1.13 XX/YYY
 $ go get -u github.com/go-flutter-desktop/hover
 ```
-Go 1.13 is required!
+Go 1.13 is required and `GO111MODULE` must not be set to `on` (`auto` and `off` is fine)
 
 Run the same command to update when a newer version becomes available.
 
