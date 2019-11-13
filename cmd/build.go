@@ -365,6 +365,7 @@ func buildNormal(targetOS string, vmArguments []string) {
 			os.Exit(1)
 		}
 	}
+	fileutils.CopyDir(build.IntermediatesDirectoryPath(targetOS), build.OutputDirectoryPath(targetOS))
 
 	err := os.MkdirAll(build.OutputDirectoryPath(targetOS), 0775)
 	if err != nil {
@@ -532,13 +533,17 @@ func buildNormal(targetOS string, vmArguments []string) {
 
 func buildEnv(targetOS string, engineCachePath string) []string {
 	var cgoLdflags string
+
+	outputDirPath := build.OutputDirectoryPath(targetOS)
+
 	switch targetOS {
 	case "darwin":
 		cgoLdflags = fmt.Sprintf("-F%s -Wl,-rpath,@executable_path", engineCachePath)
+		cgoLdflags = fmt.Sprintf("%s -F%s -L%s", cgoLdflags, outputDirPath, outputDirPath)
 	case "linux":
-		cgoLdflags = fmt.Sprintf("-L%s", engineCachePath)
+		cgoLdflags = fmt.Sprintf("-L%s -L%s", engineCachePath, outputDirPath)
 	case "windows":
-		cgoLdflags = fmt.Sprintf("-L%s", engineCachePath)
+		cgoLdflags = fmt.Sprintf("-L%s -L%s", engineCachePath, outputDirPath)
 	default:
 		log.Errorf("Target platform %s is not supported, cgo_ldflags not implemented.", targetOS)
 		os.Exit(1)
