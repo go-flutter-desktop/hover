@@ -5,12 +5,32 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"path/filepath"
 	"strings"
 	"text/template"
 
 	rice "github.com/GeertJohan/go.rice"
 	"github.com/go-flutter-desktop/hover/internal/log"
 )
+
+
+// IsFileExists checks if a file exists and is not a directory
+func IsFileExists(filename string) bool {
+	info, err := os.Stat(filename)
+	if os.IsNotExist(err) {
+		return false
+	}
+	return !info.IsDir()
+}
+
+// IsDirectory check if path exists and is a directory
+func IsDirectory(path string) bool {
+	info, err := os.Stat(path)
+	if os.IsNotExist(err) {
+		return false
+	}
+	return info.IsDir()
+}
 
 // RemoveLinesFromFile removes lines to a file if the text is present in the line
 func RemoveLinesFromFile(filePath, text string) {
@@ -84,6 +104,37 @@ func CopyFile(src, to string) {
 	if err != nil {
 		log.Errorf("Failed to copy %s to %s: %v\n", src, to, err)
 		os.Exit(1)
+	}
+}
+
+// CopyDir copy files from one directory to another directory recursively
+func CopyDir(src, dst string) {
+	var err error
+	var fds []os.FileInfo
+
+	if !IsDirectory(src) {
+		log.Errorf("Failed to copy directory, %s not a directory\n", src)
+		os.Exit(1)
+	}
+
+	if err = os.MkdirAll(dst, 0755); err != nil {
+		log.Errorf("Failed to copy directory %s to %s: %v\n", src, dst, err)
+		os.Exit(1)
+	}
+
+	if fds, err = ioutil.ReadDir(src); err != nil {
+		log.Errorf("Failed to list directory %s: %v\n", src, err)
+		os.Exit(1)
+	}
+
+	for _, fd := range fds {
+		srcPath := filepath.Join(src, fd.Name())
+		dstPath := filepath.Join(dst, fd.Name())
+		if fd.IsDir() {
+			CopyDir(srcPath, dstPath)
+		} else {
+			CopyFile(srcPath, dstPath)
+		}
 	}
 }
 
