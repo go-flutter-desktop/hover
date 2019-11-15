@@ -229,6 +229,16 @@ var pluginTidyCmd = &cobra.Command{
 				}
 			}
 		}
+		if tidyPurge {
+			intermediatesDirectoryPath, err := filepath.Abs(filepath.Join(build.BuildPath, "build", "intermediates"))
+			if err != nil {
+				log.Errorf("Failed to resolve absolute path for intermediates directory: %v", err)
+				os.Exit(1)
+			}
+			if fileutils.IsDirectory(intermediatesDirectoryPath) {
+				_ = os.RemoveAll(intermediatesDirectoryPath)
+			}
+		}
 	},
 }
 
