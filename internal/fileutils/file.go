@@ -13,6 +13,16 @@ import (
 	"github.com/go-flutter-desktop/hover/internal/log"
 )
 
+
+// IsFileExists checks if a file exists and is not a directory
+func IsFileExists(filename string) bool {
+	info, err := os.Stat(filename)
+	if os.IsNotExist(err) {
+		return false
+	}
+	return !info.IsDir()
+}
+
 // IsDirectory check if path exists and is a directory
 func IsDirectory(path string) bool {
 	info, err := os.Stat(path)

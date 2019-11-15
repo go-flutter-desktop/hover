@@ -323,7 +323,13 @@ func hoverPluginGet(dryRun bool) bool {
 					log.Errorf("Failed to resolve absolute path for intermediates directory: %v", err)
 					os.Exit(1)
 				}
+
 				fileutils.CopyDir(dlibPath, intermediatesDirectoryPath)
+				if fileutils.IsFileExists(filepath.Join(dlibPath, "README.md")) {
+					readmeName := fmt.Sprintf("README-%s.md", dep.name)
+					fileutils.CopyFile(filepath.Join(dlibPath, "README.md"), filepath.Join(intermediatesDirectoryPath, readmeName))
+					_ = os.Remove(filepath.Join(intermediatesDirectoryPath, "README.md"))
+				}
 			}
 
 			pluginImportStr, err := readPluginGoImport(pluginImportOutPath, dep.name)
