@@ -534,7 +534,7 @@ func buildNormal(targetOS string, vmArguments []string) {
 func buildEnv(targetOS string, engineCachePath string) []string {
 	var cgoLdflags string
 
-	outputDirPath := build.OutputDirectoryPath(targetOS)
+	outputDirPath := filepath.Join("build", "outputs", targetOS)
 
 	switch targetOS {
 	case "darwin":
