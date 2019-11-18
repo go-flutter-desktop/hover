@@ -263,7 +263,9 @@ func buildInDocker(targetOS string, vmArguments []string) {
 			os.Exit(1)
 		}
 		dockerFileContent := []string{
-			"FROM dockercore/golang-cross",
+			// TODO: Once golang 1.13 is available in the 'dockercore/golang-cross' image.
+			// Use the 'dockercore' image instead. Pending PR: https://github.com/docker/golang-cross/pull/45
+			"FROM goreng/golang-cross",
 			"RUN apt-get update && apt-get install libgl1-mesa-dev xorg-dev -y",
 		}
 
