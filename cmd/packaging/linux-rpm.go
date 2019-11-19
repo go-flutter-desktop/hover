@@ -48,7 +48,7 @@ func InitLinuxRpm() {
 		log.Errorf("Failed to create BUILDROOT directory %s: %v", rpmBuildRootDirectoryPath, err)
 		os.Exit(1)
 	}
-	rpmRootSourcesDirectoryPath, err := filepath.Abs(filepath.Join(rpmBuildRootDirectoryPath, fmt.Sprintf("%s-%s-%s.x86_64", removeDashesAndUnderscores(projectName), pubspec.GetPubSpec().Version, pubspec.GetPubSpec().Version)))
+	rpmRootSourcesDirectoryPath, err := filepath.Abs(filepath.Join(rpmBuildRootDirectoryPath, "{{.strippedProjectName}}-{{.version}}-{{.version}}.x86_64"))
 	if err != nil {
 		log.Errorf("Failed to resolve absolute path for BUILDROOT directory: %v", err)
 		os.Exit(1)
@@ -79,18 +79,10 @@ func InitLinuxRpm() {
 		log.Errorf("Failed to create applications directory %s: %v", applicationsDirectoryPath, err)
 		os.Exit(1)
 	}
-
-	templateData := map[string]string{
-		"projectName":         projectName,
-		"strippedProjectName": removeDashesAndUnderscores(projectName),
-		"version":             pubspec.GetPubSpec().Version,
-		"description":         pubspec.GetPubSpec().Description,
-	}
-
 	binFilePath := filepath.Join(binDirectoryPath, removeDashesAndUnderscores(projectName))
 
-	fileutils.CopyTemplate("packaging/app.spec.tmpl", filepath.Join(rpmSpecsDirectoryPath, removeDashesAndUnderscores(projectName)+".spec"), fileutils.AssetsBox, templateData)
-	fileutils.CopyTemplate("packaging/bin.tmpl", binFilePath, fileutils.AssetsBox, templateData)
+	fileutils.CopyTemplateFromAssetsBox("packaging/app.spec.tmpl", filepath.Join(rpmSpecsDirectoryPath, removeDashesAndUnderscores(projectName)+".spec.tmpl"), fileutils.AssetsBox, getTemplateData(projectName))
+	fileutils.CopyTemplateFromAssetsBox("packaging/bin.tmpl", binFilePath, fileutils.AssetsBox, getTemplateData(projectName))
 
 	err = os.Chmod(binFilePath, 0777)
 	if err != nil {
@@ -137,12 +129,7 @@ func BuildLinuxRpm() {
 		log.Errorf("Could not copy build folder: %v", err)
 		os.Exit(1)
 	}
-	err = copy.Copy(packagingFormatPath(packagingFormat), filepath.Join(tmpPath))
-	if err != nil {
-		log.Errorf("Could not copy packaging configuration folder: %v", err)
-		os.Exit(1)
-	}
-
+	fileutils.CopyTemplateDir(packagingFormatPath(packagingFormat), filepath.Join(tmpPath), getTemplateData(projectName))
 	outputFileName := fmt.Sprintf("%s-%s-%s.x86_64.rpm", removeDashesAndUnderscores(projectName), pubspec.GetPubSpec().Version, pubspec.GetPubSpec().Version)
 	runDockerPackaging(tmpPath, packagingFormat, []string{"rpmbuild --define '_topdir /app/rpmbuild' -ba /app/rpmbuild/SPECS/" + removeDashesAndUnderscores(projectName) + ".spec", "&&", "rm /root/.rpmdb -r"})
 

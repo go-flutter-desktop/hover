@@ -6,7 +6,6 @@ import (
 
 	"github.com/otiai10/copy"
 
-	"github.com/go-flutter-desktop/hover/internal/androidmanifest"
 	"github.com/go-flutter-desktop/hover/internal/build"
 	"github.com/go-flutter-desktop/hover/internal/fileutils"
 	"github.com/go-flutter-desktop/hover/internal/log"
@@ -49,14 +48,7 @@ func InitDarwinBundle() {
 		os.Exit(1)
 	}
 
-	templateData := map[string]string{
-		"projectName":      projectName,
-		"organizationName": androidmanifest.AndroidOrganizationName(),
-		"version":          pubspec.GetPubSpec().Version,
-		"description":      pubspec.GetPubSpec().Description,
-	}
-
-	fileutils.CopyTemplate("packaging/Info.plist.tmpl", filepath.Join(bundleContentsDirectoryPath, "Info.plist"), fileutils.AssetsBox, templateData)
+	fileutils.CopyTemplateFromAssetsBox("packaging/Info.plist.tmpl", filepath.Join(bundleContentsDirectoryPath, "Info.plist.tmpl"), fileutils.AssetsBox, getTemplateData(projectName))
 
 	createDockerfile(packagingFormat, []string{
 		"FROM ubuntu:bionic",
@@ -84,12 +76,7 @@ func BuildDarwinBundle() {
 		log.Errorf("Could not copy build folder: %v", err)
 		os.Exit(1)
 	}
-	err = copy.Copy(packagingFormatPath(packagingFormat), filepath.Join(tmpPath))
-	if err != nil {
-		log.Errorf("Could not copy packaging configuration folder: %v", err)
-		os.Exit(1)
-	}
-
+	fileutils.CopyTemplateDir(packagingFormatPath(packagingFormat), filepath.Join(tmpPath), getTemplateData(projectName))
 	runDockerPackaging(tmpPath, packagingFormat, []string{"mkdir", "-p", projectName + ".app/Contents/Resources", "&&", "png2icns", projectName + ".app/Contents/Resources/icon.icns", projectName + ".app/Contents/MacOS/assets/icon.png"})
 
 	outputFileName := projectName + ".app"

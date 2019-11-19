@@ -24,14 +24,7 @@ func InitWindowsMsi() {
 	createPackagingFormatDirectory(packagingFormat)
 	msiDirectoryPath := packagingFormatPath(packagingFormat)
 
-	templateData := map[string]string{
-		"projectName": projectName,
-		"version":     pubspec.GetPubSpec().Version,
-		"author":      getAuthor(),
-		"description": pubspec.GetPubSpec().Description,
-	}
-
-	fileutils.CopyTemplate("packaging/app.wxs.tmpl", filepath.Join(msiDirectoryPath, projectName+".wxs"), fileutils.AssetsBox, templateData)
+	fileutils.CopyTemplateFromAssetsBox("packaging/app.wxs.tmpl", filepath.Join(msiDirectoryPath, projectName+".wxs.tmpl"), fileutils.AssetsBox, getTemplateData(projectName))
 
 	createDockerfile(packagingFormat, []string{
 		"FROM ubuntu:bionic",
@@ -64,11 +57,7 @@ func BuildWindowsMsi() {
 		log.Errorf("Could not copy build folder: %v", err)
 		os.Exit(1)
 	}
-	err = copy.Copy(packagingFormatPath(packagingFormat), filepath.Join(tmpPath))
-	if err != nil {
-		log.Errorf("Could not copy packaging configuration folder: %v", err)
-		os.Exit(1)
-	}
+	fileutils.CopyTemplateDir(packagingFormatPath(packagingFormat), filepath.Join(tmpPath), getTemplateData(projectName))
 	directoriesFilePath, err := filepath.Abs(filepath.Join(tmpPath, "directories.wxi"))
 	if err != nil {
 		log.Errorf("Failed to resolve absolute path for directories.wxi file %s: %v", projectName, err)

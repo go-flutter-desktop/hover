@@ -1,12 +1,10 @@
 package packaging
 
 import (
+	"github.com/otiai10/copy"
 	"os"
 	"path/filepath"
 	"runtime"
-	"strings"
-
-	"github.com/otiai10/copy"
 
 	"github.com/go-flutter-desktop/hover/internal/build"
 	"github.com/go-flutter-desktop/hover/internal/fileutils"
@@ -52,19 +50,10 @@ func InitLinuxDeb() {
 		os.Exit(1)
 	}
 
-	templateData := map[string]string{
-		"projectName":         projectName,
-		"strippedProjectName": removeDashesAndUnderscores(projectName),
-		"author":              getAuthor(),
-		"version":             pubspec.GetPubSpec().Version,
-		"description":         pubspec.GetPubSpec().Description,
-		"dependencies":        strings.Join(linuxPackagingDependencies, ","),
-	}
-
 	binFilePath := filepath.Join(binDirectoryPath, removeDashesAndUnderscores(projectName))
 
-	fileutils.CopyTemplate("packaging/control.tmpl", filepath.Join(debDebianDirectoryPath, "control"), fileutils.AssetsBox, templateData)
-	fileutils.CopyTemplate("packaging/bin.tmpl", binFilePath, fileutils.AssetsBox, templateData)
+	fileutils.CopyTemplateFromAssetsBox("packaging/control.tmpl", filepath.Join(debDebianDirectoryPath, "control.tmpl"), fileutils.AssetsBox, getTemplateData(projectName))
+	fileutils.CopyTemplateFromAssetsBox("packaging/bin.tmpl", binFilePath, fileutils.AssetsBox, getTemplateData(projectName))
 
 	err = os.Chmod(binFilePath, 0777)
 	if err != nil {
@@ -104,11 +93,7 @@ func BuildLinuxDeb() {
 		log.Errorf("Could not copy build folder: %v", err)
 		os.Exit(1)
 	}
-	err = copy.Copy(packagingFormatPath(packagingFormat), filepath.Join(tmpPath))
-	if err != nil {
-		log.Errorf("Could not copy packaging configuration folder: %v", err)
-		os.Exit(1)
-	}
+	fileutils.CopyTemplateDir(packagingFormatPath(packagingFormat), filepath.Join(tmpPath), getTemplateData(projectName))
 
 	outputFileName := removeDashesAndUnderscores(projectName) + "_" + runtime.GOARCH + ".deb"
 	runDockerPackaging(tmpPath, packagingFormat, []string{"dpkg-deb", "--build", ".", outputFileName})

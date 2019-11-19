@@ -2,6 +2,6 @@ Package: {{.strippedProjectName}}
 Architecture: amd64
 Maintainer: @{{.author}}
 Priority: optional
-Version: {{.version}}
+Version: {{`{{.version}}`}}
 Description: {{.description}}
-Depends: {{.dependencies}}
+Depends: {{`{{.debDependencies}}`}}

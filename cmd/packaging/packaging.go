@@ -2,6 +2,7 @@ package packaging
 
 import (
 	"fmt"
+	"github.com/go-flutter-desktop/hover/internal/androidmanifest"
 	"io/ioutil"
 	"os"
 	"os/exec"
@@ -158,5 +159,18 @@ func runDockerPackaging(path string, packagingFormat string, command []string) {
 		log.Infof("  docker build: `%s`", log.Au().Magenta(dockerBuildCmd.String()))
 		log.Infof("  docker run: `%s`", log.Au().Magenta(dockerRunCmd.String()))
 		os.Exit(1)
+	}
+}
+
+func getTemplateData(projectName string) map[string]string {
+	return map[string]string{
+		"projectName":         projectName,
+		"strippedProjectName": removeDashesAndUnderscores(projectName),
+		"author":              getAuthor(),
+		"version":             pubspec.GetPubSpec().Version,
+		"description":         pubspec.GetPubSpec().Description,
+		"debDependencies":     strings.Join(linuxPackagingDependencies, ","),
+		"snapDependencies":    strings.Join(linuxPackagingDependencies, "\n      - "),
+		"organizationName":    androidmanifest.AndroidOrganizationName(),
 	}
 }
