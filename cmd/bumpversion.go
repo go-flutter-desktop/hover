@@ -21,8 +21,8 @@ func init() {
 }
 
 var upgradeCmd = &cobra.Command{
-	Use:   "upgrade",
-	Short: "upgrade the `go-flutter` core library",
+	Use:   "bumpversion",
+	Short: "upgrade the 'go-flutter' golang library in this project",
 	Run: func(cmd *cobra.Command, args []string) {
 		assertInFlutterProject()
 		// Can only run on host OS

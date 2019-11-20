@@ -8,7 +8,8 @@ import (
 	"github.com/go-flutter-desktop/hover/internal/log"
 )
 
-func flutterRequiredEngineVersion() string {
+// FlutterRequiredEngineVersion retunrs the commit id of the engine in use
+func FlutterRequiredEngineVersion() string {
 	out, err := exec.Command("flutter", "--version").Output()
 	if err != nil {
 		log.Errorf("Failed to run %s: %v", log.Au().Magenta("flutter --version"), err)

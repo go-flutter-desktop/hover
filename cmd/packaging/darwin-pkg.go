@@ -39,7 +39,13 @@ func InitDarwinPkg(buildTarget build.Target) {
 	fileutils.CopyTemplate("packaging/PackageInfo.tmpl", filepath.Join(basePkgDirectoryPath, "PackageInfo"), fileutils.AssetsBox, templateData)
 	fileutils.CopyTemplate("packaging/Distribution.tmpl", filepath.Join(pkgDirectoryPath, "flat", "Distribution"), fileutils.AssetsBox, templateData)
 
-	createDockerfile(buildTarget)
+	createDockerfile(packagingFormat, []string{
+		"FROM ubuntu:bionic",
+		"RUN apt-get update && apt-get install cpio git make g++ wget libxml2-dev libssl1.0-dev zlib1g-dev -y",
+		"WORKDIR /tmp",
+		"RUN git clone https://github.com/hogliux/bomutils && cd bomutils && make > /dev/null && make install > /dev/null",
+		"RUN wget https://storage.googleapis.com/google-code-archive-downloads/v2/code.google.com/xar/xar-1.5.2.tar.gz && tar -zxvf xar-1.5.2.tar.gz > /dev/null && cd xar-1.5.2 && ./configure > /dev/null && make > /dev/null && make install > /dev/null",
+	})
 
 	printInitFinished(buildTarget)
 }
@@ -81,7 +87,7 @@ func BuildDarwinPkg(buildTarget build.Target) {
 	outputFilePath := filepath.Join(build.OutputDirectoryPath(buildTarget, true), outputFileName)
 	err = copy.Copy(filepath.Join(tmpPath, outputFileName), outputFilePath)
 	if err != nil {
-		log.Errorf("Could not move pkg directory: %v", err)
+		log.Errorf("Could not move pkg: %v", err)
 		os.Exit(1)
 	}
 

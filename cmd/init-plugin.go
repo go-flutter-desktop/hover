@@ -52,6 +52,23 @@ var createPluginCmd = &cobra.Command{
 		fileutils.CopyTemplate("plugin/README.md.tmpl", filepath.Join(build.BuildPath, "README.md"), fileutils.AssetsBox, templateData)
 		fileutils.CopyTemplate("plugin/import.go.tmpl.tmpl", filepath.Join(build.BuildPath, "import.go.tmpl"), fileutils.AssetsBox, templateData)
 
+		dlibPath := filepath.Join(build.BuildPath, "dlib")
+		err = os.Mkdir(dlibPath, 0775)
+		if err != nil {
+			log.Errorf("Failed to create '%s' directory: %v", dlibPath, err)
+			os.Exit(1)
+		}
+		fileutils.CopyTemplate("plugin/README.md.dlib.tmpl", filepath.Join(dlibPath, "README.md"), fileutils.AssetsBox, templateData)
+
+		platforms := []string{"darwin", "linux", "windows"}
+		for _, platform := range platforms {
+			platformPath := filepath.Join(dlibPath, platform)
+			err = os.Mkdir(platformPath, 0775)
+			if err != nil {
+				log.Errorf("Failed to create '%s' directory: %v", platformPath, err)
+				os.Exit(1)
+			}
+		}
 		initializeGoModule(vcsPath)
 	},
 }

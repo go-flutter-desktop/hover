@@ -12,17 +12,14 @@ import (
 // Much like android and ios are already used.
 const BuildPath = "go"
 
-var BundlePath = filepath.Join(BuildPath, "build", "bundle")
-
-// OutputDirectoryPath returns the path where the go-flutter binary and flutter
-// binaries blobs will be stored for a particular platform.
+// buildDirectoryPath returns the path in `BuildPath`/build.
 // If needed, the directory is create at the returned path.
-func OutputDirectoryPath(buildTarget Target, withPackagingFormat bool) string {
+func buildDirectoryPath(buildTarget Target, withPackagingFormat bool, path string) string {
 	targetName := buildTarget.Platform
 	if buildTarget.PackagingFormat != "" && withPackagingFormat {
 		targetName += fmt.Sprintf("-%s", buildTarget.PackagingFormat)
 	}
-	outputDirectoryPath, err := filepath.Abs(filepath.Join(BuildPath, "build", "outputs", targetName))
+	outputDirectoryPath, err := filepath.Abs(filepath.Join(BuildPath, "build", path, targetName))
 	if err != nil {
 		log.Errorf("Failed to resolve absolute path for output directory: %v", err)
 		os.Exit(1)
@@ -35,6 +32,23 @@ func OutputDirectoryPath(buildTarget Target, withPackagingFormat bool) string {
 		}
 	}
 	return outputDirectoryPath
+}
+
+// OutputDirectoryPath returns the path where the go-flutter binary and flutter
+// binaries blobs will be stored for a particular platform.
+// If needed, the directory is create at the returned path.
+func OutputDirectoryPath(buildTarget Target, withPackagingFormat bool) string {
+	return buildDirectoryPath(targetOS, "outputs")
+}
+
+// IntermediatesDirectoryPath returns the path where the intermediates stored.
+// If needed, the directory is create at the returned path.
+//
+// Those intermediates include the dynamic library dependencies of go-flutter plugins.
+// hover copies these intermediates from flutter plugins folder when `hover plugins get`, and
+// copies to go-flutter's binary output folder before build.
+func IntermediatesDirectoryPath(targetOS string) string {
+	return buildDirectoryPath(targetOS, "intermediates")
 }
 
 // OutputBinaryName returns the string of the executable used to launch the

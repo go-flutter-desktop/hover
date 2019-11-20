@@ -88,8 +88,8 @@ func CheckForGoFlutterUpdate(goDirectoryPath string, currentTag string) {
 			return
 		}
 		if res.Outdated {
-			log.Infof("The core library `go-flutter` has an update available. (%s -> %s)", currentTag, res.Current)
-			log.Infof("              To update `go-flutter` in this project run: `%s`", log.Au().Magenta("hover upgrade"))
+			log.Infof("The core library 'go-flutter' has an update available. (%s -> %s)", currentTag, res.Current)
+			log.Infof("              To update 'go-flutter' in this project run: `%s`", log.Au().Magenta("hover bumpversion"))
 		}
 
 		if now.Sub(lastUpdateTimeStamp).Hours() > checkRate {
