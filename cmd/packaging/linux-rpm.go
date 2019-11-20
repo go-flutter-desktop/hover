@@ -12,11 +12,10 @@ import (
 )
 
 // InitLinuxRpm initialize the a linux rpm packaging format.
-func InitLinuxRpm() {
+func InitLinuxRpm(buildTarget build.Target) {
 	projectName := pubspec.GetPubSpec().Name
-	packagingFormat := "linux-rpm"
-	createPackagingFormatDirectory(packagingFormat)
-	rpmDirectoryPath := packagingFormatPath(packagingFormat)
+	createPackagingFormatDirectory(buildTarget)
+	rpmDirectoryPath := PackagingFormatPath(buildTarget)
 
 	rpmRmpbuildDirectoryPath, err := filepath.Abs(filepath.Join(rpmDirectoryPath, "rpmbuild"))
 	if err != nil {
@@ -100,19 +99,18 @@ func InitLinuxRpm() {
 
 	createLinuxDesktopFile(filepath.Join(applicationsDirectoryPath, projectName+".desktop"), "/usr/bin/"+removeDashesAndUnderscores(projectName), "/usr/lib/"+projectName+"/assets/icon.png")
 
-	createDockerfile(packagingFormat, []string{
+	createDockerfile(buildTarget, []string{
 		"FROM ubuntu:bionic",
 		"RUN apt-get update && apt-get install rpm -y",
 	})
 
-	printInitFinished(packagingFormat)
+	printInitFinished(buildTarget)
 }
 
 // BuildLinuxRpm uses the InitLinuxRpm template to create a rpm package.
-func BuildLinuxRpm() {
+func BuildLinuxRpm(buildTarget build.Target) {
 	projectName := pubspec.GetPubSpec().Name
-	packagingFormat := "linux-rpm"
-	tmpPath := getTemporaryBuildDirectory(projectName, packagingFormat)
+	tmpPath := getTemporaryBuildDirectory(projectName, buildTarget)
 	defer func() {
 		err := os.RemoveAll(tmpPath)
 		if err != nil {
@@ -132,26 +130,26 @@ func BuildLinuxRpm() {
 		log.Errorf("Cannot create the lib directory: %v", err)
 		os.Exit(1)
 	}
-	err = copy.Copy(build.OutputDirectoryPath("linux"), filepath.Join(libDirectoryPath, projectName))
+	err = copy.Copy(build.OutputDirectoryPath(buildTarget, false), filepath.Join(libDirectoryPath, projectName))
 	if err != nil {
 		log.Errorf("Could not copy build folder: %v", err)
 		os.Exit(1)
 	}
-	err = copy.Copy(packagingFormatPath(packagingFormat), filepath.Join(tmpPath))
+	err = copy.Copy(PackagingFormatPath(buildTarget), filepath.Join(tmpPath))
 	if err != nil {
 		log.Errorf("Could not copy packaging configuration folder: %v", err)
 		os.Exit(1)
 	}
 
 	outputFileName := fmt.Sprintf("%s-%s-%s.x86_64.rpm", removeDashesAndUnderscores(projectName), pubspec.GetPubSpec().Version, pubspec.GetPubSpec().Version)
-	runDockerPackaging(tmpPath, packagingFormat, []string{"rpmbuild --define '_topdir /app/rpmbuild' -ba /app/rpmbuild/SPECS/" + removeDashesAndUnderscores(projectName) + ".spec", "&&", "rm /root/.rpmdb -r"})
+	runDockerPackaging(tmpPath, buildTarget, []string{"rpmbuild --define '_topdir /app/rpmbuild' -ba /app/rpmbuild/SPECS/" + removeDashesAndUnderscores(projectName) + ".spec", "&&", "rm /root/.rpmdb -r"})
 
-	outputFilePath := filepath.Join(build.OutputDirectoryPath("linux-rpm"), outputFileName)
+	outputFilePath := filepath.Join(build.OutputDirectoryPath(buildTarget, true), outputFileName)
 	err = copy.Copy(filepath.Join(tmpPath, "rpmbuild", "RPMS", "x86_64", outputFileName), outputFilePath)
 	if err != nil {
 		log.Errorf("Could not move rpm file: %v", err)
 		os.Exit(1)
 	}
 
-	printPackagingFinished(packagingFormat)
+	printPackagingFinished(buildTarget)
 }

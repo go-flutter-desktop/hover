@@ -11,28 +11,24 @@ import (
 	"github.com/go-flutter-desktop/hover/internal/pubspec"
 )
 
-func InitDarwinDmg() {
-	packagingFormat := "darwin-dmg"
-	if _, err := os.Stat(packagingFormatPath("darwin-bundle")); os.IsNotExist(err) {
+func InitDarwinDmg(buildTarget build.Target) {
+	if _, err := os.Stat(PackagingFormatPath(buildTarget)); os.IsNotExist(err) {
 		log.Errorf("`darwin-dmg` depends on `darwin-bundle`. Run `hover init-packaging darwin-bundle` first and then `hover init-packaging darwin-dmg`")
 		os.Exit(1)
 	}
-	createPackagingFormatDirectory(packagingFormat)
+	createPackagingFormatDirectory(buildTarget)
 
-	createDockerfile(packagingFormat, []string{
+	createDockerfile(buildTarget, []string{
 		"FROM ubuntu:bionic",
 		"RUN apt-get update && apt-get install genisoimage -y ",
 	})
 
-	printInitFinished(packagingFormat)
+	printInitFinished(buildTarget)
 }
 
-func BuildDarwinDmg() {
-	log.Infof("Building darwin-bundle first")
-	BuildDarwinBundle()
+func BuildDarwinDmg(buildTarget build.Target) {
 	projectName := pubspec.GetPubSpec().Name
-	packagingFormat := "darwin-dmg"
-	tmpPath := getTemporaryBuildDirectory(projectName, packagingFormat)
+	tmpPath := getTemporaryBuildDirectory(projectName, buildTarget)
 	defer func() {
 		err := os.RemoveAll(tmpPath)
 		if err != nil {
@@ -42,28 +38,28 @@ func BuildDarwinDmg() {
 	}()
 	log.Infof("Packaging dmg in %s", tmpPath)
 
-	err := copy.Copy(build.OutputDirectoryPath("darwin-bundle"), filepath.Join(tmpPath, "dmgdir"))
+	err := copy.Copy(build.OutputDirectoryPath(buildTarget, false), filepath.Join(tmpPath, "dmgdir"))
 	if err != nil {
 		log.Errorf("Could not copy build folder: %v", err)
 		os.Exit(1)
 	}
-	err = copy.Copy(packagingFormatPath(packagingFormat), filepath.Join(tmpPath))
+	err = copy.Copy(PackagingFormatPath(buildTarget), filepath.Join(tmpPath))
 	if err != nil {
 		log.Errorf("Could not copy packaging configuration folder: %v", err)
 		os.Exit(1)
 	}
 
 	outputFileName := projectName + " " + pubspec.GetPubSpec().Version + ".dmg"
-	runDockerPackaging(tmpPath, packagingFormat, []string{
+	runDockerPackaging(tmpPath, buildTarget, []string{
 		"genisoimage -V '" + projectName + "' -D -R -apple -no-pad -o '" + outputFileName + "' dmgdir",
 	})
 
-	outputFilePath := filepath.Join(build.OutputDirectoryPath("darwin-dmg"), outputFileName)
+	outputFilePath := filepath.Join(build.OutputDirectoryPath(buildTarget, true), outputFileName)
 	err = copy.Copy(filepath.Join(tmpPath, outputFileName), outputFilePath)
 	if err != nil {
 		log.Errorf("Could not move dmg: %v", err)
 		os.Exit(1)
 	}
 
-	printPackagingFinished(packagingFormat)
+	printPackagingFinished(buildTarget)
 }

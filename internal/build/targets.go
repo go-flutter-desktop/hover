@@ -25,8 +25,10 @@ type buildTargetPackagingFormats struct {
 	AppImage TargetPackagingFormat
 	Deb      TargetPackagingFormat
 	Snap     TargetPackagingFormat
+	Rpm      TargetPackagingFormat
 	Bundle   TargetPackagingFormat
 	Pkg      TargetPackagingFormat
+	Dmg      TargetPackagingFormat
 	Msi      TargetPackagingFormat
 	All      TargetPackagingFormat
 }
@@ -42,8 +44,10 @@ var TargetPackagingFormats = &buildTargetPackagingFormats{
 	"appimage",
 	"deb",
 	"snap",
+	"rpm",
 	"bundle",
 	"pkg",
+	"dmg",
 	"msi",
 	"*",
 }

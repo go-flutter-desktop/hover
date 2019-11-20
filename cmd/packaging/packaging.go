@@ -42,10 +42,19 @@ func createPackagingFormatDirectory(buildTarget build.Target) {
 // AssertPackagingFormatInitialized exits hover if the requested
 // packaging format isn`t initialized.
 func AssertPackagingFormatInitialized(buildTarget build.Target) {
-	if _, err := os.Stat(PackagingFormatPath(buildTarget)); os.IsNotExist(err) {
+	if IsPackagingFormatInitialized(buildTarget) {
 		log.Errorf("%s-%s is not initialized for packaging. Please run `hover init-packaging %s-%s` first.", buildTarget.Platform, buildTarget.PackagingFormat, buildTarget.Platform, buildTarget.PackagingFormat)
 		os.Exit(1)
 	}
+}
+
+// IsPackagingFormatInitialized checks if a packaging format
+// isn`t initialized.
+func IsPackagingFormatInitialized(buildTarget build.Target) bool {
+	if _, err := os.Stat(PackagingFormatPath(buildTarget)); os.IsNotExist(err) {
+		return false
+	}
+	return true
 }
 
 func removeDashesAndUnderscores(projectName string) string {

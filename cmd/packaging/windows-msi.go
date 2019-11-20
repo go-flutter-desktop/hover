@@ -32,7 +32,7 @@ func InitWindowsMsi(buildTarget build.Target) {
 
 	fileutils.CopyTemplate("packaging/app.wxs.tmpl", filepath.Join(msiDirectoryPath, projectName+".wxs"), fileutils.AssetsBox, templateData)
 
-	createDockerfile(packagingFormat, []string{
+	createDockerfile(buildTarget, []string{
 		"FROM ubuntu:bionic",
 		"RUN apt-get update && apt-get install wixl imagemagick -y",
 	})

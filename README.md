@@ -85,13 +85,13 @@ To create a standalone release (JIT mode) build run this command:
 
 ```bash
 hover build linux # or darwin or windows
-hover build linux,darwin
+hover build --build-targets=linux,darwin
 ```
 You can create a build for any of the supported OSs using cross-compiling which needs [Docker to be installed](https://docs.docker.com/install/).
 Then just run the command from above and it will do everything for you.
 You can also build using wildcards:
 ```bash
-hover build "*"
+hover build --build-targets="*"
 ```
 
 The output will be in `go/build/outputs/linux` or windows or darwin.
@@ -109,23 +109,23 @@ You can package your application for different packaging formats.
 First initialize the packaging format:
 ```bash
 hover init-packaging linux-appimage
-hover init-packaging linux-appimage,darwin-pkg
+hover init-packaging --packaging-targets=linux-appimage,darwin-pkg
 ```
 You can also package using wildcards:
 ```bash
-hover init-packaging "linux-*"
-hover init-packaging "*"
+hover init-packaging --packaging-targets="linux-*"
+hover init-packaging --packaging-targets="*"
 ```
 Update the configuration files located in `go/packaging/linux-appimage/`to your needs.  
 Then create a build and package it using this command:
 ```bash
 hover build linux-appimage
-hover build linux-appimage,darwin-pkg
+hover build --build-targets=linux-appimage,darwin-pkg
 ```
 You can also build and package using wildcards:
 ```bash
-hover build "linux-*"
-hover build "*-*"
+hover build --build-targets="linux-*"
+hover build --build-targets="*-*"
 ```
 The packaging output will be located in `go/build/outputs/linux-appimage/`
 

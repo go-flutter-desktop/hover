@@ -39,7 +39,7 @@ func InitDarwinPkg(buildTarget build.Target) {
 	fileutils.CopyTemplate("packaging/PackageInfo.tmpl", filepath.Join(basePkgDirectoryPath, "PackageInfo"), fileutils.AssetsBox, templateData)
 	fileutils.CopyTemplate("packaging/Distribution.tmpl", filepath.Join(pkgDirectoryPath, "flat", "Distribution"), fileutils.AssetsBox, templateData)
 
-	createDockerfile(packagingFormat, []string{
+	createDockerfile(buildTarget, []string{
 		"FROM ubuntu:bionic",
 		"RUN apt-get update && apt-get install cpio git make g++ wget libxml2-dev libssl1.0-dev zlib1g-dev -y",
 		"WORKDIR /tmp",
@@ -51,7 +51,6 @@ func InitDarwinPkg(buildTarget build.Target) {
 }
 
 func BuildDarwinPkg(buildTarget build.Target) {
-	log.Infof("Building darwin-bundle first")
 	projectName := pubspec.GetPubSpec().Name
 	tmpPath := getTemporaryBuildDirectory(projectName, buildTarget)
 	defer func() {

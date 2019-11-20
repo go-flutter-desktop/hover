@@ -5,8 +5,6 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"github.com/mitchellh/go-homedir"
-
 	"github.com/go-flutter-desktop/hover/internal/log"
 )
 

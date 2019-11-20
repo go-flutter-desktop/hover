@@ -32,7 +32,7 @@ func InitLinuxAppImage(buildTarget build.Target) {
 	}
 
 	createLinuxDesktopFile(filepath.Join(appImageDirectoryPath, projectName+".desktop"), "", "/build/assets/icon")
-	createDockerfile(packagingFormat, []string{
+	createDockerfile(buildTarget, []string{
 		"FROM ubuntu:bionic",
 		"WORKDIR /opt",
 		"RUN apt-get update && \\",

@@ -9,6 +9,7 @@ require (
 	github.com/google/go-querystring v1.0.0 // indirect
 	github.com/hashicorp/go-version v1.2.0
 	github.com/logrusorgru/aurora v0.0.0-20191116043053-66b7ad493a23
+	github.com/mitchellh/go-homedir v1.1.0
 	github.com/otiai10/copy v1.0.2
 	github.com/pkg/errors v0.8.1
 	github.com/spf13/cobra v0.0.5

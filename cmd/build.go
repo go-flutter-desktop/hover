@@ -6,12 +6,12 @@ import (
 	"os/exec"
 	"os/user"
 	"path/filepath"
+	"regexp"
 	"runtime"
 	"strings"
 
 	"github.com/hashicorp/go-version"
 	"github.com/otiai10/copy"
-	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
 
 	"github.com/go-flutter-desktop/hover/cmd/packaging"
@@ -36,6 +36,7 @@ var (
 	buildOmitFlutterBundle bool
 	buildOpenGlVersion     string
 	buildDocker            bool
+	buildTargetsString     string
 )
 
 const mingwGccBinName = "x86_64-w64-mingw32-gcc"
@@ -45,17 +46,30 @@ var crossCompile = false
 var engineCachePath string
 
 func init() {
-	buildCmd.Flags().StringVarP(&buildTargetFile, "target", "t", config.BuildTargetFileDefault, "The main entry-point file of the application.")
-	buildCmd.Flags().StringVarP(&buildBranch, "branch", "b", config.BuildBranchDefault, "The `go-flutter` version to use. (@master or @v0.20.0 for example)")
-	buildCmd.Flags().BoolVar(&buildDebug, "debug", false, "Build a debug version of the app.")
-	buildCmd.Flags().StringVarP(&buildCachePath, "cache-path", "", config.BuildCachePathDefault, "The path that hover uses to cache dependencies such as the Flutter engine .so/.dll (defaults to the standard user cache directory)")
-	buildCmd.Flags().StringVar(&buildOpenGlVersion, "opengl", config.BuildOpenGlVersionDefault, "The OpenGL version specified here is only relevant for external texture plugin (i.e. video_plugin).\nIf `none` is provided, texture won`t be supported. Note: the Flutter Engine still needs a OpenGL compatible context.")
-	buildCmd.Flags().BoolVar(&buildDocker, "docker", false, "Compile in Docker container only. No need to install go")
-	buildCmd.AddCommand(listCmd)
+	buildCmd.PersistentFlags().StringVarP(&buildTargetFile, "target", "t", config.BuildTargetFileDefault, "The main entry-point file of the application.")
+	buildCmd.PersistentFlags().StringVarP(&buildBranch, "branch", "b", config.BuildBranchDefault, "The `go-flutter` version to use. (@master or @v0.20.0 for example)")
+	buildCmd.PersistentFlags().BoolVar(&buildDebug, "debug", false, "Build a debug version of the app.")
+	buildCmd.PersistentFlags().StringVarP(&buildCachePath, "cache-path", "", config.BuildCachePathDefault, "The path that hover uses to cache dependencies such as the Flutter engine .so/.dll (defaults to the standard user cache directory)")
+	buildCmd.PersistentFlags().StringVar(&buildOpenGlVersion, "opengl", config.BuildOpenGlVersionDefault, "The OpenGL version specified here is only relevant for external texture plugin (i.e. video_plugin).\nIf `none` is provided, texture won`t be supported. Note: the Flutter Engine still needs a OpenGL compatible context.")
+	buildCmd.PersistentFlags().BoolVar(&buildDocker, "docker", false, "Compile in Docker container only. No need to install go")
+	buildCmd.Flags().StringVar(&buildTargetsString, "build-targets", "", "The build targets to build for")
+	buildCmd.MarkFlagRequired("build-targets")
+	buildCmd.AddCommand(listBuildCmd)
+	buildCmd.AddCommand(buildLinuxCmd)
+	buildCmd.AddCommand(buildLinuxSnapCmd)
+	buildCmd.AddCommand(buildLinuxDebCmd)
+	buildCmd.AddCommand(buildLinuxAppImageCmd)
+	buildCmd.AddCommand(buildLinuxRpmCmd)
+	buildCmd.AddCommand(buildDarwinCmd)
+	buildCmd.AddCommand(buildDarwinBundleCmd)
+	buildCmd.AddCommand(buildDarwinPkgCmd)
+	buildCmd.AddCommand(buildDarwinDmgCmd)
+	buildCmd.AddCommand(buildWindowsCmd)
+	buildCmd.AddCommand(buildWindowsMsiCmd)
 	rootCmd.AddCommand(buildCmd)
 }
 
-var listCmd = &cobra.Command{
+var listBuildCmd = &cobra.Command{
 	Use:   "list",
 	Short: "List all targets",
 	Run: func(cmd *cobra.Command, args []string) {
@@ -92,78 +106,216 @@ var listCmd = &cobra.Command{
 	},
 }
 
+var buildLinuxCmd = &cobra.Command{
+	Use:   "linux",
+	Short: "Build a desktop release for linux",
+	Run: func(cmd *cobra.Command, args []string) {
+		buildFromTargets([]build.Target{{
+			Platform: build.TargetPlatforms.Linux,
+		}})
+	},
+}
+
+var buildLinuxSnapCmd = &cobra.Command{
+	Use:   "linux-snap",
+	Short: "Build a desktop release for linux and package it for snap",
+	Run: func(cmd *cobra.Command, args []string) {
+		buildFromTargets([]build.Target{{
+			Platform:        build.TargetPlatforms.Linux,
+			PackagingFormat: build.TargetPackagingFormats.Snap,
+		}})
+	},
+}
+
+var buildLinuxDebCmd = &cobra.Command{
+	Use:   "linux-deb",
+	Short: "Build a desktop release for linux and package it for deb",
+	Run: func(cmd *cobra.Command, args []string) {
+		buildFromTargets([]build.Target{{
+			Platform:        build.TargetPlatforms.Linux,
+			PackagingFormat: build.TargetPackagingFormats.Deb,
+		}})
+	},
+}
+
+var buildLinuxAppImageCmd = &cobra.Command{
+	Use:   "linux-appimage",
+	Short: "Build a desktop release for linux and package it for AppImage",
+	Run: func(cmd *cobra.Command, args []string) {
+		buildFromTargets([]build.Target{{
+			Platform:        build.TargetPlatforms.Linux,
+			PackagingFormat: build.TargetPackagingFormats.AppImage,
+		}})
+	},
+}
+
+var buildLinuxRpmCmd = &cobra.Command{
+	Use:   "linux-rpm",
+	Short: "Build a desktop release for linux and package it for rpm",
+	Run: func(cmd *cobra.Command, args []string) {
+		buildFromTargets([]build.Target{{
+			Platform:        build.TargetPlatforms.Linux,
+			PackagingFormat: build.TargetPackagingFormats.Rpm,
+		}})
+	},
+}
+
+var buildDarwinCmd = &cobra.Command{
+	Use:   "darwin",
+	Short: "Build a desktop release for darwin",
+	Run: func(cmd *cobra.Command, args []string) {
+		buildFromTargets([]build.Target{{
+			Platform: build.TargetPlatforms.Darwin,
+		}})
+	},
+}
+
+var buildDarwinBundleCmd = &cobra.Command{
+	Use:   "darwin-bundle",
+	Short: "Build a desktop release for darwin and package it for OSX bundle",
+	Run: func(cmd *cobra.Command, args []string) {
+		buildFromTargets([]build.Target{{
+			Platform:        build.TargetPlatforms.Darwin,
+			PackagingFormat: build.TargetPackagingFormats.Bundle,
+		}})
+	},
+}
+
+var buildDarwinPkgCmd = &cobra.Command{
+	Use:   "darwin-pkg",
+	Short: "Build a desktop release for darwin and package it for OSX pkg installer",
+	Run: func(cmd *cobra.Command, args []string) {
+		buildFromTargets([]build.Target{{
+			Platform:        build.TargetPlatforms.Darwin,
+			PackagingFormat: build.TargetPackagingFormats.Pkg,
+		}})
+	},
+}
+
+var buildDarwinDmgCmd = &cobra.Command{
+	Use:   "darwin-dmg",
+	Short: "Build a desktop release for darwin and package it for OSX dmg",
+	Run: func(cmd *cobra.Command, args []string) {
+		buildFromTargets([]build.Target{{
+			Platform:        build.TargetPlatforms.Darwin,
+			PackagingFormat: build.TargetPackagingFormats.Dmg,
+		}})
+	},
+}
+
+var buildWindowsCmd = &cobra.Command{
+	Use:   "windows",
+	Short: "Build a desktop release for windows",
+	Run: func(cmd *cobra.Command, args []string) {
+		buildFromTargets([]build.Target{{
+			Platform: build.TargetPlatforms.Windows,
+		}})
+	},
+}
+
+var buildWindowsMsiCmd = &cobra.Command{
+	Use:   "windows-msi",
+	Short: "Build a desktop release for windows and package it for msi",
+	Run: func(cmd *cobra.Command, args []string) {
+		buildFromTargets([]build.Target{{
+			Platform:        build.TargetPlatforms.Windows,
+			PackagingFormat: build.TargetPackagingFormats.Msi,
+		}})
+	},
+}
+
 var buildCmd = &cobra.Command{
 	Use:   "build",
 	Short: "Build a desktop release",
-	Args: func(cmd *cobra.Command, args []string) error {
-		if len(args) < 1 {
-			return errors.New("requires a build targets argument")
-		}
-		return build.AreValidBuildTargets(args[0], false)
-	},
 	Run: func(cmd *cobra.Command, args []string) {
-		buildTargets, err := build.ParseBuildTargets(args[0], false)
+		buildTargets, err := build.ParseBuildTargets(buildTargetsString, false)
 		if err != nil {
 			log.Errorf("Failed to parse build targets: %v", err)
 			os.Exit(1)
 		}
-		assertHoverInitialized()
-		hasLinuxTargets := false
-		hasDarwinTargets := false
-		hasWindowsTargets := false
-		hasCrossCompilingTargets := false
-		hasPackagingTargets := false
-		for _, buildTarget := range buildTargets {
-			if buildTarget.Platform == build.TargetPlatforms.Linux {
-				hasLinuxTargets = true
-			}
-			if buildTarget.Platform == build.TargetPlatforms.Darwin {
-				hasDarwinTargets = true
-			}
-			if buildTarget.Platform == build.TargetPlatforms.Windows {
-				hasWindowsTargets = true
-			}
-			if runtime.GOOS != buildTarget.Platform {
-				hasCrossCompilingTargets = true
-			}
-			if buildTarget.PackagingFormat != "" {
-				hasPackagingTargets = true
-				packaging.AssertPackagingFormatInitialized(buildTarget)
-			}
-		}
-		if hasCrossCompilingTargets || hasPackagingTargets {
-			packaging.AssertDockerInstalled()
-		}
-		checkForMainDesktop()
-		checkFlutter()
-		runPluginGet()
-		overrideBuildConfig()
-		buildFlutterBundle()
-		if hasLinuxTargets {
-			buildNormal(build.Target{Platform: build.TargetPlatforms.Linux}, nil)
-		}
-		if hasDarwinTargets {
-			buildNormal(build.Target{Platform: build.TargetPlatforms.Darwin}, nil)
-		}
-		if hasWindowsTargets {
-			buildNormal(build.Target{Platform: build.TargetPlatforms.Windows}, nil)
-		}
-		for _, buildTarget := range buildTargets {
-			if buildTarget.PackagingFormat == build.TargetPackagingFormats.AppImage {
-				packaging.BuildLinuxAppImage(buildTarget)
-			} else if buildTarget.PackagingFormat == build.TargetPackagingFormats.Deb {
-				packaging.BuildLinuxDeb(buildTarget)
-			} else if buildTarget.PackagingFormat == build.TargetPackagingFormats.Snap {
-				packaging.BuildLinuxSnap(buildTarget)
-			} else if buildTarget.PackagingFormat == build.TargetPackagingFormats.Bundle {
-				packaging.BuildDarwinBundle(buildTarget)
-			} else if buildTarget.PackagingFormat == build.TargetPackagingFormats.Pkg {
-				packaging.BuildDarwinPkg(buildTarget)
-			} else if buildTarget.PackagingFormat == build.TargetPackagingFormats.Msi {
-				packaging.BuildWindowsMsi(buildTarget)
-			}
-		}
+		buildFromTargets(buildTargets)
 	},
+}
+
+func buildFromTargets(buildTargets []build.Target) {
+	assertHoverInitialized()
+	hasLinuxTargets := false
+	hasDarwinTargets := false
+	hasWindowsTargets := false
+	hasCrossCompilingTargets := false
+	hasPackagingTargets := false
+	validBuildTargets := []build.Target{}
+	for _, buildTarget := range buildTargets {
+		if buildTarget.Platform == build.TargetPlatforms.Linux {
+			hasLinuxTargets = true
+		}
+		if buildTarget.Platform == build.TargetPlatforms.Darwin {
+			hasDarwinTargets = true
+		}
+		if buildTarget.Platform == build.TargetPlatforms.Windows {
+			hasWindowsTargets = true
+		}
+		if runtime.GOOS != buildTarget.Platform {
+			hasCrossCompilingTargets = true
+		}
+		if buildTarget.PackagingFormat != "" {
+			if !packaging.IsPackagingFormatInitialized(buildTarget) {
+				continue
+			}
+			hasPackagingTargets = true
+		}
+		validBuildTargets = append(validBuildTargets, buildTarget)
+	}
+	if hasCrossCompilingTargets || hasPackagingTargets {
+		packaging.AssertDockerInstalled()
+	}
+	checkForMainDesktop()
+	checkFlutter()
+	log.Infof("Compiling for:")
+	if hasLinuxTargets {
+		log.Infof("    linux")
+	}
+	if hasDarwinTargets {
+		log.Infof("    darwin")
+	}
+	if hasWindowsTargets {
+		log.Infof("    windows")
+	}
+	if hasPackagingTargets {
+		log.Infof("Packaging for:")
+		for _, target := range validBuildTargets {
+			if target.PackagingFormat != "" {
+				log.Infof("    %s-%s", target.Platform, target.PackagingFormat)
+			}
+		}
+	}
+	runPluginGet()
+	overrideBuildConfig()
+	buildFlutterBundle()
+	if hasLinuxTargets {
+		buildNormal(build.Target{Platform: build.TargetPlatforms.Linux}, nil)
+	}
+	if hasDarwinTargets {
+		buildNormal(build.Target{Platform: build.TargetPlatforms.Darwin}, nil)
+	}
+	if hasWindowsTargets {
+		buildNormal(build.Target{Platform: build.TargetPlatforms.Windows}, nil)
+	}
+	for _, buildTarget := range validBuildTargets {
+		if buildTarget.PackagingFormat == build.TargetPackagingFormats.AppImage {
+			packaging.BuildLinuxAppImage(buildTarget)
+		} else if buildTarget.PackagingFormat == build.TargetPackagingFormats.Deb {
+			packaging.BuildLinuxDeb(buildTarget)
+		} else if buildTarget.PackagingFormat == build.TargetPackagingFormats.Snap {
+			packaging.BuildLinuxSnap(buildTarget)
+		} else if buildTarget.PackagingFormat == build.TargetPackagingFormats.Bundle {
+			packaging.BuildDarwinBundle(buildTarget)
+		} else if buildTarget.PackagingFormat == build.TargetPackagingFormats.Pkg {
+			packaging.BuildDarwinPkg(buildTarget)
+		} else if buildTarget.PackagingFormat == build.TargetPackagingFormats.Msi {
+			packaging.BuildWindowsMsi(buildTarget)
+		}
+	}
 }
 
 // checkForMainDesktop checks and adds the lib/main_desktop.dart dart entry
@@ -395,7 +547,7 @@ func buildNormal(buildTarget build.Target, vmArguments []string) {
 			os.Exit(1)
 		}
 	}
-	fileutils.CopyDir(build.IntermediatesDirectoryPath(targetOS), build.OutputDirectoryPath(targetOS))
+	fileutils.CopyDir(build.IntermediatesDirectoryPath(buildTarget, false), build.OutputDirectoryPath(buildTarget, false))
 
 	err := os.MkdirAll(build.OutputDirectoryPath(buildTarget, false), 0775)
 	if err != nil {

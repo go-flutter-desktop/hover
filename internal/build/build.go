@@ -12,6 +12,8 @@ import (
 // Much like android and ios are already used.
 const BuildPath = "go"
 
+var BundlePath = filepath.Join(BuildPath, "build", "bundle")
+
 // buildDirectoryPath returns the path in `BuildPath`/build.
 // If needed, the directory is create at the returned path.
 func buildDirectoryPath(buildTarget Target, withPackagingFormat bool, path string) string {
@@ -38,7 +40,7 @@ func buildDirectoryPath(buildTarget Target, withPackagingFormat bool, path strin
 // binaries blobs will be stored for a particular platform.
 // If needed, the directory is create at the returned path.
 func OutputDirectoryPath(buildTarget Target, withPackagingFormat bool) string {
-	return buildDirectoryPath(targetOS, "outputs")
+	return buildDirectoryPath(buildTarget, withPackagingFormat, "outputs")
 }
 
 // IntermediatesDirectoryPath returns the path where the intermediates stored.
@@ -47,8 +49,8 @@ func OutputDirectoryPath(buildTarget Target, withPackagingFormat bool) string {
 // Those intermediates include the dynamic library dependencies of go-flutter plugins.
 // hover copies these intermediates from flutter plugins folder when `hover plugins get`, and
 // copies to go-flutter's binary output folder before build.
-func IntermediatesDirectoryPath(targetOS string) string {
-	return buildDirectoryPath(targetOS, "intermediates")
+func IntermediatesDirectoryPath(buildTarget Target, withPackagingFormat bool) string {
+	return buildDirectoryPath(buildTarget, withPackagingFormat, "intermediates")
 }
 
 // OutputBinaryName returns the string of the executable used to launch the
