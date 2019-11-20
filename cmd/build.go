@@ -112,7 +112,7 @@ var buildLinuxCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		buildFromTargets([]build.Target{{
 			Platform: build.TargetPlatforms.Linux,
-		}})
+		}}, nil, true)
 	},
 }
 
@@ -123,7 +123,7 @@ var buildLinuxSnapCmd = &cobra.Command{
 		buildFromTargets([]build.Target{{
 			Platform:        build.TargetPlatforms.Linux,
 			PackagingFormat: build.TargetPackagingFormats.Snap,
-		}})
+		}}, nil, true)
 	},
 }
 
@@ -134,7 +134,7 @@ var buildLinuxDebCmd = &cobra.Command{
 		buildFromTargets([]build.Target{{
 			Platform:        build.TargetPlatforms.Linux,
 			PackagingFormat: build.TargetPackagingFormats.Deb,
-		}})
+		}}, nil, true)
 	},
 }
 
@@ -145,7 +145,7 @@ var buildLinuxAppImageCmd = &cobra.Command{
 		buildFromTargets([]build.Target{{
 			Platform:        build.TargetPlatforms.Linux,
 			PackagingFormat: build.TargetPackagingFormats.AppImage,
-		}})
+		}}, nil, true)
 	},
 }
 
@@ -156,7 +156,7 @@ var buildLinuxRpmCmd = &cobra.Command{
 		buildFromTargets([]build.Target{{
 			Platform:        build.TargetPlatforms.Linux,
 			PackagingFormat: build.TargetPackagingFormats.Rpm,
-		}})
+		}}, nil, true)
 	},
 }
 
@@ -166,7 +166,7 @@ var buildDarwinCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		buildFromTargets([]build.Target{{
 			Platform: build.TargetPlatforms.Darwin,
-		}})
+		}}, nil, true)
 	},
 }
 
@@ -177,7 +177,7 @@ var buildDarwinBundleCmd = &cobra.Command{
 		buildFromTargets([]build.Target{{
 			Platform:        build.TargetPlatforms.Darwin,
 			PackagingFormat: build.TargetPackagingFormats.Bundle,
-		}})
+		}}, nil, true)
 	},
 }
 
@@ -188,7 +188,7 @@ var buildDarwinPkgCmd = &cobra.Command{
 		buildFromTargets([]build.Target{{
 			Platform:        build.TargetPlatforms.Darwin,
 			PackagingFormat: build.TargetPackagingFormats.Pkg,
-		}})
+		}}, nil, true)
 	},
 }
 
@@ -199,7 +199,7 @@ var buildDarwinDmgCmd = &cobra.Command{
 		buildFromTargets([]build.Target{{
 			Platform:        build.TargetPlatforms.Darwin,
 			PackagingFormat: build.TargetPackagingFormats.Dmg,
-		}})
+		}}, nil, true)
 	},
 }
 
@@ -209,7 +209,7 @@ var buildWindowsCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		buildFromTargets([]build.Target{{
 			Platform: build.TargetPlatforms.Windows,
-		}})
+		}}, nil, true)
 	},
 }
 
@@ -220,7 +220,7 @@ var buildWindowsMsiCmd = &cobra.Command{
 		buildFromTargets([]build.Target{{
 			Platform:        build.TargetPlatforms.Windows,
 			PackagingFormat: build.TargetPackagingFormats.Msi,
-		}})
+		}}, nil, true)
 	},
 }
 
@@ -233,11 +233,11 @@ var buildCmd = &cobra.Command{
 			log.Errorf("Failed to parse build targets: %v", err)
 			os.Exit(1)
 		}
-		buildFromTargets(buildTargets)
+		buildFromTargets(buildTargets, nil, true)
 	},
 }
 
-func buildFromTargets(buildTargets []build.Target) {
+func buildFromTargets(buildTargets []build.Target, vmArguments []string, printBuildTargets bool) {
 	assertHoverInitialized()
 	hasLinuxTargets := false
 	hasDarwinTargets := false
@@ -269,37 +269,39 @@ func buildFromTargets(buildTargets []build.Target) {
 	if hasCrossCompilingTargets || hasPackagingTargets {
 		packaging.AssertDockerInstalled()
 	}
+	overrideBuildConfig()
 	checkForMainDesktop()
 	checkFlutter()
-	log.Infof("Compiling for:")
-	if hasLinuxTargets {
-		log.Infof("    linux")
-	}
-	if hasDarwinTargets {
-		log.Infof("    darwin")
-	}
-	if hasWindowsTargets {
-		log.Infof("    windows")
-	}
-	if hasPackagingTargets {
-		log.Infof("Packaging for:")
-		for _, target := range validBuildTargets {
-			if target.PackagingFormat != "" {
-				log.Infof("    %s-%s", target.Platform, target.PackagingFormat)
+	if printBuildTargets {
+		log.Infof("Compiling for:")
+		if hasLinuxTargets {
+			log.Infof("    linux")
+		}
+		if hasDarwinTargets {
+			log.Infof("    darwin")
+		}
+		if hasWindowsTargets {
+			log.Infof("    windows")
+		}
+		if hasPackagingTargets {
+			log.Infof("Packaging for:")
+			for _, target := range validBuildTargets {
+				if target.PackagingFormat != "" {
+					log.Infof("    %s-%s", target.Platform, target.PackagingFormat)
+				}
 			}
 		}
 	}
 	runPluginGet()
-	overrideBuildConfig()
 	buildFlutterBundle()
 	if hasLinuxTargets {
-		buildNormal(build.Target{Platform: build.TargetPlatforms.Linux}, nil)
+		buildNormal(build.Target{Platform: build.TargetPlatforms.Linux}, vmArguments)
 	}
 	if hasDarwinTargets {
-		buildNormal(build.Target{Platform: build.TargetPlatforms.Darwin}, nil)
+		buildNormal(build.Target{Platform: build.TargetPlatforms.Darwin}, vmArguments)
 	}
 	if hasWindowsTargets {
-		buildNormal(build.Target{Platform: build.TargetPlatforms.Windows}, nil)
+		buildNormal(build.Target{Platform: build.TargetPlatforms.Windows}, vmArguments)
 	}
 	for _, buildTarget := range validBuildTargets {
 		if buildTarget.PackagingFormat == build.TargetPackagingFormats.AppImage {

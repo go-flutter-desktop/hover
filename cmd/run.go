@@ -58,7 +58,7 @@ var runCmd = &cobra.Command{
 		// forcefully enable --debug (which is not an option for `hover run`)
 		buildDebug = true
 
-		buildNormal(buildTarget, []string{"--observatory-port=" + runObservatoryPort})
+		buildFromTargets([]build.Target{buildTarget}, []string{"--observatory-port=" + runObservatoryPort}, false)
 		log.Infof("Build finished, starting app...")
 		runAndAttach(projectName, buildTarget)
 	},
