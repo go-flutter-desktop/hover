@@ -301,6 +301,7 @@ func buildInDocker(targetOS string, vmArguments []string) {
 	}
 	args := []string{
 		"run",
+		"--rm",
 		"-w", "/app/go",
 		"-v", goPath + ":/go",
 		"-v", wd + ":/app",
@@ -560,6 +561,8 @@ func buildEnv(targetOS string, engineCachePath string) []string {
 	if buildDocker {
 		env = append(env,
 			"GOCACHE=/cache",
+			"GOPROXY="+os.Getenv("GOPROXY"),
+			"GOPRIVATE="+os.Getenv("GOPRIVATE"),
 		)
 		if targetOS == "windows" {
 			env = append(env,
