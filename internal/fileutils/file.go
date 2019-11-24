@@ -12,6 +12,7 @@ import (
 	"text/template"
 
 	rice "github.com/GeertJohan/go.rice"
+
 	"github.com/go-flutter-desktop/hover/internal/log"
 )
 
@@ -179,12 +180,12 @@ func CopyTemplateDir(boxed, to string, templateData interface{}) {
 			if strings.HasSuffix(newFile, ".tmpl") {
 				newFile = strings.TrimSuffix(newFile, ".tmpl")
 			}
-			CopyTemplateFromFile(file, newFile, templateData)
+			ExecuteTemplateFromFile(file, newFile, templateData)
 		}
 	}
 }
 
-func copyTemplateFromString(templateString, to string, templateData interface{}) {
+func executeTemplateFromString(templateString, to string, templateData interface{}) {
 	tmplFile, err := template.New("").Parse(templateString)
 	if err != nil {
 		log.Errorf("Failed to parse template string: %v\n", err)
@@ -201,24 +202,24 @@ func copyTemplateFromString(templateString, to string, templateData interface{})
 	tmplFile.Execute(toFile, templateData)
 }
 
-// CopyTemplateFromFile create file from a template file
-func CopyTemplateFromFile(boxed, to string, templateData interface{}) {
+// ExecuteTemplateFromFile create file from a template file
+func ExecuteTemplateFromFile(boxed, to string, templateData interface{}) {
 	templateString, err := ioutil.ReadFile(boxed)
 	if err != nil {
 		log.Errorf("Failed to find template file: %v\n", err)
 		os.Exit(1)
 	}
-	copyTemplateFromString(string(templateString), to, templateData)
+	executeTemplateFromString(string(templateString), to, templateData)
 }
 
-// CopyTemplateFromAssetsBox create file from a template asset
-func CopyTemplateFromAssetsBox(boxed, to string, assetsBox *rice.Box, templateData interface{}) {
+// ExecuteTemplateFromAssetsBox create file from a template asset
+func ExecuteTemplateFromAssetsBox(boxed, to string, assetsBox *rice.Box, templateData interface{}) {
 	templateString, err := assetsBox.String(boxed)
 	if err != nil {
 		log.Errorf("Failed to find template file: %v\n", err)
 		os.Exit(1)
 	}
-	copyTemplateFromString(templateString, to, templateData)
+	executeTemplateFromString(templateString, to, templateData)
 }
 
 // CopyAsset copies a file from asset

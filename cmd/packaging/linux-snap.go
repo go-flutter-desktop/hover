@@ -32,7 +32,7 @@ func InitLinuxSnap() {
 		os.Exit(1)
 	}
 
-	fileutils.CopyTemplateFromAssetsBox("packaging/snapcraft.yaml.tmpl", filepath.Join(snapDirectoryPath, "snap", "snapcraft.yaml.tmpl"), fileutils.AssetsBox, getTemplateData(projectName))
+	fileutils.ExecuteTemplateFromAssetsBox("packaging/linux-snap/snapcraft.yaml.tmpl.tmpl", filepath.Join(snapDirectoryPath, "snap", "snapcraft.yaml.tmpl"), fileutils.AssetsBox, getTemplateData(projectName, ""))
 
 	createLinuxDesktopFile(filepath.Join(snapLocalDirectoryPath, projectName+".desktop"), "/"+projectName, "/icon.png")
 	createDockerfile(packagingFormat, []string{
@@ -43,7 +43,7 @@ func InitLinuxSnap() {
 }
 
 // BuildLinuxSnap uses the InitLinuxSnap template to create a snap package.
-func BuildLinuxSnap() {
+func BuildLinuxSnap(buildVersion string) {
 	projectName := pubspec.GetPubSpec().Name
 	packagingFormat := "linux-snap"
 	tmpPath := getTemporaryBuildDirectory(projectName, packagingFormat)
@@ -66,10 +66,10 @@ func BuildLinuxSnap() {
 		log.Errorf("Could not copy build folder: %v", err)
 		os.Exit(1)
 	}
-	fileutils.CopyTemplateDir(packagingFormatPath(packagingFormat), filepath.Join(tmpPath), getTemplateData(projectName))
+	fileutils.CopyTemplateDir(packagingFormatPath(packagingFormat), filepath.Join(tmpPath), getTemplateData(projectName, buildVersion))
 	runDockerPackaging(tmpPath, packagingFormat, []string{"snapcraft"})
 
-	outputFileName := strings.ToLower(removeDashesAndUnderscores(projectName)) + "_" + pubspec.GetPubSpec().Version + "_" + runtime.GOARCH + ".snap"
+	outputFileName := strings.ToLower(removeDashesAndUnderscores(projectName)) + "_" + buildVersion + "_" + runtime.GOARCH + ".snap"
 	outputFilePath := filepath.Join(build.OutputDirectoryPath("linux-snap"), outputFileName)
 	err = copy.Copy(filepath.Join(tmpPath, outputFileName), outputFilePath)
 	if err != nil {

@@ -13,13 +13,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/pkg/errors"
+	"github.com/spf13/cobra"
+	"gopkg.in/yaml.v2"
+
 	"github.com/go-flutter-desktop/hover/internal/build"
 	"github.com/go-flutter-desktop/hover/internal/fileutils"
 	"github.com/go-flutter-desktop/hover/internal/log"
 	"github.com/go-flutter-desktop/hover/internal/pubspec"
-	"github.com/pkg/errors"
-	"github.com/spf13/cobra"
-	yaml "gopkg.in/yaml.v2"
 )
 
 const standaloneImplementationListAPI = "https://raw.githubusercontent.com/go-flutter-desktop/plugins/master/list.json"

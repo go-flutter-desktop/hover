@@ -27,9 +27,9 @@ func InitDarwinDmg() {
 	printInitFinished(packagingFormat)
 }
 
-func BuildDarwinDmg() {
+func BuildDarwinDmg(buildVersion string) {
 	log.Infof("Building darwin-bundle first")
-	BuildDarwinBundle()
+	BuildDarwinBundle(buildVersion)
 	projectName := pubspec.GetPubSpec().Name
 	packagingFormat := "darwin-dmg"
 	tmpPath := getTemporaryBuildDirectory(projectName, packagingFormat)
@@ -53,7 +53,7 @@ func BuildDarwinDmg() {
 		os.Exit(1)
 	}
 
-	outputFileName := projectName + " " + pubspec.GetPubSpec().Version + ".dmg"
+	outputFileName := projectName + " " + buildVersion + ".dmg"
 	runDockerPackaging(tmpPath, packagingFormat, []string{
 		"genisoimage -V '" + projectName + "' -D -R -apple -no-pad -o '" + outputFileName + "' dmgdir",
 	})

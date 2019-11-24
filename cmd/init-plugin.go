@@ -48,9 +48,9 @@ var createPluginCmd = &cobra.Command{
 			"urlVSCRepo": vcsPath,
 		}
 
-		fileutils.CopyTemplateFromAssetsBox("plugin/plugin.go.tmpl", filepath.Join(build.BuildPath, "plugin.go"), fileutils.AssetsBox, templateData)
-		fileutils.CopyTemplateFromAssetsBox("plugin/README.md.tmpl", filepath.Join(build.BuildPath, "README.md"), fileutils.AssetsBox, templateData)
-		fileutils.CopyTemplateFromAssetsBox("plugin/import.go.tmpl.tmpl", filepath.Join(build.BuildPath, "import.go.tmpl"), fileutils.AssetsBox, templateData)
+		fileutils.ExecuteTemplateFromAssetsBox("plugin/plugin.go.tmpl", filepath.Join(build.BuildPath, "plugin.go"), fileutils.AssetsBox, templateData)
+		fileutils.ExecuteTemplateFromAssetsBox("plugin/README.md.tmpl", filepath.Join(build.BuildPath, "README.md"), fileutils.AssetsBox, templateData)
+		fileutils.ExecuteTemplateFromAssetsBox("plugin/import.go.tmpl.tmpl", filepath.Join(build.BuildPath, "import.go.tmpl"), fileutils.AssetsBox, templateData)
 
 		dlibPath := filepath.Join(build.BuildPath, "dlib")
 		err = os.Mkdir(dlibPath, 0775)
@@ -58,7 +58,7 @@ var createPluginCmd = &cobra.Command{
 			log.Errorf("Failed to create '%s' directory: %v", dlibPath, err)
 			os.Exit(1)
 		}
-		fileutils.CopyTemplateFromAssetsBox("plugin/README.md.dlib.tmpl", filepath.Join(dlibPath, "README.md"), fileutils.AssetsBox, templateData)
+		fileutils.ExecuteTemplateFromAssetsBox("plugin/README.md.dlib.tmpl", filepath.Join(dlibPath, "README.md"), fileutils.AssetsBox, templateData)
 
 		platforms := []string{"darwin", "linux", "windows"}
 		for _, platform := range platforms {

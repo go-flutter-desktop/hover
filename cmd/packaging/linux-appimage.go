@@ -20,7 +20,7 @@ func InitLinuxAppImage() {
 
 	appRunFilePath := filepath.Join(appImageDirectoryPath, "AppRun")
 
-	fileutils.CopyTemplateFromAssetsBox("packaging/AppRun.tmpl", filepath.Join(appImageDirectoryPath, "AppRun"), fileutils.AssetsBox, getTemplateData(projectName))
+	fileutils.ExecuteTemplateFromAssetsBox("packaging/linux-appimage/AppRun.tmpl", appRunFilePath, fileutils.AssetsBox, getTemplateData(projectName, ""))
 
 	err := os.Chmod(appRunFilePath, 0777)
 	if err != nil {
