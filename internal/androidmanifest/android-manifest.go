@@ -46,7 +46,10 @@ func AndroidOrganizationName() string {
 		return "hover.failed.to.retrieve.package.name"
 	}
 	javaPackage := strings.Split(androidManifest.Package, ".")
-	orgName := strings.Join(javaPackage[:len(javaPackage)-1], ".")
+	if len(javaPackage) > 2 {
+		javaPackage = javaPackage[:len(javaPackage)-1]
+	}
+	orgName := strings.Join(javaPackage, ".")
 	if orgName == "" {
 		return "hover.failed.to.retrieve.package.name"
 	}
