@@ -14,5 +14,5 @@ func createLinuxDesktopFile(desktopFilePath string, exec string, icon string) {
 		"exec":        exec,
 	}
 
-	fileutils.CopyTemplate("packaging/app.desktop.tmpl", desktopFilePath, fileutils.AssetsBox, templateData)
+	fileutils.ExecuteTemplateFromAssetsBox("packaging/linux/app.desktop.tmpl", desktopFilePath, fileutils.AssetsBox, templateData)
 }

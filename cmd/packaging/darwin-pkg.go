@@ -6,7 +6,6 @@ import (
 
 	"github.com/otiai10/copy"
 
-	"github.com/go-flutter-desktop/hover/internal/androidmanifest"
 	"github.com/go-flutter-desktop/hover/internal/build"
 	"github.com/go-flutter-desktop/hover/internal/fileutils"
 	"github.com/go-flutter-desktop/hover/internal/log"
@@ -34,14 +33,8 @@ func InitDarwinPkg() {
 		os.Exit(1)
 	}
 
-	templateData := map[string]string{
-		"projectName":      projectName,
-		"organizationName": androidmanifest.AndroidOrganizationName(),
-		"version":          pubspec.GetPubSpec().Version,
-	}
-
-	fileutils.CopyTemplate("packaging/PackageInfo.tmpl", filepath.Join(basePkgDirectoryPath, "PackageInfo"), fileutils.AssetsBox, templateData)
-	fileutils.CopyTemplate("packaging/Distribution.tmpl", filepath.Join(pkgDirectoryPath, "flat", "Distribution"), fileutils.AssetsBox, templateData)
+	fileutils.ExecuteTemplateFromAssetsBox("packaging/darwin-pkg/PackageInfo.tmpl.tmpl", filepath.Join(basePkgDirectoryPath, "PackageInfo.tmpl"), fileutils.AssetsBox, getTemplateData(projectName, ""))
+	fileutils.ExecuteTemplateFromAssetsBox("packaging/darwin-pkg/Distribution.tmpl.tmpl", filepath.Join(pkgDirectoryPath, "flat", "Distribution.tmpl"), fileutils.AssetsBox, getTemplateData(projectName, ""))
 
 	createDockerfile(packagingFormat, []string{
 		"FROM ubuntu:bionic",
@@ -54,9 +47,9 @@ func InitDarwinPkg() {
 	printInitFinished(packagingFormat)
 }
 
-func BuildDarwinPkg() {
+func BuildDarwinPkg(buildVersion string) {
 	log.Infof("Building darwin-bundle first")
-	BuildDarwinBundle()
+	BuildDarwinBundle(buildVersion)
 	projectName := pubspec.GetPubSpec().Name
 	packagingFormat := "darwin-pkg"
 	tmpPath := getTemporaryBuildDirectory(projectName, packagingFormat)
@@ -74,13 +67,8 @@ func BuildDarwinPkg() {
 		log.Errorf("Could not copy build folder: %v", err)
 		os.Exit(1)
 	}
-	err = copy.Copy(packagingFormatPath(packagingFormat), filepath.Join(tmpPath))
-	if err != nil {
-		log.Errorf("Could not copy packaging configuration folder: %v", err)
-		os.Exit(1)
-	}
-
-	outputFileName := projectName + " " + pubspec.GetPubSpec().Version + " Installer.pkg"
+	fileutils.CopyTemplateDir(packagingFormatPath(packagingFormat), filepath.Join(tmpPath), getTemplateData(projectName, buildVersion))
+	outputFileName := projectName + " " + buildVersion + " Installer.pkg"
 	runDockerPackaging(tmpPath, packagingFormat, []string{
 		"(cd flat/root && find . | cpio -o --format odc --owner 0:80 | gzip -c ) > flat/base.pkg/Payload",
 		"&&", "mkbom -u 0 -g 80 flat/root flat/base.pkg/Bom",

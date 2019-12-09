@@ -2,13 +2,15 @@ package packaging
 
 import (
 	"fmt"
+	"os"
+	"path/filepath"
+
+	"github.com/otiai10/copy"
+
 	"github.com/go-flutter-desktop/hover/internal/build"
 	"github.com/go-flutter-desktop/hover/internal/fileutils"
 	"github.com/go-flutter-desktop/hover/internal/log"
 	"github.com/go-flutter-desktop/hover/internal/pubspec"
-	"github.com/otiai10/copy"
-	"os"
-	"path/filepath"
 )
 
 // InitLinuxRpm initialize the a linux rpm packaging format.
@@ -48,7 +50,7 @@ func InitLinuxRpm() {
 		log.Errorf("Failed to create BUILDROOT directory %s: %v", rpmBuildRootDirectoryPath, err)
 		os.Exit(1)
 	}
-	rpmRootSourcesDirectoryPath, err := filepath.Abs(filepath.Join(rpmBuildRootDirectoryPath, fmt.Sprintf("%s-%s-%s.x86_64", removeDashesAndUnderscores(projectName), pubspec.GetPubSpec().Version, pubspec.GetPubSpec().Version)))
+	rpmRootSourcesDirectoryPath, err := filepath.Abs(filepath.Join(rpmBuildRootDirectoryPath, "{{.strippedProjectName}}-{{.version}}-{{.version}}.x86_64"))
 	if err != nil {
 		log.Errorf("Failed to resolve absolute path for BUILDROOT directory: %v", err)
 		os.Exit(1)
@@ -79,18 +81,10 @@ func InitLinuxRpm() {
 		log.Errorf("Failed to create applications directory %s: %v", applicationsDirectoryPath, err)
 		os.Exit(1)
 	}
-
-	templateData := map[string]string{
-		"projectName":         projectName,
-		"strippedProjectName": removeDashesAndUnderscores(projectName),
-		"version":             pubspec.GetPubSpec().Version,
-		"description":         pubspec.GetPubSpec().Description,
-	}
-
 	binFilePath := filepath.Join(binDirectoryPath, removeDashesAndUnderscores(projectName))
 
-	fileutils.CopyTemplate("packaging/app.spec.tmpl", filepath.Join(rpmSpecsDirectoryPath, removeDashesAndUnderscores(projectName)+".spec"), fileutils.AssetsBox, templateData)
-	fileutils.CopyTemplate("packaging/bin.tmpl", binFilePath, fileutils.AssetsBox, templateData)
+	fileutils.ExecuteTemplateFromAssetsBox("packaging/linux-rpm/app.spec.tmpl.tmpl", filepath.Join(rpmSpecsDirectoryPath, removeDashesAndUnderscores(projectName)+".spec.tmpl"), fileutils.AssetsBox, getTemplateData(projectName, ""))
+	fileutils.ExecuteTemplateFromAssetsBox("packaging/linux/bin.tmpl", binFilePath, fileutils.AssetsBox, getTemplateData(projectName, ""))
 
 	err = os.Chmod(binFilePath, 0777)
 	if err != nil {
@@ -102,14 +96,14 @@ func InitLinuxRpm() {
 
 	createDockerfile(packagingFormat, []string{
 		"FROM ubuntu:bionic",
-		"RUN apt-get update && apt-get install rpm -y",
+		"RUN apt-get update && apt-get install rpm file -y",
 	})
 
 	printInitFinished(packagingFormat)
 }
 
 // BuildLinuxRpm uses the InitLinuxRpm template to create a rpm package.
-func BuildLinuxRpm() {
+func BuildLinuxRpm(buildVersion string) {
 	projectName := pubspec.GetPubSpec().Name
 	packagingFormat := "linux-rpm"
 	tmpPath := getTemporaryBuildDirectory(projectName, packagingFormat)
@@ -122,7 +116,7 @@ func BuildLinuxRpm() {
 	}()
 	log.Infof("Packaging rpm in %s", tmpPath)
 
-	libDirectoryPath, err := filepath.Abs(filepath.Join(tmpPath, "rpmbuild", "BUILDROOT", fmt.Sprintf("%s-%s-%s.x86_64", removeDashesAndUnderscores(projectName), pubspec.GetPubSpec().Version, pubspec.GetPubSpec().Version), "usr", "lib"))
+	libDirectoryPath, err := filepath.Abs(filepath.Join(tmpPath, "rpmbuild", "BUILDROOT", fmt.Sprintf("%s-%s-%s.x86_64", removeDashesAndUnderscores(projectName), buildVersion, buildVersion), "usr", "lib"))
 	if err != nil {
 		log.Errorf("Failed to resolve absolute path for lib directory: %v", err)
 		os.Exit(1)
@@ -137,13 +131,8 @@ func BuildLinuxRpm() {
 		log.Errorf("Could not copy build folder: %v", err)
 		os.Exit(1)
 	}
-	err = copy.Copy(packagingFormatPath(packagingFormat), filepath.Join(tmpPath))
-	if err != nil {
-		log.Errorf("Could not copy packaging configuration folder: %v", err)
-		os.Exit(1)
-	}
-
-	outputFileName := fmt.Sprintf("%s-%s-%s.x86_64.rpm", removeDashesAndUnderscores(projectName), pubspec.GetPubSpec().Version, pubspec.GetPubSpec().Version)
+	fileutils.CopyTemplateDir(packagingFormatPath(packagingFormat), filepath.Join(tmpPath), getTemplateData(projectName, buildVersion))
+	outputFileName := fmt.Sprintf("%s-%s-%s.x86_64.rpm", removeDashesAndUnderscores(projectName), buildVersion, buildVersion)
 	runDockerPackaging(tmpPath, packagingFormat, []string{"rpmbuild --define '_topdir /app/rpmbuild' -ba /app/rpmbuild/SPECS/" + removeDashesAndUnderscores(projectName) + ".spec", "&&", "rm /root/.rpmdb -r"})
 
 	outputFilePath := filepath.Join(build.OutputDirectoryPath("linux-rpm"), outputFileName)

@@ -18,13 +18,9 @@ func InitLinuxAppImage() {
 	createPackagingFormatDirectory(packagingFormat)
 	appImageDirectoryPath := packagingFormatPath(packagingFormat)
 
-	templateData := map[string]string{
-		"projectName": projectName,
-	}
-
 	appRunFilePath := filepath.Join(appImageDirectoryPath, "AppRun")
 
-	fileutils.CopyTemplate("packaging/AppRun.tmpl", filepath.Join(appImageDirectoryPath, "AppRun"), fileutils.AssetsBox, templateData)
+	fileutils.ExecuteTemplateFromAssetsBox("packaging/linux-appimage/AppRun.tmpl", appRunFilePath, fileutils.AssetsBox, getTemplateData(projectName, ""))
 
 	err := os.Chmod(appRunFilePath, 0777)
 	if err != nil {

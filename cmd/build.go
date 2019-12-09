@@ -35,6 +35,7 @@ var (
 	buildOmitFlutterBundle bool
 	buildOpenGlVersion     string
 	buildDocker            bool
+	buildVersion           string
 )
 
 const mingwGccBinName = "x86_64-w64-mingw32-gcc"
@@ -49,6 +50,7 @@ func init() {
 	buildCmd.PersistentFlags().BoolVar(&buildDebug, "debug", false, "Build a debug version of the app.")
 	buildCmd.PersistentFlags().StringVarP(&buildCachePath, "cache-path", "", config.BuildCachePathDefault, "The path that hover uses to cache dependencies such as the Flutter engine .so/.dll (defaults to the standard user cache directory)")
 	buildCmd.PersistentFlags().StringVar(&buildOpenGlVersion, "opengl", config.BuildOpenGlVersionDefault, "The OpenGL version specified here is only relevant for external texture plugin (i.e. video_plugin).\nIf 'none' is provided, texture won't be supported. Note: the Flutter Engine still needs a OpenGL compatible context.")
+	buildCmd.PersistentFlags().StringVar(&buildVersion, "version-number", "", "Override the version number used in build and packaging. You may use it with $(git describe --tags)")
 	buildCmd.PersistentFlags().BoolVar(&buildDocker, "docker", false, "Compile in Docker container only. No need to install go")
 	buildCmd.AddCommand(buildLinuxCmd)
 	buildCmd.AddCommand(buildLinuxSnapCmd)
@@ -88,7 +90,7 @@ var buildLinuxSnapCmd = &cobra.Command{
 		packaging.AssertDockerInstalled()
 
 		buildNormal("linux", nil)
-		packaging.BuildLinuxSnap()
+		packaging.BuildLinuxSnap(buildVersion)
 	},
 }
 
@@ -101,7 +103,7 @@ var buildLinuxDebCmd = &cobra.Command{
 		packaging.AssertDockerInstalled()
 
 		buildNormal("linux", nil)
-		packaging.BuildLinuxDeb()
+		packaging.BuildLinuxDeb(buildVersion)
 	},
 }
 
@@ -127,7 +129,7 @@ var buildLinuxRpmCmd = &cobra.Command{
 		packaging.AssertDockerInstalled()
 
 		buildNormal("linux", nil)
-		packaging.BuildLinuxRpm()
+		packaging.BuildLinuxRpm(buildVersion)
 	},
 }
 
@@ -150,7 +152,7 @@ var buildDarwinBundleCmd = &cobra.Command{
 		packaging.AssertDockerInstalled()
 
 		buildNormal("darwin", nil)
-		packaging.BuildDarwinBundle()
+		packaging.BuildDarwinBundle(buildVersion)
 	},
 }
 
@@ -163,7 +165,7 @@ var buildDarwinPkgCmd = &cobra.Command{
 		packaging.AssertDockerInstalled()
 
 		buildNormal("darwin", nil)
-		packaging.BuildDarwinPkg()
+		packaging.BuildDarwinPkg(buildVersion)
 	},
 }
 
@@ -176,7 +178,7 @@ var buildDarwinDmgCmd = &cobra.Command{
 		packaging.AssertDockerInstalled()
 
 		buildNormal("darwin", nil)
-		packaging.BuildDarwinDmg()
+		packaging.BuildDarwinDmg(buildVersion)
 	},
 }
 
@@ -199,7 +201,7 @@ var buildWindowsMsiCmd = &cobra.Command{
 		packaging.AssertDockerInstalled()
 
 		buildNormal("windows", nil)
-		packaging.BuildWindowsMsi()
+		packaging.BuildWindowsMsi(buildVersion)
 	},
 }
 
@@ -349,6 +351,9 @@ func buildNormal(targetOS string, vmArguments []string) {
 	}
 	if !buildDocker && config.GetConfig().Docker {
 		buildDocker = config.GetConfig().Docker
+	}
+	if buildVersion == "" {
+		buildVersion = pubspec.GetPubSpec().Version
 	}
 	checkForMainDesktop()
 	crossCompile = targetOS != runtime.GOOS
@@ -603,7 +608,7 @@ func buildCommand(targetOS string, vmArguments []string, outputBinaryPath string
 			" -X github.com/go-flutter-desktop/go-flutter.PlatformVersion=%s "+
 			" -X github.com/go-flutter-desktop/go-flutter.ProjectName=%s "+
 			" -X github.com/go-flutter-desktop/go-flutter.ProjectOrganizationName=%s",
-		pubspec.GetPubSpec().Version,
+		buildVersion,
 		currentTag,
 		pubspec.GetPubSpec().Name,
 		androidmanifest.AndroidOrganizationName()))

@@ -1,6 +1,8 @@
 package fileutils
 
 import (
+	"bytes"
+	"fmt"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -10,9 +12,9 @@ import (
 	"text/template"
 
 	rice "github.com/GeertJohan/go.rice"
+
 	"github.com/go-flutter-desktop/hover/internal/log"
 )
-
 
 // IsFileExists checks if a file exists and is not a directory
 func IsFileExists(filename string) bool {
@@ -138,16 +140,55 @@ func CopyDir(src, dst string) {
 	}
 }
 
-// CopyTemplate create file from a template asset
-func CopyTemplate(boxed, to string, assetsBox *rice.Box, templateData interface{}) {
-	templateString, err := assetsBox.String(boxed)
+func CopyTemplateDir(boxed, to string, templateData interface{}) {
+	var files []string
+	err := filepath.Walk(boxed, func(path string, info os.FileInfo, err error) error {
+		files = append(files, path)
+		return nil
+	})
+	files = files[1:]
 	if err != nil {
-		log.Errorf("Failed to find plugin template file: %v\n", err)
+		log.Errorf("Failed to list files in directory %s: %v\n", boxed, err)
 		os.Exit(1)
 	}
+	for _, file := range files {
+		newFile := filepath.Join(to, strings.Join(strings.Split(file, "")[len(boxed)+1:], ""))
+		tmplFile, err := template.New("").Parse(newFile)
+		if err != nil {
+			log.Errorf("Failed to parse template string: %v\n", err)
+			os.Exit(1)
+		}
+		var tmplBytes bytes.Buffer
+		err = tmplFile.Execute(&tmplBytes, templateData)
+		if err != nil {
+			panic(err)
+		}
+		newFile = tmplBytes.String()
+		fi, err := os.Stat(file)
+		if err != nil {
+			fmt.Println(err)
+			return
+		}
+		switch mode := fi.Mode(); {
+		case mode.IsDir():
+			err := os.MkdirAll(newFile, 0755)
+			if err != nil {
+				log.Errorf("Failed to create directory %s: %v\n", newFile, err)
+				os.Exit(1)
+			}
+		case mode.IsRegular():
+			if strings.HasSuffix(newFile, ".tmpl") {
+				newFile = strings.TrimSuffix(newFile, ".tmpl")
+			}
+			ExecuteTemplateFromFile(file, newFile, templateData)
+		}
+	}
+}
+
+func executeTemplateFromString(templateString, to string, templateData interface{}) {
 	tmplFile, err := template.New("").Parse(templateString)
 	if err != nil {
-		log.Errorf("Failed to parse plugin template file: %v\n", err)
+		log.Errorf("Failed to parse template string: %v\n", err)
 		os.Exit(1)
 	}
 
@@ -159,6 +200,26 @@ func CopyTemplate(boxed, to string, assetsBox *rice.Box, templateData interface{
 	defer toFile.Close()
 
 	tmplFile.Execute(toFile, templateData)
+}
+
+// ExecuteTemplateFromFile create file from a template file
+func ExecuteTemplateFromFile(boxed, to string, templateData interface{}) {
+	templateString, err := ioutil.ReadFile(boxed)
+	if err != nil {
+		log.Errorf("Failed to find template file: %v\n", err)
+		os.Exit(1)
+	}
+	executeTemplateFromString(string(templateString), to, templateData)
+}
+
+// ExecuteTemplateFromAssetsBox create file from a template asset
+func ExecuteTemplateFromAssetsBox(boxed, to string, assetsBox *rice.Box, templateData interface{}) {
+	templateString, err := assetsBox.String(boxed)
+	if err != nil {
+		log.Errorf("Failed to find template file: %v\n", err)
+		os.Exit(1)
+	}
+	executeTemplateFromString(templateString, to, templateData)
 }
 
 // CopyAsset copies a file from asset

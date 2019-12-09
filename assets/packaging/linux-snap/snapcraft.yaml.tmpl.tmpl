@@ -1,6 +1,6 @@
 name: {{.strippedProjectName}}
 base: core18
-version: '{{.version}}'
+version: '{{`{{.version}}`}}'
 summary: {{.description}}
 description: |
   {{.description}}
@@ -21,4 +21,4 @@ parts:
     plugin: dump
     source: build
     stage-packages:
-      - {{.dependencies}}
+      - {{`{{.snapDependencies}}`}}

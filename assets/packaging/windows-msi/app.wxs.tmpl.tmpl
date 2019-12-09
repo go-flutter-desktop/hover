@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
-    <Product Id="*" UpgradeCode="*" Version="{{.version}}" Language="1033" Name="{{.projectName}}" Manufacturer="{{.author}}">
+    <Product Id="*" UpgradeCode="*" Version="{{`{{.version}}`}}" Language="1033" Name="{{.projectName}}" Manufacturer="{{.author}}">
         <Package InstallerVersion="300" Compressed="yes"/>
         <Media Id="1" Cabinet="{{.projectName}}.cab" EmbedCab="yes" />
         <Directory Id="TARGETDIR" Name="SourceDir">
