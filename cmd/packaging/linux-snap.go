@@ -14,7 +14,7 @@ import (
 	"github.com/go-flutter-desktop/hover/internal/pubspec"
 )
 
-// InitLinuxSnap initialize the a linux snap packagingFormat
+// InitLinuxSnap initializes the linux snap packaging format
 func InitLinuxSnap() {
 	projectName := pubspec.GetPubSpec().Name
 	packagingFormat := "linux-snap"

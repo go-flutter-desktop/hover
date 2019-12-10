@@ -47,8 +47,8 @@ var doctorCmd = &cobra.Command{
 			log.Errorf("Flutter doctor failed: %v", err)
 		}
 
-		engineCommitId := enginecache.FlutterRequiredEngineVersion()
-		log.Infof("Flutter engine commit: %s", log.Au().Magenta("https://github.com/flutter/engine/commit/"+engineCommitId))
+		engineCommitID := enginecache.FlutterRequiredEngineVersion()
+		log.Infof("Flutter engine commit: %s", log.Au().Magenta("https://github.com/flutter/engine/commit/"+engineCommitID))
 
 		checkFlutterChannel()
 

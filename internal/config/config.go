@@ -10,9 +10,16 @@ import (
 	"github.com/go-flutter-desktop/hover/internal/build"
 )
 
+// BuildTargetDefault Default build target file
 const BuildTargetDefault = "lib/main_desktop.dart"
+
+// BuildBranchDefault Default go-flutter branch
 const BuildBranchDefault = ""
+
+// BuildCachePathDefault Default go-flutter cache path
 const BuildCachePathDefault = ""
+
+// BuildOpenGlVersionDefault Default OpenGL version for go-flutter
 const BuildOpenGlVersionDefault = "3.3"
 
 // Config contains the parsed contents of hover.yaml
