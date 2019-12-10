@@ -53,7 +53,7 @@ func BuildDarwinDmg(buildVersion string) {
 		os.Exit(1)
 	}
 
-	outputFileName := projectName + " " + buildVersion + ".dmg"
+	outputFileName := projectName + "-" + buildVersion + ".dmg"
 	runDockerPackaging(tmpPath, packagingFormat, []string{
 		"genisoimage -V '" + projectName + "' -D -R -apple -no-pad -o '" + outputFileName + "' dmgdir",
 	})

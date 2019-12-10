@@ -132,11 +132,12 @@ func BuildLinuxRpm(buildVersion string) {
 		os.Exit(1)
 	}
 	fileutils.CopyTemplateDir(packagingFormatPath(packagingFormat), filepath.Join(tmpPath), getTemplateData(projectName, buildVersion))
-	outputFileName := fmt.Sprintf("%s-%s-%s.x86_64.rpm", removeDashesAndUnderscores(projectName), buildVersion, buildVersion)
+	resultFileName := fmt.Sprintf("%s-%s-%s.x86_64.rpm", removeDashesAndUnderscores(projectName), buildVersion, buildVersion)
+	outputFileName := projectName + "-" + buildVersion + ".rpm"
 	runDockerPackaging(tmpPath, packagingFormat, []string{"rpmbuild --define '_topdir /app/rpmbuild' -ba /app/rpmbuild/SPECS/" + removeDashesAndUnderscores(projectName) + ".spec", "&&", "rm /root/.rpmdb -r"})
 
 	outputFilePath := filepath.Join(build.OutputDirectoryPath("linux-rpm"), outputFileName)
-	err = copy.Copy(filepath.Join(tmpPath, "rpmbuild", "RPMS", "x86_64", outputFileName), outputFilePath)
+	err = copy.Copy(filepath.Join(tmpPath, "rpmbuild", "RPMS", "x86_64", resultFileName), outputFilePath)
 	if err != nil {
 		log.Errorf("Could not move rpm file: %v", err)
 		os.Exit(1)

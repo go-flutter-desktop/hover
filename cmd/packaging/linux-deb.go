@@ -3,7 +3,6 @@ package packaging
 import (
 	"os"
 	"path/filepath"
-	"runtime"
 
 	"github.com/otiai10/copy"
 
@@ -96,7 +95,7 @@ func BuildLinuxDeb(buildVersion string) {
 	}
 	fileutils.CopyTemplateDir(packagingFormatPath(packagingFormat), filepath.Join(tmpPath), getTemplateData(projectName, buildVersion))
 
-	outputFileName := removeDashesAndUnderscores(projectName) + "_" + runtime.GOARCH + ".deb"
+	outputFileName := projectName + "-" + buildVersion + ".deb"
 	runDockerPackaging(tmpPath, packagingFormat, []string{"dpkg-deb", "--build", ".", outputFileName})
 
 	outputFilePath := filepath.Join(build.OutputDirectoryPath("linux-deb"), outputFileName)

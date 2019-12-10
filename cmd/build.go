@@ -116,7 +116,7 @@ var buildLinuxAppImageCmd = &cobra.Command{
 		packaging.AssertDockerInstalled()
 
 		buildNormal("linux", nil)
-		packaging.BuildLinuxAppImage()
+		packaging.BuildLinuxAppImage(buildVersion)
 	},
 }
 

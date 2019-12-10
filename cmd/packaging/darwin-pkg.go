@@ -68,7 +68,7 @@ func BuildDarwinPkg(buildVersion string) {
 		os.Exit(1)
 	}
 	fileutils.CopyTemplateDir(packagingFormatPath(packagingFormat), filepath.Join(tmpPath), getTemplateData(projectName, buildVersion))
-	outputFileName := projectName + " " + buildVersion + " Installer.pkg"
+	outputFileName := projectName + "-" + buildVersion + ".pkg"
 	runDockerPackaging(tmpPath, packagingFormat, []string{
 		"(cd flat/root && find . | cpio -o --format odc --owner 0:80 | gzip -c ) > flat/base.pkg/Payload",
 		"&&", "mkbom -u 0 -g 80 flat/root flat/base.pkg/Bom",
