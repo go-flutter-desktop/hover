@@ -79,14 +79,15 @@ func BuildDarwinBundle(buildVersion string) {
 	fileutils.CopyTemplateDir(packagingFormatPath(packagingFormat), filepath.Join(tmpPath), getTemplateData(projectName, buildVersion))
 	runDockerPackaging(tmpPath, packagingFormat, []string{"mkdir", "-p", projectName + ".app/Contents/Resources", "&&", "png2icns", projectName + ".app/Contents/Resources/icon.icns", projectName + ".app/Contents/MacOS/assets/icon.png"})
 
-	outputFileName := projectName + ".app"
+	resultFileName := projectName + ".app"
+	outputFileName := projectName + "-" + buildVersion + ".app"
 	outputFilePath := filepath.Join(build.OutputDirectoryPath("darwin-bundle"), outputFileName)
 	err = os.RemoveAll(outputFilePath)
 	if err != nil {
 		log.Errorf("Could not remove previous bundle directory: %v", err)
 		os.Exit(1)
 	}
-	err = copy.Copy(filepath.Join(tmpPath, outputFileName), outputFilePath)
+	err = copy.Copy(filepath.Join(tmpPath, resultFileName), outputFilePath)
 	if err != nil {
 		log.Errorf("Could not move bundle directory: %v", err)
 		os.Exit(1)

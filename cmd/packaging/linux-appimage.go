@@ -45,7 +45,7 @@ func InitLinuxAppImage() {
 	printInitFinished(packagingFormat)
 }
 
-func BuildLinuxAppImage() {
+func BuildLinuxAppImage(buildVersion string) {
 	projectName := pubspec.GetPubSpec().Name
 	packagingFormat := "linux-appimage"
 	tmpPath := getTemporaryBuildDirectory(projectName, packagingFormat)
@@ -71,9 +71,10 @@ func BuildLinuxAppImage() {
 
 	runDockerPackaging(tmpPath, packagingFormat, []string{"appimagetool", "."})
 
-	outputFileName := projectName + "-x86_64.AppImage"
+	resultFileName := projectName + "-x86_64.AppImage"
+	outputFileName := projectName + "-" + buildVersion + ".AppImage"
 	outputFilePath := filepath.Join(build.OutputDirectoryPath("linux-appimage"), outputFileName)
-	err = copy.Copy(filepath.Join(tmpPath, outputFileName), outputFilePath)
+	err = copy.Copy(filepath.Join(tmpPath, resultFileName), outputFilePath)
 	if err != nil {
 		log.Errorf("Could not move AppImage file: %v", err)
 		os.Exit(1)
