@@ -10,9 +10,11 @@ import (
 )
 
 var colors bool
+var docker bool
 
 func init() {
 	rootCmd.PersistentFlags().BoolVar(&colors, "colors", true, "Add colors to log")
+	rootCmd.PersistentFlags().BoolVar(&docker, "docker", false, "Run the command in a docker container for hover")
 }
 
 func initHover() {
@@ -34,6 +36,7 @@ var rootCmd = &cobra.Command{
 	Use:   "hover",
 	Short: "Hover connects Flutter and go-flutter-desktop.",
 	Long:  "Hover helps developers to release Flutter applications on desktop.",
+	// TODO: Run or PreRun to catch --docker and spawn docker child.
 }
 
 // Execute executes the rootCmd

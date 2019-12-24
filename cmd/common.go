@@ -19,34 +19,29 @@ import (
 
 // initBinaries is used to ensure go and flutter exec are found in the
 // user's path
+// TODO: Only init based on what the user asks for in the command/arguments given to hover. Only error based on their questions.
+// TODO: separate this function into two functions; initLocalBuildBinaries (go, flutter, git) and initDockerBinary (docker)
+// TODO: Move this to the internal/build package?
 func initBinaries() {
 	var err error
-	goAvailable := false
-	dockerAvailable := false
+	// TODO: cleanup
+	// if !dockerAvailable && !goAvailable {
+	// 	log.Errorf("Failed to lookup `go` and `docker` executable. Please install one of them:\nGo: https://golang.org/doc/install\nDocker: https://docs.docker.com/install")
+	// 	os.Exit(1)
+	// }
 	build.GoBin, err = exec.LookPath("go")
-	if err == nil {
-		goAvailable = true
-	}
-	build.DockerBin, err = exec.LookPath("docker")
-	if err == nil {
-		dockerAvailable = true
-	}
-	if !dockerAvailable && !goAvailable {
-		log.Errorf("Failed to lookup `go` and `docker` executable. Please install one of them:\nGo: https://golang.org/doc/install\nDocker: https://docs.docker.com/install")
-		os.Exit(1)
-	}
-	if dockerAvailable && !goAvailable && !buildDocker {
-		log.Errorf("Failed to lookup `go` executable. Please install go or add '--docker' to force running in Docker container.\nhttps://golang.org/doc/install")
+	if err != nil {
+		log.Errorf("Failed to lookup `go` executable: %s. Please install go or add `--docker` to run the Hover command in a Docker container.\nhttps://golang.org/doc/install", err)
 		os.Exit(1)
 	}
 	build.FlutterBin, err = exec.LookPath("flutter")
 	if err != nil {
-		log.Errorf("Failed to lookup 'flutter' executable. Please install flutter.\nhttps://flutter.dev/docs/get-started/install")
+		log.Errorf("Failed to lookup 'flutter' executable: %s. Please install flutter or add `--docker` to run the Hover command in Docker container.\nhttps://flutter.dev/docs/get-started/install", err)
 		os.Exit(1)
 	}
 	build.GitBin, err = exec.LookPath("git")
 	if err != nil {
-		log.Warnf("Failed to lookup 'git' executable.")
+		log.Warnf("Failed to lookup 'git' executable: %s.", err)
 	}
 }
 
@@ -66,7 +61,7 @@ func assertInFlutterPluginProject() {
 func assertHoverInitialized() {
 	_, err := os.Stat(build.BuildPath)
 	if os.IsNotExist(err) {
-		if hoverMigration() {
+		if hoverMigrateDesktopToGo() {
 			return
 		}
 		log.Errorf("Directory '%s' is missing. Please init go-flutter first: %s", build.BuildPath, log.Au().Magenta("hover init"))
@@ -99,8 +94,8 @@ func checkFlutterChannel() {
 	}
 }
 
-// hoverMigration migrates from old hover buildPath directory to the new one ("desktop" -> "go")
-func hoverMigration() bool {
+// hoverMigrateDesktopToGo migrates from old hover buildPath directory to the new one ("desktop" -> "go")
+func hoverMigrateDesktopToGo() bool {
 	oldBuildPath := "desktop"
 	file, err := os.Open(filepath.Join(oldBuildPath, "go.mod"))
 	if err != nil {
@@ -128,6 +123,12 @@ func hoverMigration() bool {
 // askForConfirmation asks the user for confirmation.
 func askForConfirmation() bool {
 	fmt.Print(log.Au().Bold(log.Au().Cyan("hover: ")).String() + "[y/N]? ")
+
+	if len(os.Getenv("HOVER_DISABLE_INTERACTIONS")) > 0 {
+		fmt.Println(log.Au().Bold(log.Au().Yellow("Interactions disabled, assuming 'no'.")).String())
+		return false
+	}
+
 	in := bufio.NewReader(os.Stdin)
 	s, err := in.ReadString('\n')
 	if err != nil {

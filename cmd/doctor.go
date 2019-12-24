@@ -36,7 +36,6 @@ var doctorCmd = &cobra.Command{
 		assertInFlutterProject()
 
 		log.Infof("Running on %s", runtime.GOOS)
-		log.Infof("Docker installed: %v", build.DockerBin != "")
 
 		log.Infof("Sharing flutter version")
 		cmdFlutterDoctor := exec.Command(build.FlutterBin, "--version")

@@ -1,26 +1,23 @@
 package packaging
 
 import (
-	"github.com/go-flutter-desktop/hover/internal/log"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
+
+	"github.com/go-flutter-desktop/hover/internal/log"
 )
 
 var directoriesFileContent []string
 var directoryRefsFileContent []string
 var componentRefsFileContent []string
 
-// WindowsMsiPackagingTask packaging for windows as msi
-var WindowsMsiPackagingTask = &packagingTask{
+// WindowsMsiTask packaging for windows as msi
+var WindowsMsiTask = &packagingTask{
 	packagingFormatName: "windows-msi",
 	templateFiles: map[string]string{
 		"windows-msi/app.wxs.tmpl.tmpl": "{{.projectName}}.wxs.tmpl",
-	},
-	dockerfileContent: []string{
-		"FROM ubuntu:bionic",
-		"RUN apt-get update && apt-get install wixl imagemagick -y",
 	},
 	buildOutputDirectory:    "build",
 	packagingScriptTemplate: "convert -resize x16 build/assets/icon.png build/assets/icon.ico && wixl -v {{.projectName}}.wxs && mv {{.projectName}}.msi {{.projectName}}-{{.version}}.msi",
@@ -59,7 +56,7 @@ var WindowsMsiPackagingTask = &packagingTask{
 		directoriesFileContent = append(directoriesFileContent, `<Include>`)
 		directoryRefsFileContent = append(directoryRefsFileContent, `<Include>`)
 		componentRefsFileContent = append(componentRefsFileContent, `<Include>`)
-		processFiles(filepath.Join(tmpPath, "build", "flutter_assets"))
+		windowsMsiProcessFiles(filepath.Join(tmpPath, "build", "flutter_assets"))
 		directoriesFileContent = append(directoriesFileContent, `</Include>`)
 		directoryRefsFileContent = append(directoryRefsFileContent, `</Include>`)
 		componentRefsFileContent = append(componentRefsFileContent, `</Include>`)
@@ -100,7 +97,7 @@ var WindowsMsiPackagingTask = &packagingTask{
 	},
 }
 
-func processFiles(path string) {
+func windowsMsiProcessFiles(path string) {
 	files, err := ioutil.ReadDir(path)
 	if err != nil {
 		log.Errorf("Failed to read directory %s: %v", path, err)
@@ -114,7 +111,7 @@ func processFiles(path string) {
 			directoriesFileContent = append(directoriesFileContent,
 				`<Directory Id="FLUTTERASSETSDIRECTORY_`+strings.Join(relativePath, "_")+`" Name="`+f.Name()+`">`,
 			)
-			processFiles(p)
+			windowsMsiProcessFiles(p)
 			directoriesFileContent = append(directoriesFileContent,
 				`</Directory>`,
 			)

@@ -3,13 +3,15 @@ package cmd
 import (
 	"bufio"
 	"fmt"
-	"github.com/go-flutter-desktop/hover/internal/config"
 	"io"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"regexp"
 	"runtime"
+
+	"github.com/go-flutter-desktop/hover/cmd/packaging"
+	"github.com/go-flutter-desktop/hover/internal/config"
 
 	"github.com/spf13/cobra"
 
@@ -19,20 +21,24 @@ import (
 )
 
 var (
-	runObservatoryPort string
-	runInitialRoute    string
+	runObservatoryPort   string
+	runInitialRoute      string
+	runOmitEmbedder      bool
+	runOmitFlutterBundle bool
+	runDocker            bool
 )
 
 func init() {
 	runCmd.Flags().StringVarP(&buildTarget, "target", "t", config.BuildTargetDefault, "The main entry-point file of the application.")
-	runCmd.Flags().StringVarP(&buildBranch, "branch", "b", config.BuildBranchDefault, "The 'go-flutter' version to use. (@master or @v0.20.0 for example)")
-	runCmd.Flags().StringVarP(&buildCachePath, "cache-path", "", config.BuildCachePathDefault, "The path that hover uses to cache dependencies such as the Flutter engine .so/.dll (defaults to the standard user cache directory)")
+	runCmd.Flags().StringVarP(&buildGoFlutterBranch, "branch", "b", config.BuildBranchDefault, "The 'go-flutter' version to use. (@master or @v0.20.0 for example)")
+	runCmd.Flags().StringVar(&buildCachePath, "cache-path", "", "The path that hover uses to cache dependencies such as the Flutter engine .so/.dll (defaults to the standard user cache directory)")
 	runCmd.Flags().StringVar(&buildOpenGlVersion, "opengl", config.BuildOpenGlVersionDefault, "The OpenGL version specified here is only relevant for external texture plugin (i.e. video_plugin).\nIf 'none' is provided, texture won't be supported. Note: the Flutter Engine still needs a OpenGL compatible context.")
+
 	runCmd.Flags().StringVar(&runInitialRoute, "route", "", "Which route to load when running the app.")
 	runCmd.Flags().StringVarP(&runObservatoryPort, "observatory-port", "", "50300", "The observatory port used to connect hover to VM services (hot-reload/debug/..)")
-	runCmd.Flags().BoolVar(&buildOmitEmbedder, "omit-embedder", false, "Don't (re)compile 'go-flutter' source code, useful when only working with Dart code")
-	runCmd.Flags().BoolVar(&buildOmitFlutterBundle, "omit-flutter", false, "Don't (re)compile the current Flutter project, useful when only working with Golang code (plugin)")
-	runCmd.PersistentFlags().BoolVar(&buildDocker, "docker", false, "Compile and run in Docker container only. No need to install go")
+	runCmd.Flags().BoolVar(&runOmitFlutterBundle, "omit-flutter", false, "Don't (re)compile the current Flutter project, useful when only working with Golang code (plugin)")
+	runCmd.Flags().BoolVar(&runOmitEmbedder, "omit-embedder", false, "Don't (re)compile 'go-flutter' source code, useful when only working with Dart code")
+	runCmd.Flags().BoolVar(&runDocker, "docker", false, "Execute the go build in a docker container. The Flutter build is always run locally")
 	rootCmd.AddCommand(runCmd)
 }
 
@@ -44,7 +50,7 @@ var runCmd = &cobra.Command{
 		assertHoverInitialized()
 
 		// ensure we have something to build
-		if buildOmitEmbedder && buildOmitFlutterBundle {
+		if runOmitEmbedder && runOmitFlutterBundle {
 			log.Errorf("Flags omit-embedder and omit-flutter are not compatible.")
 			os.Exit(1)
 		}
@@ -52,10 +58,32 @@ var runCmd = &cobra.Command{
 		// Can only run on host OS
 		targetOS := runtime.GOOS
 
-		// forcefully enable --debug (which is not an option for 'hover run')
+		// forcefully enable --debug as it is not optional for 'hover run'
 		buildDebug = true
 
-		buildNormal(targetOS, []string{"--observatory-port=" + runObservatoryPort})
+		if runOmitFlutterBundle {
+			log.Infof("Omiting flutter build bundle")
+		} else {
+			// TODO: cleaning can't be enabled because it would break when users --omit-embedder.
+			// cleanBuildOutputsDir(targetOS)
+			buildFlutterBundle(targetOS)
+		}
+		if runOmitEmbedder {
+			log.Infof("Omiting build the embedder")
+		} else {
+			vmArguments := []string{"--observatory-port=" + runObservatoryPort}
+			if runDocker {
+				var buildFlags []string
+				buildFlags = append(buildFlags, commonFlags()...)
+				buildFlags = append(buildFlags, []string{
+					"--skip-flutter-build-bundle",
+					"--debug",
+				}...)
+				dockerHoverBuild(targetOS, packaging.NoopTask, buildFlags, vmArguments)
+			} else {
+				buildGoBinary(targetOS, vmArguments)
+			}
+		}
 		log.Infof("Build finished, starting app...")
 		runAndAttach(projectName, targetOS)
 	},
@@ -80,7 +108,7 @@ func runAndAttach(projectName string, targetOS string) {
 
 	re := regexp.MustCompile("(?:http:\\/\\/)[^:]*:" + runObservatoryPort + "\\/[^\\/]*\\/")
 
-	// Non-blockingly read the stdout to catch the debug-uri
+	// asynchronously read the stdout to catch the debug-uri
 	go func(reader io.Reader) {
 		scanner := bufio.NewScanner(reader)
 		for scanner.Scan() {

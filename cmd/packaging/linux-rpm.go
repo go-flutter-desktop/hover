@@ -1,7 +1,7 @@
 package packaging
 
-// LinuxRpmPackagingTask packaging for linux as rpm
-var LinuxRpmPackagingTask = &packagingTask{
+// LinuxRpmTask packaging for linux as rpm
+var LinuxRpmTask = &packagingTask{
 	packagingFormatName: "linux-rpm",
 	templateFiles: map[string]string{
 		"linux-rpm/app.spec.tmpl.tmpl": "rpmbuild/SPECS/{{.projectName}}.spec.tmpl",
@@ -14,11 +14,7 @@ var LinuxRpmPackagingTask = &packagingTask{
 	},
 	linuxDesktopFileExecutablePath: "/usr/lib/{{.projectName}}/{{.projectName}}",
 	linuxDesktopFileIconPath:       "/usr/lib/{{.projectName}}/assets/icon.png",
-	dockerfileContent: []string{
-		"FROM ubuntu:bionic",
-		"RUN apt-get update && apt-get install rpm file -y",
-	},
-	buildOutputDirectory:    "rpmbuild/BUILDROOT/{{.projectName}}-{{.version}}-{{.version}}.x86_64/usr/lib/{{.projectName}}",
-	packagingScriptTemplate: "rpmbuild --define '_topdir /app/rpmbuild' -ba /app/rpmbuild/SPECS/{{.projectName}}.spec && rm /root/.rpmdb -r && mv rpmbuild/RPMS/x86_64/{{.projectName}}-{{.version}}-{{.version}}.x86_64.rpm {{.projectName}}-{{.version}}.rpm",
-	outputFileExtension:     "rpm",
+	buildOutputDirectory:           "rpmbuild/BUILDROOT/{{.projectName}}-{{.version}}-{{.version}}.x86_64/usr/lib/{{.projectName}}",
+	packagingScriptTemplate:        "rpmbuild --define '_topdir /app/rpmbuild' -ba /app/rpmbuild/SPECS/{{.projectName}}.spec && rm /root/.rpmdb -r && mv rpmbuild/RPMS/x86_64/{{.projectName}}-{{.version}}-{{.version}}.x86_64.rpm {{.projectName}}-{{.version}}.rpm",
+	outputFileExtension:            "rpm",
 }
