@@ -30,7 +30,7 @@ var initLinuxSnapCmd = &cobra.Command{
 		assertHoverInitialized()
 		packaging.AssertDockerInstalled()
 
-		packaging.InitLinuxSnap()
+		packaging.LinuxSnapPackagingTask.Init()
 	},
 }
 
@@ -41,7 +41,7 @@ var initLinuxDebCmd = &cobra.Command{
 		assertHoverInitialized()
 		packaging.AssertDockerInstalled()
 
-		packaging.InitLinuxDeb()
+		packaging.LinuxDebPackagingTask.Init()
 	},
 }
 
@@ -52,7 +52,7 @@ var initLinuxAppImageCmd = &cobra.Command{
 		assertHoverInitialized()
 		packaging.AssertDockerInstalled()
 
-		packaging.InitLinuxAppImage()
+		packaging.LinuxAppImagePackagingTask.Init()
 	},
 }
 var initLinuxRpmCmd = &cobra.Command{
@@ -62,7 +62,7 @@ var initLinuxRpmCmd = &cobra.Command{
 		assertHoverInitialized()
 		packaging.AssertDockerInstalled()
 
-		packaging.InitLinuxRpm()
+		packaging.LinuxRpmPackagingTask.Init()
 	},
 }
 var initWindowsMsiCmd = &cobra.Command{
@@ -72,7 +72,7 @@ var initWindowsMsiCmd = &cobra.Command{
 		assertHoverInitialized()
 		packaging.AssertDockerInstalled()
 
-		packaging.InitWindowsMsi()
+		packaging.WindowsMsiPackagingTask.Init()
 	},
 }
 
@@ -83,7 +83,7 @@ var initDarwinBundleCmd = &cobra.Command{
 		assertHoverInitialized()
 		packaging.AssertDockerInstalled()
 
-		packaging.InitDarwinBundle()
+		packaging.DarwinBundlePackagingTask.Init()
 	},
 }
 
@@ -94,7 +94,7 @@ var initDarwinPkgCmd = &cobra.Command{
 		assertHoverInitialized()
 		packaging.AssertDockerInstalled()
 
-		packaging.InitDarwinPkg()
+		packaging.DarwinPkgPackagingTask.Init()
 	},
 }
 
@@ -105,6 +105,6 @@ var initDarwinDmgCmd = &cobra.Command{
 		assertHoverInitialized()
 		packaging.AssertDockerInstalled()
 
-		packaging.InitDarwinDmg()
+		packaging.DarwinDmgPackagingTask.Init()
 	},
 }

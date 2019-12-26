@@ -1,147 +1,103 @@
 package packaging
 
 import (
+	"github.com/go-flutter-desktop/hover/internal/log"
 	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
-
-	"github.com/otiai10/copy"
-
-	"github.com/go-flutter-desktop/hover/internal/build"
-	"github.com/go-flutter-desktop/hover/internal/fileutils"
-	"github.com/go-flutter-desktop/hover/internal/log"
-	"github.com/go-flutter-desktop/hover/internal/pubspec"
 )
 
-var directoriesFileContent = []string{}
-var directoryRefsFileContent = []string{}
-var componentRefsFileContent = []string{}
+var directoriesFileContent []string
+var directoryRefsFileContent []string
+var componentRefsFileContent []string
 
-func InitWindowsMsi() {
-	projectName := pubspec.GetPubSpec().Name
-	packagingFormat := "windows-msi"
-	createPackagingFormatDirectory(packagingFormat)
-	msiDirectoryPath := packagingFormatPath(packagingFormat)
-
-	fileutils.ExecuteTemplateFromAssetsBox("packaging/windows-msi/app.wxs.tmpl.tmpl", filepath.Join(msiDirectoryPath, projectName+".wxs.tmpl"), fileutils.AssetsBox, getTemplateData(projectName, ""))
-
-	createDockerfile(packagingFormat, []string{
+// WindowsMsiPackagingTask packaging for windows as msi
+var WindowsMsiPackagingTask = &packagingTask{
+	packagingFormatName: "windows-msi",
+	templateFiles: map[string]string{
+		"windows-msi/app.wxs.tmpl.tmpl": "{{.projectName}}.wxs.tmpl",
+	},
+	dockerfileContent: []string{
 		"FROM ubuntu:bionic",
 		"RUN apt-get update && apt-get install wixl imagemagick -y",
-	})
-
-	printInitFinished(packagingFormat)
-}
-
-func BuildWindowsMsi(buildVersion string) {
-	projectName := pubspec.GetPubSpec().Name
-	packagingFormat := "windows-msi"
-	tmpPath := getTemporaryBuildDirectory(projectName, packagingFormat)
-	defer func() {
-		err := os.RemoveAll(tmpPath)
+	},
+	buildOutputDirectory:    "build",
+	packagingScriptTemplate: "convert -resize x16 build/assets/icon.png build/assets/icon.ico && wixl -v {{.projectName}}.wxs && mv {{.projectName}}.msi {{.projectName}}-{{.version}}.msi",
+	outputFileExtension:     "msi",
+	generateBuildFiles: func(projectName, tmpPath string) {
+		directoriesFilePath, err := filepath.Abs(filepath.Join(tmpPath, "directories.wxi"))
 		if err != nil {
-			log.Errorf("Could not remove temporary build directory: %v", err)
+			log.Errorf("Failed to resolve absolute path for directories.wxi file %s: %v", projectName, err)
 			os.Exit(1)
 		}
-	}()
-	log.Infof("Packaging msi in %s", tmpPath)
-
-	buildDirectoryPath, err := filepath.Abs(filepath.Join(tmpPath, "build"))
-	if err != nil {
-		log.Errorf("Failed to resolve absolute path for build directory: %v", err)
-		os.Exit(1)
-	}
-	err = copy.Copy(build.OutputDirectoryPath("windows"), filepath.Join(buildDirectoryPath))
-	if err != nil {
-		log.Errorf("Could not copy build folder: %v", err)
-		os.Exit(1)
-	}
-	fileutils.CopyTemplateDir(packagingFormatPath(packagingFormat), filepath.Join(tmpPath), getTemplateData(projectName, buildVersion))
-	directoriesFilePath, err := filepath.Abs(filepath.Join(tmpPath, "directories.wxi"))
-	if err != nil {
-		log.Errorf("Failed to resolve absolute path for directories.wxi file %s: %v", projectName, err)
-		os.Exit(1)
-	}
-	directoriesFile, err := os.Create(directoriesFilePath)
-	if err != nil {
-		log.Errorf("Failed to create directories.wxi file %s: %v", projectName, err)
-		os.Exit(1)
-	}
-	directoryRefsFilePath, err := filepath.Abs(filepath.Join(tmpPath, "directory_refs.wxi"))
-	if err != nil {
-		log.Errorf("Failed to resolve absolute path for directory_refs.wxi file %s: %v", projectName, err)
-		os.Exit(1)
-	}
-	directoryRefsFile, err := os.Create(directoryRefsFilePath)
-	if err != nil {
-		log.Errorf("Failed to create directory_refs.wxi file %s: %v", projectName, err)
-		os.Exit(1)
-	}
-	componentRefsFilePath, err := filepath.Abs(filepath.Join(tmpPath, "component_refs.wxi"))
-	if err != nil {
-		log.Errorf("Failed to resolve absolute path for component_refs.wxi file %s: %v", projectName, err)
-		os.Exit(1)
-	}
-	componentRefsFile, err := os.Create(componentRefsFilePath)
-	if err != nil {
-		log.Errorf("Failed to create component_refs.wxi file %s: %v", projectName, err)
-		os.Exit(1)
-	}
-	directoriesFileContent = append(directoriesFileContent, `<Include>`)
-	directoryRefsFileContent = append(directoryRefsFileContent, `<Include>`)
-	componentRefsFileContent = append(componentRefsFileContent, `<Include>`)
-	processFiles(filepath.Join(buildDirectoryPath, "flutter_assets"))
-	directoriesFileContent = append(directoriesFileContent, `</Include>`)
-	directoryRefsFileContent = append(directoryRefsFileContent, `</Include>`)
-	componentRefsFileContent = append(componentRefsFileContent, `</Include>`)
-
-	for _, line := range directoriesFileContent {
-		if _, err := directoriesFile.WriteString(line + "\n"); err != nil {
-			log.Errorf("Could not write directories.wxi: %v", projectName, err)
+		directoriesFile, err := os.Create(directoriesFilePath)
+		if err != nil {
+			log.Errorf("Failed to create directories.wxi file %s: %v", projectName, err)
 			os.Exit(1)
 		}
-	}
-	err = directoriesFile.Close()
-	if err != nil {
-		log.Errorf("Could not close directories.wxi: %v", projectName, err)
-		os.Exit(1)
-	}
-	for _, line := range directoryRefsFileContent {
-		if _, err := directoryRefsFile.WriteString(line + "\n"); err != nil {
-			log.Errorf("Could not write directory_refs.wxi: %v", projectName, err)
+		directoryRefsFilePath, err := filepath.Abs(filepath.Join(tmpPath, "directory_refs.wxi"))
+		if err != nil {
+			log.Errorf("Failed to resolve absolute path for directory_refs.wxi file %s: %v", projectName, err)
 			os.Exit(1)
 		}
-	}
-	err = directoryRefsFile.Close()
-	if err != nil {
-		log.Errorf("Could not close directory_refs.wxi: %v", projectName, err)
-		os.Exit(1)
-	}
-	for _, line := range componentRefsFileContent {
-		if _, err := componentRefsFile.WriteString(line + "\n"); err != nil {
-			log.Errorf("Could not write component_refs.wxi: %v", projectName, err)
+		directoryRefsFile, err := os.Create(directoryRefsFilePath)
+		if err != nil {
+			log.Errorf("Failed to create directory_refs.wxi file %s: %v", projectName, err)
 			os.Exit(1)
 		}
-	}
-	err = componentRefsFile.Close()
-	if err != nil {
-		log.Errorf("Could not close component_refs.wxi: %v", projectName, err)
-		os.Exit(1)
-	}
+		componentRefsFilePath, err := filepath.Abs(filepath.Join(tmpPath, "component_refs.wxi"))
+		if err != nil {
+			log.Errorf("Failed to resolve absolute path for component_refs.wxi file %s: %v", projectName, err)
+			os.Exit(1)
+		}
+		componentRefsFile, err := os.Create(componentRefsFilePath)
+		if err != nil {
+			log.Errorf("Failed to create component_refs.wxi file %s: %v", projectName, err)
+			os.Exit(1)
+		}
+		directoriesFileContent = append(directoriesFileContent, `<Include>`)
+		directoryRefsFileContent = append(directoryRefsFileContent, `<Include>`)
+		componentRefsFileContent = append(componentRefsFileContent, `<Include>`)
+		processFiles(filepath.Join(tmpPath, "build", "flutter_assets"))
+		directoriesFileContent = append(directoriesFileContent, `</Include>`)
+		directoryRefsFileContent = append(directoryRefsFileContent, `</Include>`)
+		componentRefsFileContent = append(componentRefsFileContent, `</Include>`)
 
-	runDockerPackaging(tmpPath, packagingFormat, []string{"convert", "-resize", "x16", "build/assets/icon.png", "build/assets/icon.ico", "&&", "wixl", "-v", projectName + ".wxs"})
-
-	resultFileName := projectName + ".msi"
-	outputFileName := projectName + "-" + buildVersion + ".msi"
-	outputFilePath := filepath.Join(build.OutputDirectoryPath("windows-msi"), outputFileName)
-	err = copy.Copy(filepath.Join(tmpPath, resultFileName), outputFilePath)
-	if err != nil {
-		log.Errorf("Could not move msi file: %v", err)
-		os.Exit(1)
-	}
-
-	printPackagingFinished(packagingFormat)
+		for _, line := range directoriesFileContent {
+			if _, err := directoriesFile.WriteString(line + "\n"); err != nil {
+				log.Errorf("Could not write directories.wxi: %v", projectName, err)
+				os.Exit(1)
+			}
+		}
+		err = directoriesFile.Close()
+		if err != nil {
+			log.Errorf("Could not close directories.wxi: %v", projectName, err)
+			os.Exit(1)
+		}
+		for _, line := range directoryRefsFileContent {
+			if _, err := directoryRefsFile.WriteString(line + "\n"); err != nil {
+				log.Errorf("Could not write directory_refs.wxi: %v", projectName, err)
+				os.Exit(1)
+			}
+		}
+		err = directoryRefsFile.Close()
+		if err != nil {
+			log.Errorf("Could not close directory_refs.wxi: %v", projectName, err)
+			os.Exit(1)
+		}
+		for _, line := range componentRefsFileContent {
+			if _, err := componentRefsFile.WriteString(line + "\n"); err != nil {
+				log.Errorf("Could not write component_refs.wxi: %v", projectName, err)
+				os.Exit(1)
+			}
+		}
+		err = componentRefsFile.Close()
+		if err != nil {
+			log.Errorf("Could not close component_refs.wxi: %v", projectName, err)
+			os.Exit(1)
+		}
+	},
 }
 
 func processFiles(path string) {

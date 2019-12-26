@@ -81,7 +81,8 @@ func upgradeGoFlutter(targetOS string, engineCachePath string) (err error) {
 	cmdGoGetU.Stdout = os.Stdout
 
 	err = cmdGoGetU.Run()
-	if err != nil {
+	// When cross-compiling the command fails, but that is not an error
+	if err != nil && !buildDocker {
 		log.Errorf("Updating go-flutter to %s version failed: %v", buildBranch, err)
 		return
 	}

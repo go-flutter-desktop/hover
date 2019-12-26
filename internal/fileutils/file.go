@@ -140,6 +140,8 @@ func CopyDir(src, dst string) {
 	}
 }
 
+// CopyTemplateDir copy files from one directory to another directory recursively
+// while executing all templates in files and file names
 func CopyTemplateDir(boxed, to string, templateData interface{}) {
 	var files []string
 	err := filepath.Walk(boxed, func(path string, info os.FileInfo, err error) error {
