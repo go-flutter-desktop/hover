@@ -1,36 +1,18 @@
 package packaging
 
-import (
-	"os"
-	"path/filepath"
-
-	"github.com/otiai10/copy"
-
-	"github.com/go-flutter-desktop/hover/internal/build"
-	"github.com/go-flutter-desktop/hover/internal/fileutils"
-	"github.com/go-flutter-desktop/hover/internal/log"
-	"github.com/go-flutter-desktop/hover/internal/pubspec"
-)
-
-// InitLinuxAppImage initializes the linux AppImage packaging format.
-func InitLinuxAppImage() {
-	projectName := pubspec.GetPubSpec().Name
-	packagingFormat := "linux-appimage"
-	createPackagingFormatDirectory(packagingFormat)
-	appImageDirectoryPath := packagingFormatPath(packagingFormat)
-
-	appRunFilePath := filepath.Join(appImageDirectoryPath, "AppRun")
-
-	fileutils.ExecuteTemplateFromAssetsBox("packaging/linux-appimage/AppRun.tmpl", appRunFilePath, fileutils.AssetsBox, getTemplateData(projectName, ""))
-
-	err := os.Chmod(appRunFilePath, 0777)
-	if err != nil {
-		log.Errorf("Failed to change file permissions for AppRun file: %v", err)
-		os.Exit(1)
-	}
-
-	createLinuxDesktopFile(filepath.Join(appImageDirectoryPath, projectName+".desktop"), "", "/build/assets/icon")
-	createDockerfile(packagingFormat, []string{
+// LinuxAppImagePackagingTask packaging for linux as AppImage
+var LinuxAppImagePackagingTask = &packagingTask{
+	packagingFormatName: "linux-appimage",
+	templateFiles: map[string]string{
+		"linux-appimage/AppRun.tmpl": "AppRun",
+		"linux/app.desktop.tmpl":     "{{.projectName}}.desktop",
+	},
+	executableFiles: []string{
+		"AppRun",
+		"{{.projectName}}.desktop",
+	},
+	linuxDesktopFileIconPath: "/build/assets/icon",
+	dockerfileContent: []string{
 		"FROM ubuntu:bionic",
 		"WORKDIR /opt",
 		"RUN apt-get update && \\",
@@ -41,46 +23,8 @@ func InitLinuxAppImage() {
 		"mv squashfs-root appimagetool && \\",
 		"rm appimagetool-x86_64.AppImage",
 		"ENV PATH=/opt/appimagetool/usr/bin:$PATH",
-	})
-
-	printInitFinished(packagingFormat)
-}
-
-// BuildLinuxAppImage uses the InitLinuxAppImage template to create a AppImage package.
-func BuildLinuxAppImage(buildVersion string) {
-	projectName := pubspec.GetPubSpec().Name
-	packagingFormat := "linux-appimage"
-	tmpPath := getTemporaryBuildDirectory(projectName, packagingFormat)
-	defer func() {
-		err := os.RemoveAll(tmpPath)
-		if err != nil {
-			log.Errorf("Could not remove temporary build directory: %v", err)
-			os.Exit(1)
-		}
-	}()
-	log.Infof("Packaging AppImage in %s", tmpPath)
-
-	err := copy.Copy(build.OutputDirectoryPath("linux"), filepath.Join(tmpPath, "build"))
-	if err != nil {
-		log.Errorf("Could not copy build folder: %v", err)
-		os.Exit(1)
-	}
-	err = copy.Copy(packagingFormatPath(packagingFormat), filepath.Join(tmpPath))
-	if err != nil {
-		log.Errorf("Could not copy packaging configuration folder: %v", err)
-		os.Exit(1)
-	}
-
-	runDockerPackaging(tmpPath, packagingFormat, []string{"appimagetool", "."})
-
-	resultFileName := projectName + "-x86_64.AppImage"
-	outputFileName := projectName + "-" + buildVersion + ".AppImage"
-	outputFilePath := filepath.Join(build.OutputDirectoryPath("linux-appimage"), outputFileName)
-	err = copy.Copy(filepath.Join(tmpPath, resultFileName), outputFilePath)
-	if err != nil {
-		log.Errorf("Could not move AppImage file: %v", err)
-		os.Exit(1)
-	}
-
-	printPackagingFinished(packagingFormat)
+	},
+	buildOutputDirectory:    "build",
+	packagingScriptTemplate: "appimagetool . && mv {{.projectName}}-x86_64.AppImage {{.projectName}}-{{.version}}.AppImage",
+	outputFileExtension:     "AppImage",
 }

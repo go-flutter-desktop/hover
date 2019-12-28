@@ -86,11 +86,11 @@ var buildLinuxSnapCmd = &cobra.Command{
 	Short: "Build a desktop release for linux and package it for snap",
 	Run: func(cmd *cobra.Command, args []string) {
 		assertHoverInitialized()
-		packaging.AssertPackagingFormatInitialized("linux-snap")
+		packaging.LinuxSnapPackagingTask.AssertInitialized()
 		packaging.AssertDockerInstalled()
 
 		buildNormal("linux", nil)
-		packaging.BuildLinuxSnap(buildVersion)
+		packaging.LinuxSnapPackagingTask.Pack(buildVersion)
 	},
 }
 
@@ -99,11 +99,11 @@ var buildLinuxDebCmd = &cobra.Command{
 	Short: "Build a desktop release for linux and package it for deb",
 	Run: func(cmd *cobra.Command, args []string) {
 		assertHoverInitialized()
-		packaging.AssertPackagingFormatInitialized("linux-deb")
+		packaging.LinuxDebPackagingTask.AssertInitialized()
 		packaging.AssertDockerInstalled()
 
 		buildNormal("linux", nil)
-		packaging.BuildLinuxDeb(buildVersion)
+		packaging.LinuxDebPackagingTask.Pack(buildVersion)
 	},
 }
 
@@ -112,11 +112,11 @@ var buildLinuxAppImageCmd = &cobra.Command{
 	Short: "Build a desktop release for linux and package it for AppImage",
 	Run: func(cmd *cobra.Command, args []string) {
 		assertHoverInitialized()
-		packaging.AssertPackagingFormatInitialized("linux-appimage")
+		packaging.LinuxAppImagePackagingTask.AssertInitialized()
 		packaging.AssertDockerInstalled()
 
 		buildNormal("linux", nil)
-		packaging.BuildLinuxAppImage(buildVersion)
+		packaging.LinuxAppImagePackagingTask.Pack(buildVersion)
 	},
 }
 
@@ -125,11 +125,11 @@ var buildLinuxRpmCmd = &cobra.Command{
 	Short: "Build a desktop release for linux and package it for rpm",
 	Run: func(cmd *cobra.Command, args []string) {
 		assertHoverInitialized()
-		packaging.AssertPackagingFormatInitialized("linux-rpm")
+		packaging.LinuxRpmPackagingTask.AssertInitialized()
 		packaging.AssertDockerInstalled()
 
 		buildNormal("linux", nil)
-		packaging.BuildLinuxRpm(buildVersion)
+		packaging.LinuxRpmPackagingTask.Pack(buildVersion)
 	},
 }
 
@@ -148,11 +148,11 @@ var buildDarwinBundleCmd = &cobra.Command{
 	Short: "Build a desktop release for darwin and package it for OSX bundle",
 	Run: func(cmd *cobra.Command, args []string) {
 		assertHoverInitialized()
-		packaging.AssertPackagingFormatInitialized("darwin-bundle")
+		packaging.DarwinBundlePackagingTask.AssertInitialized()
 		packaging.AssertDockerInstalled()
 
 		buildNormal("darwin", nil)
-		packaging.BuildDarwinBundle(buildVersion)
+		packaging.DarwinBundlePackagingTask.Pack(buildVersion)
 	},
 }
 
@@ -161,11 +161,11 @@ var buildDarwinPkgCmd = &cobra.Command{
 	Short: "Build a desktop release for darwin and package it for OSX pkg installer",
 	Run: func(cmd *cobra.Command, args []string) {
 		assertHoverInitialized()
-		packaging.AssertPackagingFormatInitialized("darwin-pkg")
+		packaging.DarwinPkgPackagingTask.AssertInitialized()
 		packaging.AssertDockerInstalled()
 
 		buildNormal("darwin", nil)
-		packaging.BuildDarwinPkg(buildVersion)
+		packaging.DarwinPkgPackagingTask.Pack(buildVersion)
 	},
 }
 
@@ -174,11 +174,11 @@ var buildDarwinDmgCmd = &cobra.Command{
 	Short: "Build a desktop release for darwin and package it for OSX dmg",
 	Run: func(cmd *cobra.Command, args []string) {
 		assertHoverInitialized()
-		packaging.AssertPackagingFormatInitialized("darwin-dmg")
+		packaging.DarwinDmgPackagingTask.AssertInitialized()
 		packaging.AssertDockerInstalled()
 
 		buildNormal("darwin", nil)
-		packaging.BuildDarwinDmg(buildVersion)
+		packaging.DarwinDmgPackagingTask.Pack(buildVersion)
 	},
 }
 
@@ -197,11 +197,11 @@ var buildWindowsMsiCmd = &cobra.Command{
 	Short: "Build a desktop release for windows and package it for msi",
 	Run: func(cmd *cobra.Command, args []string) {
 		assertHoverInitialized()
-		packaging.AssertPackagingFormatInitialized("windows-msi")
+		packaging.WindowsMsiPackagingTask.AssertInitialized()
 		packaging.AssertDockerInstalled()
 
 		buildNormal("windows", nil)
-		packaging.BuildWindowsMsi(buildVersion)
+		packaging.WindowsMsiPackagingTask.Pack(buildVersion)
 	},
 }
 

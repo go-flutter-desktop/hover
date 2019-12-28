@@ -1,6 +1,7 @@
 package packaging
 
 import (
+	"bytes"
 	"fmt"
 	"io/ioutil"
 	"os"
@@ -9,9 +10,14 @@ import (
 	"path/filepath"
 	"runtime"
 	"strings"
+	"sync"
+	"text/template"
+
+	"github.com/otiai10/copy"
 
 	"github.com/go-flutter-desktop/hover/internal/androidmanifest"
 	"github.com/go-flutter-desktop/hover/internal/build"
+	"github.com/go-flutter-desktop/hover/internal/fileutils"
 	"github.com/go-flutter-desktop/hover/internal/log"
 	"github.com/go-flutter-desktop/hover/internal/pubspec"
 )
@@ -37,28 +43,6 @@ func createPackagingFormatDirectory(packagingFormat string) {
 		log.Errorf("Failed to create %s directory %s: %v", packagingFormat, packagingFormatPath(packagingFormat), err)
 		os.Exit(1)
 	}
-}
-
-// AssertPackagingFormatInitialized exits hover if the requested
-// packagingFormat isn't initialized.
-func AssertPackagingFormatInitialized(packagingFormat string) {
-	if _, err := os.Stat(packagingFormatPath(packagingFormat)); os.IsNotExist(err) {
-		log.Errorf("%s is not initialized for packaging. Please run `hover init-packaging %s` first.", packagingFormat, packagingFormat)
-		os.Exit(1)
-	}
-}
-
-func removeDashesAndUnderscores(projectName string) string {
-	return strings.ReplaceAll(strings.ReplaceAll(projectName, "-", ""), "_", "")
-}
-
-func printInitFinished(packagingFormat string) {
-	log.Infof("go/packaging/%s has been created. You can modify the configuration files and add it to git.", packagingFormat)
-	log.Infof(fmt.Sprintf("You now can package the %s using `%s`", strings.Split(packagingFormat, "-")[0], log.Au().Magenta("hover build "+packagingFormat)))
-}
-
-func printPackagingFinished(packagingFormat string) {
-	log.Infof("Successfully packaged %s", strings.Split(packagingFormat, "-")[1])
 }
 
 func getTemporaryBuildDirectory(projectName string, packagingFormat string) string {
@@ -117,7 +101,7 @@ func createDockerfile(packagingFormat string, dockerFileContent []string) {
 	}
 }
 
-func runDockerPackaging(path string, packagingFormat string, command []string) {
+func runDockerPackaging(path string, packagingFormat string, command string) {
 	dockerBuildCmd := exec.Command(build.DockerBin, "build", "-t", "hover-build-packaging-"+packagingFormat, ".")
 	dockerBuildCmd.Stdout = os.Stdout
 	dockerBuildCmd.Stderr = os.Stderr
@@ -142,7 +126,7 @@ func runDockerPackaging(path string, packagingFormat string, command []string) {
 	if runtime.GOOS != "windows" {
 		chownStr = fmt.Sprintf(" && chown %s:%s * -R", u.Uid, u.Gid)
 	}
-	args = append(args, "bash", "-c", fmt.Sprintf("%s%s", strings.Join(command, " "), chownStr))
+	args = append(args, "bash", "-c", command+chownStr)
 	dockerRunCmd := exec.Command(build.DockerBin, args...)
 	dockerRunCmd.Stderr = os.Stderr
 	dockerRunCmd.Stdout = os.Stdout
@@ -162,15 +146,154 @@ func runDockerPackaging(path string, packagingFormat string, command []string) {
 	}
 }
 
+var templateData map[string]string
+var once sync.Once
+
 func getTemplateData(projectName, buildVersion string) map[string]string {
-	return map[string]string{
-		"projectName":         projectName,
-		"strippedProjectName": removeDashesAndUnderscores(projectName),
-		"author":              getAuthor(),
-		"version":             buildVersion,
-		"description":         pubspec.GetPubSpec().Description,
-		"debDependencies":     strings.Join(linuxPackagingDependencies, ","),
-		"snapDependencies":    strings.Join(linuxPackagingDependencies, "\n      - "),
-		"organizationName":    androidmanifest.AndroidOrganizationName(),
+	once.Do(func() {
+		templateData = map[string]string{
+			"projectName":         projectName,
+			"strippedProjectName": strings.ReplaceAll(projectName, "_", ""),
+			"author":              getAuthor(),
+			"version":             buildVersion,
+			"description":         pubspec.GetPubSpec().Description,
+			"organizationName":    androidmanifest.AndroidOrganizationName(),
+			"arch":                runtime.GOARCH,
+		}
+	})
+	return templateData
+}
+
+type packagingTask struct {
+	packagingFormatName            string                         // Name of the packaging format: OS-TYPE
+	dependsOn                      map[*packagingTask]string      // Packaging tasks this task depends on
+	templateFiles                  map[string]string              // Template files to copy over on init
+	executableFiles                []string                       // Files that should be executable
+	linuxDesktopFileExecutablePath string                         // Path of the executable for linux .desktop file (only set on linux)
+	linuxDesktopFileIconPath       string                         // Path of the icon for linux .desktop file (only set on linux)
+	dockerfileContent              []string                       // Content of the Dockerfile
+	generateBuildFiles             func(projectName, path string) // Generate dynamic build files. Operates in the temporary directory
+	buildOutputDirectory           string                         // Path to copy the build output of the app to. Operates in the temporary directory
+	packagingScriptTemplate        string                         // Template for the command that actually packages the app
+	outputFileExtension            string                         // File extension of the packaged app
+}
+
+func (t *packagingTask) Init() {
+	t.init(false)
+}
+
+func (t *packagingTask) init(ignoreAlreadyExists bool) {
+	for task := range t.dependsOn {
+		task.init(true)
 	}
+	projectName := pubspec.GetPubSpec().Name
+	if !t.IsInitialized() {
+		createPackagingFormatDirectory(t.packagingFormatName)
+		dir := packagingFormatPath(t.packagingFormatName)
+		templateData := getTemplateData(projectName, "")
+		templateData["icon"] = executeStringTemplate(t.linuxDesktopFileIconPath, templateData)
+		templateData["exec"] = executeStringTemplate(t.linuxDesktopFileExecutablePath, templateData)
+		for sourceFile, destinationFile := range t.templateFiles {
+			destinationFile = executeStringTemplate(filepath.Join(dir, destinationFile), templateData)
+			err := os.MkdirAll(filepath.Dir(destinationFile), 0775)
+			if err != nil {
+				log.Errorf("Failed to create directory %s: %v", filepath.Dir(destinationFile), err)
+				os.Exit(1)
+			}
+			fileutils.ExecuteTemplateFromAssetsBox(fmt.Sprintf("packaging/%s", sourceFile), destinationFile, fileutils.AssetsBox, templateData)
+		}
+		createDockerfile(t.packagingFormatName, t.dockerfileContent)
+		log.Infof("go/packaging/%s has been created. You can modify the configuration files and add it to git.", t.packagingFormatName)
+		log.Infof(fmt.Sprintf("You now can package the %s using `%s`", strings.Split(t.packagingFormatName, "-")[0], log.Au().Magenta("hover build "+t.packagingFormatName)))
+	} else if !ignoreAlreadyExists {
+		log.Errorf("%s is already initialized for packaging.", t.packagingFormatName)
+		os.Exit(1)
+	}
+}
+
+func (t *packagingTask) Pack(buildVersion string) {
+	for task := range t.dependsOn {
+		task.Pack(buildVersion)
+	}
+	projectName := pubspec.GetPubSpec().Name
+	tmpPath := getTemporaryBuildDirectory(projectName, t.packagingFormatName)
+	templateData := getTemplateData(projectName, buildVersion)
+	defer func() {
+		err := os.RemoveAll(tmpPath)
+		if err != nil {
+			log.Errorf("Could not remove temporary build directory: %v", err)
+			os.Exit(1)
+		}
+	}()
+	log.Infof("Packaging %s in %s", strings.Split(t.packagingFormatName, "-")[1], tmpPath)
+
+	if t.buildOutputDirectory != "" {
+		err := copy.Copy(build.OutputDirectoryPath(strings.Split(t.packagingFormatName, "-")[0]), executeStringTemplate(filepath.Join(tmpPath, t.buildOutputDirectory), templateData))
+		if err != nil {
+			log.Errorf("Could not copy build folder: %v", err)
+			os.Exit(1)
+		}
+	}
+	for task, destination := range t.dependsOn {
+		err := copy.Copy(build.OutputDirectoryPath(task.packagingFormatName), filepath.Join(tmpPath, destination))
+		if err != nil {
+			log.Errorf("Could not copy build folder of %s: %v", task.packagingFormatName, err)
+			os.Exit(1)
+		}
+	}
+	fileutils.CopyTemplateDir(packagingFormatPath(t.packagingFormatName), filepath.Join(tmpPath), getTemplateData(projectName, buildVersion))
+	if t.generateBuildFiles != nil {
+		log.Infof("Generating dynamic build files")
+		t.generateBuildFiles(projectName, tmpPath)
+	}
+
+	for _, file := range t.executableFiles {
+		err := os.Chmod(executeStringTemplate(filepath.Join(tmpPath, file), templateData), 0777)
+		if err != nil {
+			log.Errorf("Failed to change file permissions for %s file: %v", file, err)
+			os.Exit(1)
+		}
+	}
+
+	err := os.RemoveAll(build.OutputDirectoryPath(t.packagingFormatName))
+	log.Printf("Cleaning the build directory")
+	if err != nil {
+		log.Errorf("Failed to clean output directory %s: %v", build.OutputDirectoryPath(t.packagingFormatName), err)
+		os.Exit(1)
+	}
+
+	runDockerPackaging(tmpPath, t.packagingFormatName, executeStringTemplate(t.packagingScriptTemplate, templateData))
+	outputFileName := projectName + "-" + buildVersion + "." + t.outputFileExtension
+	outputFilePath := executeStringTemplate(filepath.Join(build.OutputDirectoryPath(t.packagingFormatName), outputFileName), templateData)
+	err = copy.Copy(filepath.Join(tmpPath, outputFileName), outputFilePath)
+	if err != nil {
+		log.Errorf("Could not move %s file: %v", outputFileName, err)
+		os.Exit(1)
+	}
+}
+
+func (t *packagingTask) AssertInitialized() {
+	if !t.IsInitialized() {
+		log.Errorf("%s is not initialized for packaging. Please run `hover init-packaging %s` first.", t.packagingFormatName, t.packagingFormatName)
+		os.Exit(1)
+	}
+}
+
+func (t *packagingTask) IsInitialized() bool {
+	_, err := os.Stat(packagingFormatPath(t.packagingFormatName))
+	return !os.IsNotExist(err)
+}
+
+func executeStringTemplate(t string, data map[string]string) string {
+	tmplFile, err := template.New("").Parse(t)
+	if err != nil {
+		log.Errorf("Failed to parse template string: %v\n", err)
+		os.Exit(1)
+	}
+	var tmplBytes bytes.Buffer
+	err = tmplFile.Execute(&tmplBytes, data)
+	if err != nil {
+		panic(err)
+	}
+	return tmplBytes.String()
 }

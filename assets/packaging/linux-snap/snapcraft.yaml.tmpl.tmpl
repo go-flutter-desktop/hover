@@ -16,9 +16,12 @@ parts:
     source: snap
   assets:
     plugin: dump
-    source: assets
+    source: build/assets
   app:
     plugin: dump
     source: build
     stage-packages:
-      - {{`{{.snapDependencies}}`}}
+      - libx11-6
+      - libxrandr2
+      - libxcursor1
+      - libxinerama1
