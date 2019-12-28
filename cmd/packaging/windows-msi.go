@@ -14,10 +14,11 @@ import (
 	"github.com/go-flutter-desktop/hover/internal/pubspec"
 )
 
-var directoriesFileContent = []string{}
-var directoryRefsFileContent = []string{}
-var componentRefsFileContent = []string{}
+var directoriesFileContent []string
+var directoryRefsFileContent []string
+var componentRefsFileContent []string
 
+// InitWindowsMsi initializes the windows msi packaging format.
 func InitWindowsMsi() {
 	projectName := pubspec.GetPubSpec().Name
 	packagingFormat := "windows-msi"
@@ -34,6 +35,7 @@ func InitWindowsMsi() {
 	printInitFinished(packagingFormat)
 }
 
+// BuildWindowsMsi uses the InitWindowsMsi template to create a msi package.
 func BuildWindowsMsi(buildVersion string) {
 	projectName := pubspec.GetPubSpec().Name
 	packagingFormat := "windows-msi"

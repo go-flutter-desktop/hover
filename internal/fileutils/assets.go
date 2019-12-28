@@ -7,6 +7,7 @@ import (
 	"github.com/go-flutter-desktop/hover/internal/log"
 )
 
+// AssetsBox hover's assets box
 var AssetsBox *rice.Box
 
 func init() {

@@ -12,6 +12,7 @@ import (
 	"github.com/go-flutter-desktop/hover/internal/pubspec"
 )
 
+// InitDarwinBundle initializes the darwin bundle packaging format.
 func InitDarwinBundle() {
 	projectName := pubspec.GetPubSpec().Name
 	packagingFormat := "darwin-bundle"
@@ -58,6 +59,7 @@ func InitDarwinBundle() {
 	printInitFinished(packagingFormat)
 }
 
+// BuildDarwinBundle uses the InitDarwinBundle template to create an OSX bundle.
 func BuildDarwinBundle(buildVersion string) {
 	projectName := pubspec.GetPubSpec().Name
 	packagingFormat := "darwin-bundle"

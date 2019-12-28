@@ -12,6 +12,7 @@ import (
 	"github.com/go-flutter-desktop/hover/internal/pubspec"
 )
 
+// InitLinuxAppImage initializes the linux AppImage packaging format.
 func InitLinuxAppImage() {
 	projectName := pubspec.GetPubSpec().Name
 	packagingFormat := "linux-appimage"
@@ -45,6 +46,7 @@ func InitLinuxAppImage() {
 	printInitFinished(packagingFormat)
 }
 
+// BuildLinuxAppImage uses the InitLinuxAppImage template to create a AppImage package.
 func BuildLinuxAppImage(buildVersion string) {
 	projectName := pubspec.GetPubSpec().Name
 	packagingFormat := "linux-appimage"

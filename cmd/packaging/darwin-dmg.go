@@ -11,6 +11,7 @@ import (
 	"github.com/go-flutter-desktop/hover/internal/pubspec"
 )
 
+// InitDarwinDmg initializes the a darwin dmg packaging format.
 func InitDarwinDmg() {
 	packagingFormat := "darwin-dmg"
 	if _, err := os.Stat(packagingFormatPath("darwin-bundle")); os.IsNotExist(err) {
@@ -27,6 +28,7 @@ func InitDarwinDmg() {
 	printInitFinished(packagingFormat)
 }
 
+// BuildDarwinDmg uses the InitDarwinDmg template to create an dmg package.
 func BuildDarwinDmg(buildVersion string) {
 	log.Infof("Building darwin-bundle first")
 	BuildDarwinBundle(buildVersion)

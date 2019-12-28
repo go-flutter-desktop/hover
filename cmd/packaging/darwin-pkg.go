@@ -12,6 +12,7 @@ import (
 	"github.com/go-flutter-desktop/hover/internal/pubspec"
 )
 
+// InitDarwinPkg initializes the a darwin pkg packaging format.
 func InitDarwinPkg() {
 	projectName := pubspec.GetPubSpec().Name
 	packagingFormat := "darwin-pkg"
@@ -47,6 +48,7 @@ func InitDarwinPkg() {
 	printInitFinished(packagingFormat)
 }
 
+// BuildDarwinPkg uses the InitDarwinPkg template to create an pkg package.
 func BuildDarwinPkg(buildVersion string) {
 	log.Infof("Building darwin-bundle first")
 	BuildDarwinBundle(buildVersion)

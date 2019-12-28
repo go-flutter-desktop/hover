@@ -13,7 +13,7 @@ import (
 	"github.com/go-flutter-desktop/hover/internal/pubspec"
 )
 
-// InitLinuxRpm initialize the a linux rpm packaging format.
+// InitLinuxRpm initializes the linux rpm packaging format.
 func InitLinuxRpm() {
 	projectName := pubspec.GetPubSpec().Name
 	packagingFormat := "linux-rpm"

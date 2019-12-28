@@ -12,7 +12,7 @@ import (
 	"github.com/go-flutter-desktop/hover/internal/pubspec"
 )
 
-// InitLinuxDeb initialize the a linux deb packagingFormat.
+// InitLinuxDeb initializes the linux deb packaging format.
 func InitLinuxDeb() {
 	projectName := pubspec.GetPubSpec().Name
 	packagingFormat := "linux-deb"
