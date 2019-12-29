@@ -52,6 +52,8 @@ func init() {
 	buildCmd.PersistentFlags().StringVar(&buildOpenGlVersion, "opengl", config.BuildOpenGlVersionDefault, "The OpenGL version specified here is only relevant for external texture plugin (i.e. video_plugin).\nIf 'none' is provided, texture won't be supported. Note: the Flutter Engine still needs a OpenGL compatible context.")
 	buildCmd.PersistentFlags().StringVar(&buildVersion, "version-number", "", "Override the version number used in build and packaging. You may use it with $(git describe --tags)")
 	buildCmd.PersistentFlags().BoolVar(&buildDocker, "docker", false, "Compile in Docker container only. No need to install go")
+	buildCmd.PersistentFlags().BoolVar(&buildOmitEmbedder, "omit-embedder", false, "Don't (re)compile 'go-flutter' source code, useful when only working with Dart code")
+	buildCmd.PersistentFlags().BoolVar(&buildOmitFlutterBundle, "omit-flutter", false, "Don't (re)compile the current Flutter project, useful when only working with Golang code (plugin)")
 	buildCmd.AddCommand(buildLinuxCmd)
 	buildCmd.AddCommand(buildLinuxSnapCmd)
 	buildCmd.AddCommand(buildLinuxDebCmd)
