@@ -49,19 +49,25 @@ func IntermediatesDirectoryPath(targetOS string) string {
 // OutputBinaryName returns the string of the executable used to launch the
 // main desktop app. (appends .exe for windows)
 func OutputBinaryName(projectName string, targetOS string) string {
-	var outputBinaryName = projectName
+	return projectName + ExecutableExtension(targetOS)
+}
+
+// ExecutableExtension returns the extension of binary files on a given platform
+func ExecutableExtension(targetOS string) string {
 	switch targetOS {
 	case "darwin":
 		// no special filename
+		return ""
 	case "linux":
 		// no special filename
+		return ""
 	case "windows":
-		outputBinaryName += ".exe"
+		return ".exe"
 	default:
 		log.Errorf("Target platform %s is not supported.", targetOS)
 		os.Exit(1)
+		return ""
 	}
-	return outputBinaryName
 }
 
 // OutputBinaryPath returns the path to the go-flutter Application for a
@@ -71,19 +77,27 @@ func OutputBinaryPath(projectName string, targetOS string) string {
 	return outputBinaryPath
 }
 
-// EngineFile returns the name of the engine file from flutter for the
-// specified platform.
-func EngineFile(targetOS string) string {
+// EngineFiles returns the names of the engine files from flutter for the
+// specified platform and build mode.
+func EngineFiles(targetOS string, mode Mode) []string {
 	switch targetOS {
 	case "darwin":
-		return "FlutterEmbedder.framework"
+		if mode.IsAot {
+			return []string{"libflutter_engine.dylib"}
+		} else {
+			return []string{"FlutterEmbedder.framework"}
+		}
 	case "linux":
-		return "libflutter_engine.so"
+		return []string{"libflutter_engine.so"}
 	case "windows":
-		return "flutter_engine.dll"
+		if mode.IsAot {
+			return []string{"flutter_engine.dll", "flutter_engine.dll.exp", "flutter_engine.dll.lib", "flutter_engine.dll.pdb"}
+		} else {
+			return []string{"flutter_engine.dll"}
+		}
 	default:
 		log.Errorf("%s has no implemented engine file", targetOS)
 		os.Exit(1)
-		return ""
+		return []string{}
 	}
 }

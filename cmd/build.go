@@ -30,6 +30,9 @@ var (
 	buildTarget            string
 	buildBranch            string
 	buildDebug             bool
+	buildRelease           bool
+	buildProfile           bool
+	buildMode              build.Mode
 	buildCachePath         string
 	buildOmitEmbedder      bool
 	buildOmitFlutterBundle bool
@@ -47,13 +50,15 @@ var engineCachePath string
 func init() {
 	buildCmd.PersistentFlags().StringVarP(&buildTarget, "target", "t", config.BuildTargetDefault, "The main entry-point file of the application.")
 	buildCmd.PersistentFlags().StringVarP(&buildBranch, "branch", "b", config.BuildBranchDefault, "The 'go-flutter' version to use. (@master or @v0.20.0 for example)")
-	buildCmd.PersistentFlags().BoolVar(&buildDebug, "debug", false, "Build a debug version of the app.")
 	buildCmd.PersistentFlags().StringVarP(&buildCachePath, "cache-path", "", config.BuildCachePathDefault, "The path that hover uses to cache dependencies such as the Flutter engine .so/.dll (defaults to the standard user cache directory)")
 	buildCmd.PersistentFlags().StringVar(&buildOpenGlVersion, "opengl", config.BuildOpenGlVersionDefault, "The OpenGL version specified here is only relevant for external texture plugin (i.e. video_plugin).\nIf 'none' is provided, texture won't be supported. Note: the Flutter Engine still needs a OpenGL compatible context.")
 	buildCmd.PersistentFlags().StringVar(&buildVersion, "version-number", "", "Override the version number used in build and packaging. You may use it with $(git describe --tags)")
 	buildCmd.PersistentFlags().BoolVar(&buildDocker, "docker", false, "Compile in Docker container only. No need to install go")
 	buildCmd.PersistentFlags().BoolVar(&buildOmitEmbedder, "omit-embedder", false, "Don't (re)compile 'go-flutter' source code, useful when only working with Dart code")
 	buildCmd.PersistentFlags().BoolVar(&buildOmitFlutterBundle, "omit-flutter", false, "Don't (re)compile the current Flutter project, useful when only working with Golang code (plugin)")
+	buildCmd.PersistentFlags().BoolVar(&buildDebug, "debug", false, "Build a debug version of the app.")
+	buildCmd.PersistentFlags().BoolVar(&buildRelease, "release", false, "Enable release builds. Currently very experimental and only for linux available")
+	buildCmd.PersistentFlags().BoolVar(&buildProfile, "profile", false, "Enable profile builds. Currently very experimental and only for linux available")
 	buildCmd.AddCommand(buildLinuxCmd)
 	buildCmd.AddCommand(buildLinuxSnapCmd)
 	buildCmd.AddCommand(buildLinuxDebCmd)
@@ -322,7 +327,7 @@ func buildInDocker(targetOS string, vmArguments []string) {
 	}
 	stripStr := ""
 	if targetOS == "linux" {
-		outputEngineFile := filepath.Join("/app", build.BuildPath, "build", "outputs", targetOS, build.EngineFile(targetOS))
+		outputEngineFile := filepath.Join("/app", build.BuildPath, "build", "outputs", targetOS, build.EngineFiles(targetOS, buildMode)[0])
 		stripStr = fmt.Sprintf("strip -s %s && ", outputEngineFile)
 	}
 	args = append(args, "bash", "-c", fmt.Sprintf("%s%s%s", stripStr, strings.Join(buildCommand(targetOS, vmArguments, "build/outputs/"+targetOS+"/"+build.OutputBinaryName(pubspec.GetPubSpec().Name, targetOS)), " "), chownStr))
@@ -339,6 +344,30 @@ func buildInDocker(targetOS string, vmArguments []string) {
 }
 
 func buildNormal(targetOS string, vmArguments []string) {
+	if buildDebug {
+		buildMode = build.DebugMode
+	}
+	if buildRelease {
+		buildMode = build.ReleaseMode
+	}
+	if buildProfile {
+		buildMode = build.ProfileMode
+	}
+	if !buildDebug && !buildRelease && !buildProfile {
+		buildMode = build.DebugReleaseMode
+		log.Warnf("This build is only a JIT release build. To build an AOT release append `--release` to the build command. But please be aware that AOT builds are extremely experimental and have only been tested on linux right now")
+	}
+
+	if buildMode.IsAot && targetOS != runtime.GOOS {
+		log.Errorf("AOT builds currently only work on their host OS")
+		os.Exit(1)
+	}
+	if buildMode.IsAot {
+		if targetOS != "linux" {
+			log.Warnf("AOT builds have not been tested on " + targetOS + ", but should work. Please test and report any issues to the go-flutter team.")
+		}
+		log.Warnf("Please be aware that AOT builds are extremely experimental and have only been tested on linux right now. Please report any issues")
+	}
 	if buildTarget == config.BuildTargetDefault && config.GetConfig().Target != "" {
 		buildTarget = config.GetConfig().Target
 	}
@@ -362,9 +391,9 @@ func buildNormal(targetOS string, vmArguments []string) {
 	buildDocker = crossCompile || buildDocker
 
 	if buildCachePath != "" {
-		engineCachePath = enginecache.ValidateOrUpdateEngineAtPath(targetOS, buildCachePath)
+		engineCachePath = enginecache.ValidateOrUpdateEngineAtPath(targetOS, buildMode, buildCachePath)
 	} else {
-		engineCachePath = enginecache.ValidateOrUpdateEngine(targetOS)
+		engineCachePath = enginecache.ValidateOrUpdateEngine(targetOS, buildMode)
 	}
 
 	if !buildOmitFlutterBundle && !buildOmitEmbedder {
@@ -385,34 +414,12 @@ func buildNormal(targetOS string, vmArguments []string) {
 
 	checkFlutterChannel()
 
-	var trackWidgetCreation string
-	if buildDebug {
-		trackWidgetCreation = "--track-widget-creation"
-	}
-
 	// must be run before `flutter build bundle`
 	// because `build bundle` will update the file timestamp
 	runPluginGet, err := shouldRunPluginGet()
 	if err != nil {
 		log.Errorf("Failed to check if plugin get should be run: %v.\n", err)
 		os.Exit(1)
-	}
-
-	cmdFlutterBuild := exec.Command(build.FlutterBin, "build", "bundle",
-		"--asset-dir", filepath.Join(build.OutputDirectoryPath(targetOS), "flutter_assets"),
-		"--target", buildTarget,
-		trackWidgetCreation,
-	)
-	cmdFlutterBuild.Stderr = os.Stderr
-	cmdFlutterBuild.Stdout = os.Stdout
-
-	if !buildOmitFlutterBundle {
-		log.Infof("Bundling flutter app")
-		err = cmdFlutterBuild.Run()
-		if err != nil {
-			log.Errorf("Flutter build failed: %v", err)
-			os.Exit(1)
-		}
 	}
 
 	if runPluginGet {
@@ -424,21 +431,103 @@ func buildNormal(targetOS string, vmArguments []string) {
 			}
 		}
 	}
+	if !buildOmitFlutterBundle {
+		var trackWidgetCreation string
+		if buildMode == build.DebugMode {
+			trackWidgetCreation = "--track-widget-creation"
+		}
 
-	outputEngineFile := filepath.Join(build.OutputDirectoryPath(targetOS), build.EngineFile(targetOS))
-	err = copy.Copy(
-		filepath.Join(engineCachePath, build.EngineFile(targetOS)),
-		outputEngineFile,
-	)
-	if err != nil {
-		log.Errorf("Failed to copy %s: %v", build.EngineFile(targetOS), err)
-		os.Exit(1)
+		cmdFlutterBuild := exec.Command(build.FlutterBin, "build", "bundle",
+			"--asset-dir", filepath.Join(build.OutputDirectoryPath(targetOS), "flutter_assets"),
+			"--target", buildTarget,
+			trackWidgetCreation,
+		)
+		cmdFlutterBuild.Stderr = os.Stderr
+		cmdFlutterBuild.Stdout = os.Stdout
+
+		log.Infof("Bundling flutter app")
+		err = cmdFlutterBuild.Run()
+		if err != nil {
+			log.Errorf("Flutter build failed: %v", err)
+			os.Exit(1)
+		}
+		if buildMode.IsAot {
+			err := os.Remove(filepath.Join(build.OutputDirectoryPath(targetOS), "flutter_assets", "isolate_snapshot_data"))
+			if err != nil {
+				log.Errorf("Failed to remove unused isolate_snapshot_data: %v", err)
+				os.Exit(1)
+			}
+			err = os.Remove(filepath.Join(build.OutputDirectoryPath(targetOS), "flutter_assets", "vm_snapshot_data"))
+			if err != nil {
+				log.Errorf("Failed to remove unused vm_snapshot_data: %v", err)
+				os.Exit(1)
+			}
+			err = os.Remove(filepath.Join(build.OutputDirectoryPath(targetOS), "flutter_assets", "kernel_blob.bin"))
+			if err != nil {
+				log.Errorf("Failed to remove unused kernel_blob.bin: %v", err)
+				os.Exit(1)
+			}
+			dart := filepath.Join(engineCachePath, "dart"+build.ExecutableExtension(targetOS))
+			genSnapshot := filepath.Join(engineCachePath, "gen_snapshot"+build.ExecutableExtension(targetOS))
+			kernelSnapshot := filepath.Join(build.OutputDirectoryPath(targetOS), "kernel_snapshot.dill")
+			elfSnapshot := filepath.Join(build.OutputDirectoryPath(targetOS), "libapp.so")
+			cmdGenerateKernelSnapshot := exec.Command(
+				dart,
+				filepath.Join(engineCachePath, "gen", "frontend_server.dart.snapshot"),
+				"--sdk-root="+filepath.Join(engineCachePath, "flutter_patched_sdk"),
+				"--target=flutter",
+				"--aot",
+				"--tfa",
+				"-Ddart.vm.product=true",
+				"--packages=.packages",
+				"--output-dill="+kernelSnapshot,
+				buildTarget,
+			)
+			cmdGenerateKernelSnapshot.Stderr = os.Stderr
+			log.Infof("Generating kernel snapshot")
+			err = cmdGenerateKernelSnapshot.Run()
+			if err != nil {
+				log.Errorf("Generating kernel snapshot failed: %v", err)
+				os.Exit(1)
+			}
+			stripStr := ""
+			if buildMode.Name == "release" {
+				stripStr = "--strip"
+			}
+			cmdGenerateAotSnapshot := exec.Command(
+				genSnapshot,
+				"--causal_async_stacks",
+				"--deterministic",
+				"--snapshot_kind=app-aot-elf",
+				stripStr,
+				"--elf="+elfSnapshot,
+				kernelSnapshot,
+			)
+			cmdGenerateAotSnapshot.Stderr = os.Stderr
+			log.Infof("Generating ELF snapshot")
+			err = cmdGenerateAotSnapshot.Run()
+			if err != nil {
+				log.Errorf("Generating AOT snapshot failed: %v", err)
+				os.Exit(1)
+			}
+			err = os.Remove(kernelSnapshot)
+			if err != nil {
+				log.Errorf("Failed to remove kernel_snapshot.dill: %v", err)
+				os.Exit(1)
+			}
+		}
 	}
-
-	err = copy.Copy(
-		filepath.Join(engineCachePath, "artifacts", "icudtl.dat"),
-		filepath.Join(build.OutputDirectoryPath(targetOS), "icudtl.dat"),
-	)
+	if buildMode.IsAot {
+		err = copy.Copy(
+			filepath.Join(engineCachePath, "icudtl.dat"),
+			filepath.Join(build.OutputDirectoryPath(targetOS), "icudtl.dat"),
+		)
+	} else {
+		err = copy.Copy(
+			filepath.Join(engineCachePath, "artifacts", "icudtl.dat"),
+			filepath.Join(build.OutputDirectoryPath(targetOS), "icudtl.dat"),
+		)
+	}
 	if err != nil {
 		log.Errorf("Failed to copy icudtl.dat: %v", err)
 		os.Exit(1)
@@ -451,6 +540,18 @@ func buildNormal(targetOS string, vmArguments []string) {
 	if err != nil {
 		log.Errorf("Failed to copy %s/assets: %v", build.BuildPath, err)
 		os.Exit(1)
+	}
+
+	for _, engineFile := range build.EngineFiles(targetOS, buildMode) {
+		outputEngineFile := filepath.Join(build.OutputDirectoryPath(targetOS), engineFile)
+		err = copy.Copy(
+			filepath.Join(engineCachePath, engineFile),
+			outputEngineFile,
+		)
+		if err != nil {
+			log.Errorf("Failed to copy %s: %v", engineFile, err)
+			os.Exit(1)
+		}
 	}
 
 	if buildOmitEmbedder {
@@ -512,14 +613,6 @@ func buildNormal(targetOS string, vmArguments []string) {
 		}
 		buildInDocker(targetOS, vmArguments)
 		return
-	}
-
-	if !buildDebug && targetOS == "linux" {
-		err = exec.Command("strip", "-s", outputEngineFile).Run()
-		if err != nil {
-			log.Errorf("Failed to strip %s: %v", outputEngineFile, err)
-			os.Exit(1)
-		}
 	}
 
 	buildCommandString := buildCommand(targetOS, vmArguments, build.OutputBinaryPath(pubspec.GetPubSpec().Name, targetOS))
@@ -593,7 +686,7 @@ func buildCommand(targetOS string, vmArguments []string, outputBinaryPath string
 	}
 
 	var ldflags []string
-	if !buildDebug {
+	if buildMode == build.DebugReleaseMode {
 		vmArguments = append(vmArguments, "--disable-dart-asserts")
 		vmArguments = append(vmArguments, "--disable-observatory")
 
@@ -609,11 +702,12 @@ func buildCommand(targetOS string, vmArguments []string, outputBinaryPath string
 		"-X github.com/go-flutter-desktop/go-flutter.ProjectVersion=%s "+
 			" -X github.com/go-flutter-desktop/go-flutter.PlatformVersion=%s "+
 			" -X github.com/go-flutter-desktop/go-flutter.ProjectName=%s "+
-			" -X github.com/go-flutter-desktop/go-flutter.ProjectOrganizationName=%s",
+			" -X github.com/go-flutter-desktop/go-flutter.ProjectOrganizationName=%s ",
 		buildVersion,
 		currentTag,
 		pubspec.GetPubSpec().Name,
-		androidmanifest.AndroidOrganizationName()))
+		androidmanifest.AndroidOrganizationName(),
+	))
 
 	outputCommand := []string{
 		"go",
