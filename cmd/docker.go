@@ -7,6 +7,7 @@ import (
 	"os/user"
 	"path/filepath"
 	"runtime"
+	"strings"
 
 	"github.com/go-flutter-desktop/hover/cmd/packaging"
 	"github.com/go-flutter-desktop/hover/internal/config"
@@ -76,6 +77,15 @@ func dockerHoverBuild(targetOS string, packagingTask packaging.Task, buildFlags 
 	}
 	if goprivate := os.Getenv("GOPRIVATE"); goprivate != "" {
 		dockerArgs = append(dockerArgs, "--env", "GOPRIVATE="+goprivate)
+	}
+	if len(vmArguments) > 0 {
+		// I (GeertJohan) am not too happy with this, it make the hover inside
+		// the container aware of it being inside the container. But for now
+		// this is the best way to go about.
+		//
+		// HOVER_BUILD_INDOCKER_VMARGS is explicitly not document, it is not
+		// intended to be abused and may disappear at any time.
+		dockerArgs = append(dockerArgs, "--env", "HOVER_IN_DOCKER_BUILD_VMARGS="+strings.Join(vmArguments, ","))
 	}
 	// TODO: Use hover container of version of the current running hover.
 	// 		Use debug package to obtain Module info which contains the version.

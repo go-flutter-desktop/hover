@@ -280,6 +280,9 @@ func buildFlutterBundle(targetOS string) {
 }
 
 func buildGoBinary(targetOS string, vmArguments []string) {
+	if vmArgsFromEnv := os.Getenv("HOVER_IN_DOCKER_BUILD_VMARGS"); len(vmArgsFromEnv) > 0 {
+		vmArguments = append(vmArguments, strings.Split(vmArgsFromEnv, ",")...)
+	}
 	if buildGoFlutterBranch == config.BuildBranchDefault && config.GetConfig().Branch != "" {
 		buildGoFlutterBranch = config.GetConfig().Branch
 	}

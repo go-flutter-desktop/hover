@@ -106,7 +106,7 @@ func runAndAttach(projectName string, targetOS string) {
 		os.Exit(1)
 	}
 
-	re := regexp.MustCompile("(?:http:\\/\\/)[^:]*:" + runObservatoryPort + "\\/[^\\/]*\\/")
+	regexObservatory := regexp.MustCompile("(?:http:\\/\\/)[^:]*:" + runObservatoryPort + "\\/[^\\/]*\\/")
 
 	// asynchronously read the stdout to catch the debug-uri
 	go func(reader io.Reader) {
@@ -114,7 +114,7 @@ func runAndAttach(projectName string, targetOS string) {
 		for scanner.Scan() {
 			text := scanner.Text()
 			fmt.Println(text)
-			match := re.FindStringSubmatch(text)
+			match := regexObservatory.FindStringSubmatch(text)
 			if len(match) == 1 {
 				startHotReloadProcess(cmdFlutterAttach, buildTarget, match[0])
 				break
