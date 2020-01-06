@@ -52,7 +52,7 @@ func init() {
 	buildCmd.PersistentFlags().StringVar(&buildVersionNumber, "version-number", "", "Override the version number used in build and packaging. You may use it with $(git describe --tags)")
 	buildCmd.PersistentFlags().BoolVar(&buildDebug, "debug", false, "Build a debug version of the app.")
 	buildCmd.PersistentFlags().BoolVar(&buildDocker, "docker", false, "Execute the go build and packaging in a docker container. The Flutter build is always run locally.")
-	buildCmd.PersistentFlags().BoolVar(&buildSkipFlutterBuildBundle, "skip-flutter-build-bundle", false, "Skip the `flutter build bundle` step.")
+	buildCmd.PersistentFlags().BoolVar(&buildSkipFlutterBuildBundle, "skip-flutter-build-bundle", false, "Skip the 'flutter build bundle' step.")
 	buildCmd.AddCommand(buildLinuxCmd)
 	buildCmd.AddCommand(buildLinuxSnapCmd)
 	buildCmd.AddCommand(buildLinuxDebCmd)
