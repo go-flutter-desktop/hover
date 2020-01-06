@@ -11,6 +11,7 @@ import (
 	"github.com/go-flutter-desktop/hover/cmd/packaging"
 	"github.com/go-flutter-desktop/hover/internal/config"
 	"github.com/go-flutter-desktop/hover/internal/log"
+	"github.com/go-flutter-desktop/hover/internal/logstreamer"
 )
 
 func dockerHoverBuild(targetOS string, packagingTask packaging.Task, buildFlags []string, vmArguments []string) {
@@ -51,7 +52,7 @@ func dockerHoverBuild(targetOS string, packagingTask packaging.Task, buildFlags 
 		log.Errorf("Cannot get the path for current directory %s", err)
 		os.Exit(1)
 	}
-	log.Infof("Compiling go binary using docker")
+	log.Infof("Compiling go binary using docker container")
 
 	dockerArgs := []string{
 		"run",
@@ -90,13 +91,14 @@ func dockerHoverBuild(targetOS string, packagingTask packaging.Task, buildFlags 
 
 	dockerRunCmd := exec.Command(dockerBin, dockerArgs...)
 	// TODO: remove debug line
-	fmt.Println(dockerRunCmd.String())
-	dockerRunCmd.Stderr = os.Stderr
-	dockerRunCmd.Stdout = os.Stdout
+	fmt.Printf("Running this docker command: %v\n", dockerRunCmd.String())
+	dockerRunCmd.Stderr = logstreamer.NewLogstreamerForStderr("docker container: ")
+	dockerRunCmd.Stdout = logstreamer.NewLogstreamerForStdout("docker container: ")
 	dockerRunCmd.Dir = wd
 	err = dockerRunCmd.Run()
 	if err != nil {
 		log.Errorf("Docker run failed: %v", err)
 		os.Exit(1)
 	}
+	log.Infof("Docker run completed")
 }
