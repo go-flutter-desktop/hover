@@ -329,7 +329,7 @@ func ValidateOrUpdateEngine(targetOS string, cachePath string) (engineCachePath 
 		os.Exit(1)
 	}
 
-	// TODO: make artifacts download a separate function, it doesn't need to be
+	// TODO, optimization: make artifacts download a separate function, it doesn't need to be
 	// downloaded with engine because it's OS independent.
 	log.Printf("Downloading artifacts at version %s...", requiredEngineVersion)
 	err = downloadFile(artifactsZipPath, icudtlDownloadURL)

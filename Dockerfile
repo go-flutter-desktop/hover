@@ -48,7 +48,7 @@ RUN apt-get update \
 	&& ln -sf /usr/lib/dart/bin/pub /usr/bin/pub
 
 # Install darwin-pkg dependencies
-# TODO: make bomutils in a separate stage, copy binaries/libs, like xar.
+# TODO, optimization: make bomutils in a separate stage, copy binaries/libs, like xar.
 RUN cd /tmp \
 	&& git clone https://github.com/hogliux/bomutils \
 	&& cd bomutils \
@@ -71,7 +71,7 @@ ENV PATH=/opt/appimagetool/usr/bin:$PATH
 COPY --from=snapcraft /snap/core /snap/core
 COPY --from=snapcraft /snap/snapcraft /snap/snapcraft
 COPY --from=snapcraft /snap/bin/snapcraft /snap/bin/snapcraft
-# RUN locale-gen en_US.UTF-8 # TODO: remove locales from apt install above
+# RUN locale-gen en_US.UTF-8 # TODO: remove locales from apt install above or re-enable these env vars
 # ENV LANG="en_US.UTF-8"
 # ENV LANGUAGE="en_US:en"
 # ENV LC_ALL="en_US.UTF-8"

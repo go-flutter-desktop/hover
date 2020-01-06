@@ -17,34 +17,6 @@ import (
 	"github.com/pkg/errors"
 )
 
-// initBinaries is used to ensure go and flutter exec are found in the
-// user's path
-// TODO: Only init based on what the user asks for in the command/arguments given to hover. Only error based on their questions.
-// TODO: separate this function into two functions; initLocalBuildBinaries (go, flutter, git) and initDockerBinary (docker)
-// TODO: Move this to the internal/build package?
-func initBinaries() {
-	var err error
-	// TODO: cleanup
-	// if !dockerAvailable && !goAvailable {
-	// 	log.Errorf("Failed to lookup `go` and `docker` executable. Please install one of them:\nGo: https://golang.org/doc/install\nDocker: https://docs.docker.com/install")
-	// 	os.Exit(1)
-	// }
-	build.GoBin, err = exec.LookPath("go")
-	if err != nil {
-		log.Errorf("Failed to lookup `go` executable: %s. Please install go or add `--docker` to run the Hover command in a Docker container.\nhttps://golang.org/doc/install", err)
-		os.Exit(1)
-	}
-	build.FlutterBin, err = exec.LookPath("flutter")
-	if err != nil {
-		log.Errorf("Failed to lookup 'flutter' executable: %s. Please install flutter or add `--docker` to run the Hover command in Docker container.\nhttps://flutter.dev/docs/get-started/install", err)
-		os.Exit(1)
-	}
-	build.GitBin, err = exec.LookPath("git")
-	if err != nil {
-		log.Warnf("Failed to lookup 'git' executable: %s.", err)
-	}
-}
-
 // assertInFlutterProject asserts this command is executed in a flutter project
 func assertInFlutterProject() {
 	pubspec.GetPubSpec()
@@ -74,7 +46,7 @@ func assertHoverInitialized() {
 }
 
 func checkFlutterChannel() {
-	cmdCheckFlutter := exec.Command(build.FlutterBin, "--version")
+	cmdCheckFlutter := exec.Command(build.FlutterBin(), "--version")
 	cmdCheckFlutterOut, err := cmdCheckFlutter.Output()
 	if err != nil {
 		log.Warnf("Failed to check your flutter channel: %v", err)
@@ -161,7 +133,7 @@ func initializeGoModule(projectPath string) {
 		os.Exit(1)
 	}
 
-	cmdGoModInit := exec.Command(build.GoBin, "mod", "init", projectPath+"/"+build.BuildPath)
+	cmdGoModInit := exec.Command(build.GoBin(), "mod", "init", projectPath+"/"+build.BuildPath)
 	cmdGoModInit.Dir = filepath.Join(wd, build.BuildPath)
 	cmdGoModInit.Env = append(os.Environ(),
 		"GO111MODULE=on",
@@ -174,7 +146,7 @@ func initializeGoModule(projectPath string) {
 		os.Exit(1)
 	}
 
-	cmdGoModTidy := exec.Command(build.GoBin, "mod", "tidy")
+	cmdGoModTidy := exec.Command(build.GoBin(), "mod", "tidy")
 	cmdGoModTidy.Dir = filepath.Join(wd, build.BuildPath)
 	log.Infof("You can add the '%s' directory to git.", cmdGoModTidy.Dir)
 	cmdGoModTidy.Env = append(os.Environ(),

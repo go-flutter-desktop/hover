@@ -77,77 +77,6 @@ func getAuthor() string {
 	return author
 }
 
-// TODO: cleanup
-// func createDockerfile(packagingFormat string, dockerFileContent []string) {
-// 	dockerFilePath, err := filepath.Abs(filepath.Join(packagingFormatPath(packagingFormat), "Dockerfile"))
-// 	if err != nil {
-// 		log.Errorf("Failed to resolve absolute path for Dockerfile %s: %v", dockerFilePath, err)
-// 		os.Exit(1)
-// 	}
-// 	dockerFile, err := os.Create(dockerFilePath)
-// 	if err != nil {
-// 		log.Errorf("Failed to create Dockerfile %s: %v", dockerFilePath, err)
-// 		os.Exit(1)
-// 	}
-// 	for _, line := range dockerFileContent {
-// 		if _, err := dockerFile.WriteString(line + "\n"); err != nil {
-// 			log.Errorf("Could not write Dockerfile: %v", err)
-// 			os.Exit(1)
-// 		}
-// 	}
-// 	err = dockerFile.Close()
-// 	if err != nil {
-// 		log.Errorf("Could not close Dockerfile: %v", err)
-// 		os.Exit(1)
-// 	}
-// }
-
-// TOOD: cleanup
-// func runDockerPackaging(path string, packagingFormat string, command string) {
-// 	dockerBuildCmd := exec.Command(build.DockerBin, "build", "-t", "hover-build-packaging-"+packagingFormat, ".")
-// 	dockerBuildCmd.Stdout = os.Stdout
-// 	dockerBuildCmd.Stderr = os.Stderr
-// 	dockerBuildCmd.Dir = packagingFormatPath(packagingFormat)
-// 	err := dockerBuildCmd.Run()
-// 	if err != nil {
-// 		log.Errorf("Docker build failed: %v", err)
-// 		os.Exit(1)
-// 	}
-// 	u, err := user.Current()
-// 	if err != nil {
-// 		log.Errorf("Couldn't get current user: %v", err)
-// 		os.Exit(1)
-// 	}
-// 	args := []string{
-// 		"run",
-// 		"-w", "/app",
-// 		"-v", path + ":/app",
-// 	}
-// 	args = append(args, "hover-build-packaging-"+packagingFormat)
-// 	chownStr := ""
-// 	if runtime.GOOS != "windows" {
-// 		chownStr = fmt.Sprintf(" && chown %s:%s * -R", u.Uid, u.Gid)
-// 	}
-// 	args = append(args, "bash", "-c", command+chownStr)
-// 	dockerRunCmd := exec.Command(build.DockerBin, args...)
-// 	dockerRunCmd.Stderr = os.Stderr
-// 	dockerRunCmd.Stdout = os.Stdout
-// 	dockerRunCmd.Dir = path
-// 	err = dockerRunCmd.Run()
-// 	if err != nil {
-// 		log.Errorf("Docker run failed: %v", err)
-// 		log.Warnf("Packaging is very experimental and has only been tested on Linux.")
-// 		log.Infof("To help us debuging this error, please zip the content of:\n       \"%s\"\n       %s",
-// 			log.Au().Blue(path),
-// 			log.Au().Green("and try to package on another OS. You can also share this zip with the go-flutter team."))
-// 		log.Infof("You can package the app without hover by running:")
-// 		log.Infof("  `%s`", log.Au().Magenta("cd "+path))
-// 		log.Infof("  docker build: `%s`", log.Au().Magenta(dockerBuildCmd.String()))
-// 		log.Infof("  docker run: `%s`", log.Au().Magenta(dockerRunCmd.String()))
-// 		os.Exit(1)
-// 	}
-// }
-
 func runPackaging(path string, command string) {
 	bashCmd := exec.Command("bash", "-c", command)
 	bashCmd.Stderr = os.Stderr
@@ -225,8 +154,6 @@ func (t *packagingTask) init(ignoreAlreadyExists bool) {
 			}
 			fileutils.ExecuteTemplateFromAssetsBox(fmt.Sprintf("packaging/%s", sourceFile), destinationFile, fileutils.AssetsBox, templateData)
 		}
-		// TODO: cleanup
-		// createDockerfile(t.packagingFormatName, t.dockerfileContent)
 		log.Infof("go/packaging/%s has been created. You can modify the configuration files and add it to git.", t.packagingFormatName)
 		log.Infof(fmt.Sprintf("You now can package the %s using `%s`", strings.Split(t.packagingFormatName, "-")[0], log.Au().Magenta("hover build "+t.packagingFormatName)))
 	} else if !ignoreAlreadyExists {

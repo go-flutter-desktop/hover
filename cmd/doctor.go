@@ -38,7 +38,7 @@ var doctorCmd = &cobra.Command{
 		log.Infof("Running on %s", runtime.GOOS)
 
 		log.Infof("Sharing flutter version")
-		cmdFlutterDoctor := exec.Command(build.FlutterBin, "--version")
+		cmdFlutterDoctor := exec.Command(build.FlutterBin(), "--version")
 		cmdFlutterDoctor.Stderr = os.Stderr
 		cmdFlutterDoctor.Stdout = os.Stdout
 		err := cmdFlutterDoctor.Run()
@@ -51,7 +51,7 @@ var doctorCmd = &cobra.Command{
 
 		checkFlutterChannel()
 
-		cmdGoEnvCC := exec.Command(build.GoBin, "env", "CC")
+		cmdGoEnvCC := exec.Command(build.GoBin(), "env", "CC")
 		cmdGoEnvCCOut, err := cmdGoEnvCC.Output()
 		if err != nil {
 			log.Errorf("Go env CC failed: %v", err)

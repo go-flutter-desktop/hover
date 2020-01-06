@@ -270,7 +270,7 @@ func buildFlutterBundle(targetOS string) {
 	if buildDebug {
 		flutterBuildBundleArgs = append(flutterBuildBundleArgs, "--track-widget-creation")
 	}
-	cmdFlutterBuildBundle := exec.Command(build.FlutterBin, flutterBuildBundleArgs...)
+	cmdFlutterBuildBundle := exec.Command(build.FlutterBin(), flutterBuildBundleArgs...)
 	cmdFlutterBuildBundle.Stderr = os.Stderr
 	cmdFlutterBuildBundle.Stdout = os.Stdout
 

@@ -21,7 +21,6 @@ func initHover() {
 	if colors {
 		log.Colorize()
 	}
-	initBinaries()
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
 	go func() {
@@ -36,7 +35,6 @@ var rootCmd = &cobra.Command{
 	Use:   "hover",
 	Short: "Hover connects Flutter and go-flutter-desktop.",
 	Long:  "Hover helps developers to release Flutter applications on desktop.",
-	// TODO: Run or PreRun to catch --docker and spawn docker child.
 }
 
 // Execute executes the rootCmd
