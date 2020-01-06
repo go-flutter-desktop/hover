@@ -36,6 +36,7 @@ var (
 	buildDocker                 bool
 	buildDebug                  bool
 	buildVersionNumber          string
+	buildSkipEngineDownload     bool
 	buildSkipFlutterBuildBundle bool
 )
 
@@ -52,6 +53,7 @@ func init() {
 	buildCmd.PersistentFlags().StringVar(&buildVersionNumber, "version-number", "", "Override the version number used in build and packaging. You may use it with $(git describe --tags)")
 	buildCmd.PersistentFlags().BoolVar(&buildDebug, "debug", false, "Build a debug version of the app.")
 	buildCmd.PersistentFlags().BoolVar(&buildDocker, "docker", false, "Execute the go build and packaging in a docker container. The Flutter build is always run locally.")
+	buildCmd.PersistentFlags().BoolVar(&buildSkipEngineDownload, "skip-engine-download", false, "Skip donwloading the Flutter Engine and artifacts.")
 	buildCmd.PersistentFlags().BoolVar(&buildSkipFlutterBuildBundle, "skip-flutter-build-bundle", false, "Skip the 'flutter build bundle' step.")
 	buildCmd.AddCommand(buildLinuxCmd)
 	buildCmd.AddCommand(buildLinuxSnapCmd)
@@ -173,6 +175,7 @@ func subcommandBuild(targetOS string, packagingTask packaging.Task) {
 		var buildFlags []string
 		buildFlags = append(buildFlags, commonFlags()...)
 		buildFlags = append(buildFlags, "--skip-flutter-build-bundle")
+		buildFlags = append(buildFlags, "--skip-engine-download")
 		if buildVersionNumber != "" {
 			buildFlags = append(buildFlags, "--version-number", buildVersionNumber)
 		}
@@ -296,21 +299,24 @@ func buildGoBinary(targetOS string, vmArguments []string) {
 		buildVersionNumber = pubspec.GetPubSpec().Version
 	}
 
-	if buildCachePath != "" {
-		engineCachePath = enginecache.ValidateOrUpdateEngineAtPath(targetOS, buildCachePath)
+	if buildCachePath == "" {
+		buildCachePath = enginecache.DefaultCachePath()
+	}
+	if buildSkipEngineDownload {
+		engineCachePath = enginecache.EngineCachePath(targetOS, buildCachePath)
 	} else {
-		engineCachePath = enginecache.ValidateOrUpdateEngine(targetOS)
+		engineCachePath = enginecache.ValidateOrUpdateEngine(targetOS, buildCachePath)
 	}
 
 	fileutils.CopyDir(build.IntermediatesDirectoryPath(targetOS), build.OutputDirectoryPath(targetOS))
 
-	outputEngineFile := filepath.Join(build.OutputDirectoryPath(targetOS), build.EngineFile(targetOS))
+	outputEngineFile := filepath.Join(build.OutputDirectoryPath(targetOS), build.EngineFilename(targetOS))
 	err := copy.Copy(
-		filepath.Join(engineCachePath, build.EngineFile(targetOS)),
+		filepath.Join(engineCachePath, build.EngineFilename(targetOS)),
 		outputEngineFile,
 	)
 	if err != nil {
-		log.Errorf("Failed to copy %s: %v", build.EngineFile(targetOS), err)
+		log.Errorf("Failed to copy %s: %v", build.EngineFilename(targetOS), err)
 		os.Exit(1)
 	}
 

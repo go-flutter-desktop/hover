@@ -77,6 +77,7 @@ var runCmd = &cobra.Command{
 				buildFlags = append(buildFlags, commonFlags()...)
 				buildFlags = append(buildFlags, []string{
 					"--skip-flutter-build-bundle",
+					"--skip-engine-download",
 					"--debug",
 				}...)
 				dockerHoverBuild(targetOS, packaging.NoopTask, buildFlags, vmArguments)

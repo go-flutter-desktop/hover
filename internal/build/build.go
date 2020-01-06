@@ -71,9 +71,9 @@ func OutputBinaryPath(projectName string, targetOS string) string {
 	return outputBinaryPath
 }
 
-// EngineFile returns the name of the engine file from flutter for the
+// EngineFilename returns the name of the engine file from flutter for the
 // specified platform.
-func EngineFile(targetOS string) string {
+func EngineFilename(targetOS string) string {
 	switch targetOS {
 	case "darwin":
 		return "FlutterEmbedder.framework"
