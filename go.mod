@@ -10,7 +10,7 @@ require (
 	github.com/hashicorp/go-version v1.2.0
 	github.com/logrusorgru/aurora v0.0.0-20200102142835-e9ef32dff381
 	github.com/otiai10/copy v1.0.2
-	github.com/pkg/errors v0.8.1
+	github.com/pkg/errors v0.9.0
 	github.com/spf13/cobra v0.0.5
 	github.com/spf13/pflag v1.0.5 // indirect
 	github.com/tcnksm/go-latest v0.0.0-20170313132115-e3007ae9052e
