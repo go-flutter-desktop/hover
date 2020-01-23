@@ -390,8 +390,8 @@ func ValidateOrUpdateEngineAtPath(targetOS string, mode build.Mode, cachePath st
 		}
 	}
 
-	// Strip linux JIT engine after download and not at every build
-	if targetOS == "linux" && !mode.IsAot {
+	// Strip linux engine after download and not at every build
+	if targetOS == "linux" {
 		unstrippedEngineFile := filepath.Join(engineCachePath, build.EngineFiles(targetOS, mode)[0])
 		err = exec.Command("strip", "-s", unstrippedEngineFile).Run()
 		if err != nil {
