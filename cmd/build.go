@@ -496,7 +496,8 @@ func buildNormal(targetOS string, vmArguments []string) {
 			}
 			cmdGenerateAotSnapshot := exec.Command(
 				genSnapshot,
-				"--causal_async_stacks",
+				"--no-causal-async-stacks",
+				"--lazy-async-stacks",
 				"--deterministic",
 				"--snapshot_kind=app-aot-elf",
 				stripStr,
