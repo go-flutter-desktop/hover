@@ -196,7 +196,7 @@ func downloadFile(filepath string, url string) error {
 // ValidateOrUpdateEngineAtPath validates the engine we have cached matches the
 // flutter version, or otherwise downloads a new engine. The engine cache
 // location is set by the the user.
-func ValidateOrUpdateEngineAtPath(targetOS string, cachePath string) (engineCachePath string) {
+func ValidateOrUpdateEngineAtPath(targetOS string, cachePath string, requiredEngineVersion string) (engineCachePath string) {
 	engineCachePath = filepath.Join(cachePath, "hover", "engine", targetOS)
 
 	if strings.Contains(engineCachePath, " ") {
@@ -214,7 +214,9 @@ func ValidateOrUpdateEngineAtPath(targetOS string, cachePath string) (engineCach
 		os.Exit(1)
 	}
 	cachedEngineVersion := string(cachedEngineVersionBytes)
-	requiredEngineVersion := FlutterRequiredEngineVersion()
+	if len(requiredEngineVersion) == 0 {
+		requiredEngineVersion = FlutterRequiredEngineVersion()
+	}
 
 	if cachedEngineVersion != "" {
 		if cachedEngineVersion == requiredEngineVersion {
@@ -394,7 +396,7 @@ func ValidateOrUpdateEngineAtPath(targetOS string, cachePath string) (engineCach
 // ValidateOrUpdateEngine validates the engine we have cached matches the
 // flutter version, or otherwise downloads a new engine. The returned path is
 // that of the engine location.
-func ValidateOrUpdateEngine(targetOS string) (engineCachePath string) {
-	engineCachePath = ValidateOrUpdateEngineAtPath(targetOS, cachePath())
+func ValidateOrUpdateEngine(targetOS string, requiredEngineVersion string) (engineCachePath string) {
+	engineCachePath = ValidateOrUpdateEngineAtPath(targetOS, cachePath(), requiredEngineVersion)
 	return
 }

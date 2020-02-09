@@ -19,6 +19,9 @@ const BuildBranchDefault = ""
 // BuildCachePathDefault Default go-flutter cache path
 const BuildCachePathDefault = ""
 
+// BuildEngineDefault Default go-flutter engine version
+const BuildEngineDefault = ""
+
 // BuildOpenGlVersionDefault Default OpenGL version for go-flutter
 const BuildOpenGlVersionDefault = "3.3"
 
@@ -29,6 +32,7 @@ type Config struct {
 	Branch    string
 	CachePath string `yaml:"cache-path"`
 	OpenGL    string
+	Engine    string `yaml:"engine-version"`
 	Docker    bool
 }
 
