@@ -91,7 +91,7 @@ func EngineFiles(targetOS string, mode Mode) []string {
 		return []string{"libflutter_engine.so"}
 	case "windows":
 		if mode.IsAot {
-			return []string{"flutter_engine.exp", "flutter_engine.lib", "flutter_engine.pdb"}
+			return []string{"flutter_engine.dll", "flutter_engine.exp", "flutter_engine.lib", "flutter_engine.pdb"}
 		} else {
 			return []string{"flutter_engine.dll"}
 		}
