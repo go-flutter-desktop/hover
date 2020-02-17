@@ -475,7 +475,13 @@ func buildEnv(targetOS string, engineCachePath string) []string {
 }
 
 func buildCommand(targetOS string, vmArguments []string, outputBinaryPath string) []string {
-	currentTag, err := versioncheck.CurrentGoFlutterTag(build.BuildPath)
+	abspath, err := filepath.Abs(build.BuildPath)
+	if err != nil {
+		log.Errorf("unable to detect absolute path: %s - %v", build.BuildPath, err)
+		os.Exit(1)
+	}
+
+	currentTag, err := versioncheck.CurrentGoFlutterTag(abspath)
 	if err != nil {
 		log.Errorf("%v", err)
 		os.Exit(1)

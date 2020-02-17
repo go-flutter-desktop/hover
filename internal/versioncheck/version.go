@@ -5,16 +5,17 @@ import (
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/pkg/errors"
 	"github.com/tcnksm/go-latest"
+	"golang.org/x/mod/modfile"
 
 	"github.com/go-flutter-desktop/hover/internal/fileutils"
 	"github.com/go-flutter-desktop/hover/internal/log"
+	"github.com/go-flutter-desktop/hover/internal/modx"
 )
 
 func hasUpdate(timestampDir, currentVersion, repo string) (bool, string) {
@@ -129,20 +130,25 @@ func CheckForGoFlutterUpdate(goDirectoryPath string, currentTag string) {
 
 // CurrentGoFlutterTag retrieve the semver of go-flutter in 'go.mod'
 func CurrentGoFlutterTag(goDirectoryPath string) (currentTag string, err error) {
-	goModPath := filepath.Join(goDirectoryPath, "go.mod")
-	goModBytes, err := ioutil.ReadFile(goModPath)
-	if err != nil && !os.IsNotExist(err) {
-		err = errors.Wrap(err, "Failed to read the 'go.mod' file: %v")
-		return
+	const expected = "github.com/go-flutter-desktop/go-flutter"
+	var m *modfile.File
+
+	if m, err = modx.Open(goDirectoryPath); err != nil {
+		return "", err
 	}
 
-	re := regexp.MustCompile(`\sgithub.com/go-flutter-desktop/go-flutter\s(\S*)`)
-
-	match := re.FindStringSubmatch(string(goModBytes))
-	if len(match) < 2 {
-		err = errors.New("Failed to parse the 'go-flutter' version in go.mod")
-		return
+	// check replacements first.
+	for _, pkg := range m.Replace {
+		if pkg.New.Path == expected {
+			return pkg.New.Version, nil
+		}
 	}
-	currentTag = match[1]
-	return
+
+	for _, pkg := range m.Require {
+		if pkg.Mod.Path == expected {
+			return pkg.Mod.Version, nil
+		}
+	}
+
+	return "", errors.New("failed to parse the 'go-flutter' version in go.mod")
 }
