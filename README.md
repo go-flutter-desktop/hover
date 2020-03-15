@@ -77,7 +77,15 @@ The hot-reload is manual because you'll need to press 'r' in the terminal to hot
 
 By default, hover uses the file `lib/main_desktop.dart` as entrypoint. You may specify a different endpoint by using the `--target` flag.
 
+#### IDE integration
+
+##### VSCode
+
 If you want to integrate go-flutter with VSCode, read this [issue](https://github.com/go-flutter-desktop/go-flutter/issues/129#issuecomment-513590141).
+
+##### Emacs
+
+Check [hover.el](https://github.com/ericdallo/hover.el) packge for emacs integration.
 
 ### Build standalone application
 
