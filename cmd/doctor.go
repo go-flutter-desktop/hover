@@ -15,7 +15,7 @@ import (
 
 	"github.com/go-flutter-desktop/hover/internal/build"
 	"github.com/go-flutter-desktop/hover/internal/config"
-	"github.com/go-flutter-desktop/hover/internal/enginecache"
+	"github.com/go-flutter-desktop/hover/internal/flutterversion"
 	"github.com/go-flutter-desktop/hover/internal/log"
 )
 
@@ -47,8 +47,8 @@ var doctorCmd = &cobra.Command{
 			log.Errorf("Flutter doctor failed: %v", err)
 		}
 
-		engineCommitID := enginecache.FlutterRequiredEngineVersion()
-		log.Infof("Flutter engine commit: %s", log.Au().Magenta("https://github.com/flutter/engine/commit/"+engineCommitID))
+		engineCommitHash := flutterversion.FlutterRequiredEngineVersion()
+		log.Infof("Flutter engine commit: %s", log.Au().Magenta("https://github.com/flutter/engine/commit/"+engineCommitHash))
 
 		checkFlutterChannel()
 
