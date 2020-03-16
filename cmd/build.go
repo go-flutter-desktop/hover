@@ -39,6 +39,7 @@ var (
 	buildOpenGlVersion     string
 	buildDocker            bool
 	buildVersion           string
+	buildEngineVersion     string
 )
 
 const mingwGccBinName = "x86_64-w64-mingw32-gcc"
@@ -50,6 +51,7 @@ var engineCachePath string
 func init() {
 	buildCmd.PersistentFlags().StringVarP(&buildTarget, "target", "t", config.BuildTargetDefault, "The main entry-point file of the application.")
 	buildCmd.PersistentFlags().StringVarP(&buildBranch, "branch", "b", config.BuildBranchDefault, "The 'go-flutter' version to use. (@master or @v0.20.0 for example)")
+	buildCmd.PersistentFlags().StringVar(&buildEngineVersion, "engine-version", config.BuildEngineDefault, "The flutter engine version to use.")
 	buildCmd.PersistentFlags().StringVarP(&buildCachePath, "cache-path", "", config.BuildCachePathDefault, "The path that hover uses to cache dependencies such as the Flutter engine .so/.dll (defaults to the standard user cache directory)")
 	buildCmd.PersistentFlags().StringVar(&buildOpenGlVersion, "opengl", config.BuildOpenGlVersionDefault, "The OpenGL version specified here is only relevant for external texture plugin (i.e. video_plugin).\nIf 'none' is provided, texture won't be supported. Note: the Flutter Engine still needs a OpenGL compatible context.")
 	buildCmd.PersistentFlags().StringVar(&buildVersion, "version-number", "", "Override the version number used in build and packaging. You may use it with $(git describe --tags)")
@@ -377,6 +379,10 @@ func buildNormal(targetOS string, vmArguments []string) {
 	if buildCachePath == config.BuildCachePathDefault && config.GetConfig().CachePath != "" {
 		buildCachePath = config.GetConfig().CachePath
 	}
+	if buildEngineVersion == config.BuildEngineDefault && config.GetConfig().Engine != "" {
+		log.Warnf("changing the engine version can lead to undesirable behavior")
+		buildEngineVersion = config.GetConfig().Engine
+	}
 	if buildOpenGlVersion == config.BuildOpenGlVersionDefault && config.GetConfig().OpenGL != "" {
 		buildOpenGlVersion = config.GetConfig().OpenGL
 	}
@@ -386,14 +392,15 @@ func buildNormal(targetOS string, vmArguments []string) {
 	if buildVersion == "" {
 		buildVersion = pubspec.GetPubSpec().Version
 	}
+
 	checkForMainDesktop()
 	crossCompile = targetOS != runtime.GOOS
 	buildDocker = crossCompile || buildDocker
 
 	if buildCachePath != "" {
-		engineCachePath = enginecache.ValidateOrUpdateEngineAtPath(targetOS, buildMode, buildCachePath)
+		engineCachePath = enginecache.ValidateOrUpdateEngineAtPath(targetOS, buildMode, buildCachePath, buildEngineVersion)
 	} else {
-		engineCachePath = enginecache.ValidateOrUpdateEngine(targetOS, buildMode)
+		engineCachePath = enginecache.ValidateOrUpdateEngine(targetOS, buildMode, buildEngineVersion)
 	}
 
 	if !buildOmitFlutterBundle && !buildOmitEmbedder {
