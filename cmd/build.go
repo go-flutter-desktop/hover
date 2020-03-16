@@ -66,6 +66,7 @@ func init() {
 	buildCmd.AddCommand(buildLinuxDebCmd)
 	buildCmd.AddCommand(buildLinuxAppImageCmd)
 	buildCmd.AddCommand(buildLinuxRpmCmd)
+	buildCmd.AddCommand(buildLinuxPkgCmd)
 	buildCmd.AddCommand(buildDarwinCmd)
 	buildCmd.AddCommand(buildDarwinBundleCmd)
 	buildCmd.AddCommand(buildDarwinPkgCmd)
@@ -139,6 +140,19 @@ var buildLinuxRpmCmd = &cobra.Command{
 
 		buildNormal("linux", nil)
 		packaging.LinuxRpmPackagingTask.Pack(buildVersion)
+	},
+}
+
+var buildLinuxPkgCmd = &cobra.Command{
+	Use:   "linux-pkg",
+	Short: "Build a desktop release for linux and package it for pacman pkg",
+	Run: func(cmd *cobra.Command, args []string) {
+		assertHoverInitialized()
+		packaging.LinuxPkgPackagingTask.AssertInitialized()
+		packaging.AssertDockerInstalled()
+
+		buildNormal("linux", nil)
+		packaging.LinuxPkgPackagingTask.Pack(buildVersion)
 	},
 }
 

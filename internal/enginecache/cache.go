@@ -2,7 +2,6 @@ package enginecache
 
 import (
 	"archive/zip"
-	"encoding/json"
 	"fmt"
 	"io"
 	"io/ioutil"
@@ -18,6 +17,7 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/go-flutter-desktop/hover/internal/build"
+	"github.com/go-flutter-desktop/hover/internal/flutterversion"
 	"github.com/go-flutter-desktop/hover/internal/log"
 )
 
@@ -225,7 +225,7 @@ func ValidateOrUpdateEngineAtPath(targetOS string, mode build.Mode, cachePath st
 	}
 	cachedEngineVersion := string(cachedEngineVersionBytes)
 	if len(requiredEngineVersion) == 0 {
-		requiredEngineVersion = FlutterRequiredEngineVersion()
+		requiredEngineVersion = flutterversion.FlutterRequiredEngineVersion()
 	}
 
 	if cachedEngineVersion != "" {
@@ -249,46 +249,6 @@ func ValidateOrUpdateEngineAtPath(targetOS string, mode build.Mode, cachePath st
 		os.Exit(1)
 	}
 
-	// Retrieve the full version hash by querying github
-	url := fmt.Sprintf("https://api.github.com/repos/flutter/engine/commits/%s", requiredEngineVersion)
-	req, err := http.NewRequest("GET", os.ExpandEnv(url), nil)
-	if err != nil {
-		log.Errorf("Failed to create http request: %v", err)
-		os.Exit(1)
-	}
-	req.Header.Set("Accept", "application/vnd.github.v3+json")
-	githubToken := os.Getenv("GITHUB_TOKEN")
-	if githubToken != "" {
-		req.Header.Set("Authorization", fmt.Sprintf("token %s", githubToken))
-	}
-
-	resp, err := http.DefaultClient.Do(req)
-	if err != nil {
-		log.Errorf("Failed to find engine version on github: %v", err)
-		os.Exit(1)
-	}
-	body, err := ioutil.ReadAll(resp.Body)
-	resp.Body.Close()
-	if err != nil {
-		log.Errorf("Failed to read response body from github: %v", err)
-		os.Exit(1)
-	}
-
-	// We define a struct to build JSON object from the response
-	var apiResponse struct {
-		Sha string `json:"sha"`
-	}
-	err = json.Unmarshal(body, &apiResponse)
-	if err != nil {
-		log.Errorf("Failed to unmarshall reply github: %v", err)
-		os.Exit(1)
-	}
-	if apiResponse.Sha == "" {
-		log.Errorf("Failed to fetch full sha for engine version %s from GitHub", requiredEngineVersion)
-		os.Exit(1)
-	}
-	var requiredEngineVersionFullHash = apiResponse.Sha
-
 	dir, err := ioutil.TempDir("", "hover-engine-download")
 	if err != nil {
 		log.Errorf("Failed to create tmp dir for engine download: %v", err)
@@ -309,7 +269,7 @@ func ValidateOrUpdateEngineAtPath(targetOS string, mode build.Mode, cachePath st
 	var engineDownloadURL string
 
 	if mode.IsAot {
-		engineDownloadURL = fmt.Sprintf("https://github.com/flutter-rs/engine-builds/releases/download/f-%s/%s-host_%s.zip", requiredEngineVersionFullHash, strings.ReplaceAll(strings.ReplaceAll(platform, "-", "_"), "darwin", "macosx"), mode.Name)
+		engineDownloadURL = fmt.Sprintf("https://github.com/flutter-rs/engine-builds/releases/download/f-%s/%s-host_%s.zip", requiredEngineVersion, strings.ReplaceAll(strings.ReplaceAll(platform, "-", "_"), "darwin", "macosx"), mode.Name)
 		log.Printf("Downloading AOT %s engine for platform %s at version %s...", mode.Name, platform, requiredEngineVersion)
 	} else {
 		targetedDomain := "https://storage.googleapis.com"
@@ -318,7 +278,7 @@ func ValidateOrUpdateEngineAtPath(targetOS string, mode build.Mode, cachePath st
 			targetedDomain = envURLFlutter
 		}
 		// Build the URL for downloading the correct engine
-		engineDownloadURL = fmt.Sprintf(targetedDomain+"/flutter_infra/flutter/%s/%s/", requiredEngineVersionFullHash, platform)
+		engineDownloadURL = fmt.Sprintf(targetedDomain+"/flutter_infra/flutter/%s/%s/", requiredEngineVersion, platform)
 		switch targetOS {
 		case "darwin":
 			engineDownloadURL += "FlutterEmbedder.framework.zip"
@@ -331,7 +291,7 @@ func ValidateOrUpdateEngineAtPath(targetOS string, mode build.Mode, cachePath st
 			os.Exit(1)
 		}
 
-		icudtlDownloadURL := fmt.Sprintf(targetedDomain+"/flutter_infra/flutter/%s/%s/artifacts.zip", requiredEngineVersionFullHash, platform)
+		icudtlDownloadURL := fmt.Sprintf(targetedDomain+"/flutter_infra/flutter/%s/%s/artifacts.zip", requiredEngineVersion, platform)
 
 		artifactsZipPath := filepath.Join(dir, "artifacts.zip")
 
