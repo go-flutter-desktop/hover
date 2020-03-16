@@ -153,7 +153,7 @@ func getTemplateData(projectName, buildVersion string) map[string]string {
 	once.Do(func() {
 		templateData = map[string]string{
 			"projectName":         projectName,
-			"strippedProjectName": strings.ReplaceAll(projectName, "_", ""),
+			"strippedProjectName": strings.ReplaceAll(strings.ToLower(projectName), "-", ""),
 			"author":              getAuthor(),
 			"version":             buildVersion,
 			"description":         pubspec.GetPubSpec().Description,
