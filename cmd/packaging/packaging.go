@@ -105,6 +105,7 @@ func getTemplateData(projectName, buildVersion string) map[string]string {
 			"strippedProjectName": strings.ReplaceAll(projectName, "_", ""),
 			"author":              getAuthor(),
 			"version":             buildVersion,
+			"release":             strings.Split(buildVersion, ".")[0],
 			"description":         pubspec.GetPubSpec().Description,
 			"organizationName":    androidmanifest.AndroidOrganizationName(),
 			"arch":                runtime.GOARCH,

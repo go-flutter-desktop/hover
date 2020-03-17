@@ -59,13 +59,14 @@ COPY --from=xarbuilder /usr/local/lib/libxar.so.1 /usr/local/lib/libxar.so.1
 COPY --from=xarbuilder /usr/lib/x86_64-linux-gnu/libcrypto.so.1.0.0 /usr/lib/x86_64-linux-gnu/libcrypto.so.1.0.0
 
 # Install linux-appimage dependencies
-RUN cd /opt \
-	&& curl -LO https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage \
-	&& chmod a+x appimagetool-x86_64.AppImage \
-	&& ./appimagetool-x86_64.AppImage --appimage-extract \
-	&& mv squashfs-root appimagetool \
-	&& rm appimagetool-x86_64.AppImage
-ENV PATH=/opt/appimagetool/usr/bin:$PATH
+# Currently broken
+#RUN cd /opt \
+#	&& curl -LO https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage \
+#	&& chmod a+x appimagetool-x86_64.AppImage \
+#	&& ./appimagetool-x86_64.AppImage --appimage-extract \
+#	&& mv squashfs-root appimagetool \
+#	&& rm appimagetool-x86_64.AppImage
+#ENV PATH=/opt/appimagetool/usr/bin:$PATH
 
 # Install linux-snap dependencies (based on https://hub.docker.com/r/snapcore/snapcraft/dockerfile)
 COPY --from=snapcraft /snap/core /snap/core
@@ -80,6 +81,8 @@ ENV SNAP="/snap/snapcraft/current"
 ENV SNAP_NAME="snapcraft"
 ENV SNAP_ARCH="amd64"
 # RUN dpkg-reconfigure locales
+
+# TODO: Add pacman pkg packaging
 
 # Install Flutter from the beta channel
 RUN git clone --single-branch --depth=1 --branch beta https://github.com/flutter/flutter /opt/flutter \

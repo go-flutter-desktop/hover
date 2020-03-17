@@ -11,6 +11,7 @@ func init() {
 	initPackagingCmd.AddCommand(initLinuxDebCmd)
 	initPackagingCmd.AddCommand(initLinuxAppImageCmd)
 	initPackagingCmd.AddCommand(initLinuxRpmCmd)
+	initPackagingCmd.AddCommand(initLinuxPkgCmd)
 	initPackagingCmd.AddCommand(initWindowsMsiCmd)
 	initPackagingCmd.AddCommand(initDarwinBundleCmd)
 	initPackagingCmd.AddCommand(initDarwinPkgCmd)
@@ -59,6 +60,15 @@ var initLinuxRpmCmd = &cobra.Command{
 		assertHoverInitialized()
 
 		packaging.LinuxRpmTask.Init()
+	},
+}
+var initLinuxPkgCmd = &cobra.Command{
+	Use:   "linux-pkg",
+	Short: "Create configuration files for pacman pkg packaging",
+	Run: func(cmd *cobra.Command, args []string) {
+		assertHoverInitialized()
+
+		packaging.LinuxPkgTask.Init()
 	},
 }
 var initWindowsMsiCmd = &cobra.Command{

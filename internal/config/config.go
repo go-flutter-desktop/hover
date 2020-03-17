@@ -16,6 +16,9 @@ const BuildTargetDefault = "lib/main_desktop.dart"
 // BuildBranchDefault Default go-flutter branch
 const BuildBranchDefault = ""
 
+// BuildEngineDefault Default go-flutter engine version
+const BuildEngineDefault = ""
+
 // BuildOpenGlVersionDefault Default OpenGL version for go-flutter
 const BuildOpenGlVersionDefault = "3.3"
 
@@ -26,7 +29,7 @@ type Config struct {
 	Branch    string
 	CachePath string `yaml:"cache-path"`
 	OpenGL    string
-	// Docker    bool
+	Engine    string `yaml:"engine-version"`
 }
 
 var config = Config{}

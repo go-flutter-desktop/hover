@@ -11,10 +11,12 @@ import (
 	"strings"
 	"time"
 
+	"github.com/pkg/errors"
+
 	"github.com/go-flutter-desktop/hover/internal/build"
+	"github.com/go-flutter-desktop/hover/internal/flutterversion"
 	"github.com/go-flutter-desktop/hover/internal/log"
 	"github.com/go-flutter-desktop/hover/internal/pubspec"
-	"github.com/pkg/errors"
 )
 
 // assertInFlutterProject asserts this command is executed in a flutter project
@@ -46,23 +48,11 @@ func assertHoverInitialized() {
 }
 
 func checkFlutterChannel() {
-	cmdCheckFlutter := exec.Command(build.FlutterBin(), "--version")
-	cmdCheckFlutterOut, err := cmdCheckFlutter.Output()
-	if err != nil {
-		log.Warnf("Failed to check your flutter channel: %v", err)
-	} else {
-		re := regexp.MustCompile("•\\schannel\\s(\\w*)\\s•")
-
-		match := re.FindStringSubmatch(string(cmdCheckFlutterOut))
-		if len(match) >= 2 {
-			ignoreWarning := os.Getenv("HOVER_IGNORE_CHANNEL_WARNING")
-			if match[1] != "beta" && ignoreWarning != "true" {
-				log.Warnf("⚠ The go-flutter project tries to stay compatible with the beta channel of Flutter.")
-				log.Warnf("⚠     It's advised to use the beta channel: `%s`", log.Au().Magenta("flutter channel beta"))
-			}
-		} else {
-			log.Warnf("Failed to check your flutter channel: Unrecognized output format")
-		}
+	channel := flutterversion.FlutterChannel()
+	ignoreWarning := os.Getenv("HOVER_IGNORE_CHANNEL_WARNING")
+	if channel != "beta" && ignoreWarning != "true" {
+		log.Warnf("⚠ The go-flutter project tries to stay compatible with the beta channel of Flutter.")
+		log.Warnf("⚠     It's advised to use the beta channel: `%s`", log.Au().Magenta("flutter channel beta"))
 	}
 }
 

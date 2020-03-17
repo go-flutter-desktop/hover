@@ -38,8 +38,10 @@ var upgradeCmd = &cobra.Command{
 
 func upgrade(targetOS string) (err error) {
 	var engineCachePath string
-	if buildCachePath == "" {
-		buildCachePath = enginecache.DefaultCachePath()
+	if buildCachePath != "" {
+		engineCachePath = enginecache.ValidateOrUpdateEngineAtPath(targetOS, buildCachePath, "")
+	} else {
+		engineCachePath = enginecache.ValidateOrUpdateEngine(targetOS, "")
 	}
 	engineCachePath = enginecache.ValidateOrUpdateEngine(targetOS, buildCachePath)
 	return upgradeGoFlutter(targetOS, engineCachePath)

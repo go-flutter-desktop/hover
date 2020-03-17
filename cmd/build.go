@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/go-flutter-desktop/hover/internal/androidmanifest"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -13,7 +14,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/go-flutter-desktop/hover/cmd/packaging"
-	"github.com/go-flutter-desktop/hover/internal/androidmanifest"
 	"github.com/go-flutter-desktop/hover/internal/build"
 	"github.com/go-flutter-desktop/hover/internal/config"
 	"github.com/go-flutter-desktop/hover/internal/enginecache"
@@ -31,6 +31,7 @@ var (
 	buildGoFlutterBranch string
 	buildCachePath       string
 	buildOpenGlVersion   string
+	buildEngineVersion   string
 
 	// `hover build`-only build flags
 	buildDocker                 bool
@@ -48,6 +49,7 @@ var engineCachePath string
 func init() {
 	buildCmd.PersistentFlags().StringVarP(&buildTarget, "target", "t", config.BuildTargetDefault, "The main entry-point file of the application.")
 	buildCmd.PersistentFlags().StringVarP(&buildGoFlutterBranch, "branch", "b", config.BuildBranchDefault, "The 'go-flutter' version to use. (@master or @v0.20.0 for example)")
+	buildCmd.PersistentFlags().StringVar(&buildEngineVersion, "engine-version", config.BuildEngineDefault, "The flutter engine version to use.")
 	buildCmd.PersistentFlags().StringVar(&buildCachePath, "cache-path", "", "The path that hover uses to cache dependencies such as the Flutter engine .so/.dll (defaults to the standard user cache directory)")
 	buildCmd.PersistentFlags().StringVar(&buildOpenGlVersion, "opengl", config.BuildOpenGlVersionDefault, "The OpenGL version specified here is only relevant for external texture plugin (i.e. video_plugin).\nIf 'none' is provided, texture won't be supported. Note: the Flutter Engine still needs a OpenGL compatible context.")
 	buildCmd.PersistentFlags().StringVar(&buildVersionNumber, "version-number", "", "Override the version number used in build and packaging. You may use it with $(git describe --tags)")
@@ -60,6 +62,7 @@ func init() {
 	buildCmd.AddCommand(buildLinuxDebCmd)
 	buildCmd.AddCommand(buildLinuxAppImageCmd)
 	buildCmd.AddCommand(buildLinuxRpmCmd)
+	buildCmd.AddCommand(buildLinuxPkgCmd)
 	buildCmd.AddCommand(buildDarwinCmd)
 	buildCmd.AddCommand(buildDarwinBundleCmd)
 	buildCmd.AddCommand(buildDarwinPkgCmd)
@@ -111,6 +114,14 @@ var buildLinuxRpmCmd = &cobra.Command{
 	Short: "Build a desktop release for linux and package it for rpm",
 	Run: func(cmd *cobra.Command, args []string) {
 		subcommandBuild("linux", packaging.LinuxRpmTask)
+	},
+}
+
+var buildLinuxPkgCmd = &cobra.Command{
+	Use:   "linux-pkg",
+	Short: "Build a desktop release for linux and package it for pacman pkg",
+	Run: func(cmd *cobra.Command, args []string) {
+		subcommandBuild("linux", packaging.LinuxPkgTask)
 	},
 }
 
@@ -292,6 +303,10 @@ func buildGoBinary(targetOS string, vmArguments []string) {
 	if buildCachePath == "" && config.GetConfig().CachePath != "" {
 		buildCachePath = config.GetConfig().CachePath
 	}
+	if buildEngineVersion == config.BuildEngineDefault && config.GetConfig().Engine != "" {
+		log.Warnf("changing the engine version can lead to undesirable behavior")
+		buildEngineVersion = config.GetConfig().Engine
+	}
 	if buildOpenGlVersion == config.BuildOpenGlVersionDefault && config.GetConfig().OpenGL != "" {
 		buildOpenGlVersion = config.GetConfig().OpenGL
 	}
@@ -305,7 +320,7 @@ func buildGoBinary(targetOS string, vmArguments []string) {
 	if buildSkipEngineDownload {
 		engineCachePath = enginecache.EngineCachePath(targetOS, buildCachePath)
 	} else {
-		engineCachePath = enginecache.ValidateOrUpdateEngine(targetOS, buildCachePath)
+		engineCachePath = enginecache.ValidateOrUpdateEngine(targetOS, buildEngineVersion)
 	}
 
 	fileutils.CopyDir(build.IntermediatesDirectoryPath(targetOS), build.OutputDirectoryPath(targetOS))
