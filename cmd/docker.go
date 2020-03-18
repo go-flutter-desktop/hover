@@ -10,21 +10,19 @@ import (
 	"strings"
 
 	"github.com/go-flutter-desktop/hover/cmd/packaging"
+	"github.com/go-flutter-desktop/hover/internal/build"
 	"github.com/go-flutter-desktop/hover/internal/config"
 	"github.com/go-flutter-desktop/hover/internal/log"
 	"github.com/go-flutter-desktop/hover/internal/logstreamer"
 )
 
 func dockerHoverBuild(targetOS string, packagingTask packaging.Task, buildFlags []string, vmArguments []string) {
+	var err error
+	dockerBin := build.DockerBin()
+
 	if buildCachePath == "" && config.GetConfig().CachePath != "" {
 		buildCachePath = config.GetConfig().CachePath
 	}
-	dockerBin, err := exec.LookPath("docker")
-	if err != nil {
-		log.Printf("Docker is not installed: %v", err)
-		os.Exit(1)
-	}
-
 	if buildCachePath == "" {
 		buildCachePath, err = os.UserCacheDir()
 		if err != nil {
@@ -32,6 +30,7 @@ func dockerHoverBuild(targetOS string, packagingTask packaging.Task, buildFlags 
 			os.Exit(1)
 		}
 	}
+
 	hoverCacheDir := filepath.Join(buildCachePath, "hover")
 
 	engineCacheDir := filepath.Join(hoverCacheDir, "engine")
