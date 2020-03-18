@@ -87,8 +87,7 @@ ENV SNAP_ARCH="amd64"
 # Install Flutter from the beta channel
 RUN git clone --single-branch --depth=1 --branch beta https://github.com/flutter/flutter /opt/flutter \
 	&& ln -sf /opt/flutter/bin/flutter /usr/bin/flutter \
-	&& flutter doctor -v \
-	&& flutter config --enable-web
+	&& flutter doctor -v
 
 # Build hover
 WORKDIR /go/src/app
