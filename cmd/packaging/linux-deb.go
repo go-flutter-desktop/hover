@@ -17,7 +17,8 @@ var LinuxDebPackagingTask = &packagingTask{
 	dockerfileContent: []string{
 		"FROM ubuntu:bionic",
 	},
-	buildOutputDirectory:    "usr/lib/{{.projectName}}",
-	packagingScriptTemplate: "dpkg-deb --build . {{.projectName}}-{{.version}}.deb",
-	outputFileExtension:     "deb",
+	buildOutputDirectory:      "usr/lib/{{.projectName}}",
+	packagingScriptTemplate:   "dpkg-deb --build . {{.projectName}}-{{.version}}.deb",
+	outputFileExtension:       "deb",
+	outputFileContainsVersion: true,
 }

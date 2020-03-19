@@ -22,9 +22,10 @@ var WindowsMsiPackagingTask = &packagingTask{
 		"FROM ubuntu:bionic",
 		"RUN apt-get update && apt-get install wixl imagemagick -y",
 	},
-	buildOutputDirectory:    "build",
-	packagingScriptTemplate: "convert -resize x16 build/assets/icon.png build/assets/icon.ico && wixl -v {{.projectName}}.wxs && mv {{.projectName}}.msi {{.projectName}}-{{.version}}.msi",
-	outputFileExtension:     "msi",
+	buildOutputDirectory:      "build",
+	packagingScriptTemplate:   "convert -resize x16 build/assets/icon.png build/assets/icon.ico && wixl -v {{.projectName}}.wxs && mv {{.projectName}}.msi {{.projectName}}-{{.version}}.msi",
+	outputFileExtension:       "msi",
+	outputFileContainsVersion: true,
 	generateBuildFiles: func(projectName, tmpPath string) {
 		directoriesFilePath, err := filepath.Abs(filepath.Join(tmpPath, "directories.wxi"))
 		if err != nil {

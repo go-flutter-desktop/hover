@@ -11,7 +11,8 @@ var DarwinBundlePackagingTask = &packagingTask{
 		"FROM ubuntu:bionic",
 		"RUN apt-get update && apt-get install icnsutils -y",
 	},
-	buildOutputDirectory:    "{{.projectName}}.app/Contents/MacOS",
-	packagingScriptTemplate: "mkdir -p {{.projectName}}.app/Contents/Resources && png2icns {{.projectName}}.app/Contents/Resources/icon.icns {{.projectName}}.app/Contents/MacOS/assets/icon.png",
-	outputFileExtension:     "app",
+	buildOutputDirectory:      "{{.projectName}}.app/Contents/MacOS",
+	packagingScriptTemplate:   "mkdir -p {{.projectName}}.app/Contents/Resources && png2icns {{.projectName}}.app/Contents/Resources/icon.icns {{.projectName}}.app/Contents/MacOS/assets/icon.png",
+	outputFileExtension:       "app",
+	outputFileContainsVersion: false,
 }

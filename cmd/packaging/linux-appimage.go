@@ -24,7 +24,8 @@ var LinuxAppImagePackagingTask = &packagingTask{
 		"rm appimagetool-x86_64.AppImage",
 		"ENV PATH=/opt/appimagetool/usr/bin:$PATH",
 	},
-	buildOutputDirectory:    "build",
-	packagingScriptTemplate: "appimagetool . && mv {{.projectName}}-x86_64.AppImage {{.projectName}}-{{.version}}.AppImage",
-	outputFileExtension:     "AppImage",
+	buildOutputDirectory:      "build",
+	packagingScriptTemplate:   "appimagetool . && mv {{.projectName}}-x86_64.AppImage {{.projectName}}-{{.version}}.AppImage",
+	outputFileExtension:       "AppImage",
+	outputFileContainsVersion: true,
 }

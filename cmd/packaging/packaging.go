@@ -177,6 +177,7 @@ type packagingTask struct {
 	buildOutputDirectory           string                         // Path to copy the build output of the app to. Operates in the temporary directory
 	packagingScriptTemplate        string                         // Template for the command that actually packages the app
 	outputFileExtension            string                         // File extension of the packaged app
+	outputFileContainsVersion      bool                           // Whether the output file name contains the version
 }
 
 func (t *packagingTask) Init() {
@@ -264,7 +265,12 @@ func (t *packagingTask) Pack(buildVersion string) {
 	}
 
 	runDockerPackaging(tmpPath, t.packagingFormatName, executeStringTemplate(t.packagingScriptTemplate, templateData))
-	outputFileName := projectName + "-" + buildVersion + "." + t.outputFileExtension
+	var outputFileName string
+	if t.outputFileContainsVersion {
+		outputFileName = projectName + "-" + buildVersion + "." + t.outputFileExtension
+	} else {
+		outputFileName = projectName + "." + t.outputFileExtension
+	}
 	outputFilePath := executeStringTemplate(filepath.Join(build.OutputDirectoryPath(t.packagingFormatName), outputFileName), templateData)
 	err = copy.Copy(filepath.Join(tmpPath, outputFileName), outputFilePath)
 	if err != nil {
