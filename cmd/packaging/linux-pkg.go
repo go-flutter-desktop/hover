@@ -20,7 +20,8 @@ var LinuxPkgPackagingTask = &packagingTask{
 		"RUN useradd --no-create-home --shell=/bin/false build && usermod -L build",
 		"USER build",
 	},
-	buildOutputDirectory:    "src/usr/lib/{{.projectName}}",
-	packagingScriptTemplate: "makepkg && mv {{.projectName}}-{{.version}}-{{.release}}-x86_64.pkg.tar.xz {{.projectName}}-{{.version}}.pkg.tar.xz",
-	outputFileExtension:     "pkg.tar.xz",
+	buildOutputDirectory:      "src/usr/lib/{{.projectName}}",
+	packagingScriptTemplate:   "makepkg && mv {{.projectName}}-{{.version}}-{{.release}}-x86_64.pkg.tar.xz {{.projectName}}-{{.version}}.pkg.tar.xz",
+	outputFileExtension:       "pkg.tar.xz",
+	outputFileContainsVersion: true,
 }

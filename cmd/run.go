@@ -56,7 +56,7 @@ var runCmd = &cobra.Command{
 		// forcefully enable --debug (which is not an option for 'hover run')
 		buildDebug = true
 
-		buildNormal(targetOS, []string{"--observatory-port=" + runObservatoryPort})
+		buildNormal(targetOS, []string{"--observatory-port=" + runObservatoryPort, "--enable-service-port-fallback", "--disable-service-auth-codes"})
 		log.Infof("Build finished, starting app...")
 		runAndAttach(projectName, targetOS)
 	},
@@ -79,7 +79,7 @@ func runAndAttach(projectName string, targetOS string) {
 		os.Exit(1)
 	}
 
-	re := regexp.MustCompile("(?:http:\\/\\/)[^:]*:" + runObservatoryPort + "\\/[^\\/]*\\/")
+	re := regexp.MustCompile(`Observatory\slistening\son\s(http:[^:]*:\d*/)`)
 
 	// Non-blockingly read the stdout to catch the debug-uri
 	go func(reader io.Reader) {
@@ -88,8 +88,9 @@ func runAndAttach(projectName string, targetOS string) {
 			text := scanner.Text()
 			fmt.Println(text)
 			match := re.FindStringSubmatch(text)
-			if len(match) == 1 {
-				startHotReloadProcess(cmdFlutterAttach, buildTarget, match[0])
+			if len(match) == 2 {
+				log.Infof("Connecting hover to '%s' for hot reload", projectName)
+				startHotReloadProcess(cmdFlutterAttach, buildTarget, match[1])
 				break
 			}
 		}
@@ -131,6 +132,6 @@ func startHotReloadProcess(cmdFlutterAttach *exec.Cmd, buildTargetMainDart strin
 	}
 	err := cmdFlutterAttach.Start()
 	if err != nil {
-		log.Warnf("The command 'flutter attach' failed: %v Hotreload disabled", err)
+		log.Warnf("The command 'flutter attach' failed: %v hot reload disabled", err)
 	}
 }
