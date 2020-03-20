@@ -12,7 +12,8 @@ var LinuxSnapPackagingTask = &packagingTask{
 	dockerfileContent: []string{
 		"FROM snapcore/snapcraft",
 	},
-	buildOutputDirectory:    "build",
-	packagingScriptTemplate: "snapcraft && mv {{.strippedProjectName}}_{{.version}}_{{.arch}}.snap {{.projectName}}-{{.version}}.snap",
-	outputFileExtension:     "snap",
+	buildOutputDirectory:      "build",
+	packagingScriptTemplate:   "snapcraft && mv {{.strippedProjectName}}_{{.version}}_{{.arch}}.snap {{.projectName}}-{{.version}}.snap",
+	outputFileExtension:       "snap",
+	outputFileContainsVersion: true,
 }

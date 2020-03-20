@@ -10,6 +10,7 @@ var DarwinDmgPackagingTask = &packagingTask{
 		"FROM ubuntu:bionic",
 		"RUN apt-get update && apt-get install genisoimage -y ",
 	},
-	packagingScriptTemplate: "ln -sf /Applications dmgdir/Applications && genisoimage -V '{{.projectName}}' -D -R -apple -no-pad -o '{{.projectName}}-{{.version}}.dmg' dmgdir",
-	outputFileExtension:     "dmg",
+	packagingScriptTemplate:   "ln -sf /Applications dmgdir/Applications && genisoimage -V '{{.projectName}}' -D -R -apple -no-pad -o '{{.projectName}}-{{.version}}.dmg' dmgdir",
+	outputFileExtension:       "dmg",
+	outputFileContainsVersion: true,
 }
