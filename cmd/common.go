@@ -25,12 +25,12 @@ func initBinaries() {
 	var err error
 	goAvailable := false
 	dockerAvailable := false
-	build.GoBin, err = exec.LookPath("go")
-	if err == nil {
+	if _, err = exec.LookPath("go"); err == nil {
+		build.GoBin = "go"
 		goAvailable = true
 	}
-	build.DockerBin, err = exec.LookPath("docker")
-	if err == nil {
+	if _, err = exec.LookPath("docker"); err == nil {
+		build.DockerBin = "docker"
 		dockerAvailable = true
 	}
 	if !dockerAvailable && !goAvailable {
@@ -41,14 +41,16 @@ func initBinaries() {
 		log.Errorf("Failed to lookup `go` executable. Please install go or add '--docker' to force running in Docker container.\nhttps://golang.org/doc/install")
 		os.Exit(1)
 	}
-	build.FlutterBin, err = exec.LookPath("flutter")
-	if err != nil {
+	if _, err = exec.LookPath("flutter"); err != nil {
 		log.Errorf("Failed to lookup 'flutter' executable. Please install flutter.\nhttps://flutter.dev/docs/get-started/install")
 		os.Exit(1)
+	} else {
+		build.FlutterBin = "flutter"
 	}
-	build.GitBin, err = exec.LookPath("git")
-	if err != nil {
+	if _, err = exec.LookPath("git"); err != nil {
 		log.Warnf("Failed to lookup 'git' executable.")
+	} else {
+		build.GitBin = "git"
 	}
 }
 
