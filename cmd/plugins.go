@@ -312,27 +312,6 @@ func hoverPluginGet(dryRun bool) bool {
 			autoImportTemplatePath := filepath.Join(dep.pluginGoSource, "import.go.tmpl")
 			fileutils.CopyFile(autoImportTemplatePath, pluginImportOutPath)
 
-			if fileutils.IsDirectory(filepath.Join(dep.pluginGoSource, "dlib")) {
-				dlibPath, err := filepath.Abs(filepath.Join(dep.pluginGoSource, "dlib"))
-				if err != nil {
-					log.Errorf("Failed to resolve absolute path for dlib directory: %v", err)
-					os.Exit(1)
-				}
-
-				intermediatesDirectoryPath, err := filepath.Abs(filepath.Join(build.BuildPath, "build", "intermediates"))
-				if err != nil {
-					log.Errorf("Failed to resolve absolute path for intermediates directory: %v", err)
-					os.Exit(1)
-				}
-
-				fileutils.CopyDir(dlibPath, intermediatesDirectoryPath)
-				if fileutils.IsFileExists(filepath.Join(dlibPath, "README.md")) {
-					readmeName := fmt.Sprintf("README-%s.md", dep.name)
-					fileutils.CopyFile(filepath.Join(dlibPath, "README.md"), filepath.Join(intermediatesDirectoryPath, readmeName))
-					_ = os.Remove(filepath.Join(intermediatesDirectoryPath, "README.md"))
-				}
-			}
-
 			pluginImportStr, err := readPluginGoImport(pluginImportOutPath, dep.name)
 			if err != nil {
 				log.Warnf("Couldn't read the plugin '%s' import URL", dep.name)
@@ -362,7 +341,44 @@ func hoverPluginGet(dryRun bool) bool {
 		}
 	}
 
+	copyDlibToIntermediates()
+
 	return len(dependencyList) != 0
+}
+
+func copyDlibToIntermediates() {
+	dependencyList, err := listPlatformPlugin()
+	if err != nil {
+		log.Errorf("%v", err)
+		os.Exit(1)
+	}
+
+	for _, dep := range dependencyList {
+
+		if !dep.desktop {
+			continue
+		}
+		if fileutils.IsDirectory(filepath.Join(dep.pluginGoSource, "dlib")) {
+			dlibPath, err := filepath.Abs(filepath.Join(dep.pluginGoSource, "dlib"))
+			if err != nil {
+				log.Errorf("Failed to resolve absolute path for dlib directory: %v", err)
+				os.Exit(1)
+			}
+
+			intermediatesDirectoryPath, err := filepath.Abs(filepath.Join(build.BuildPath, "build", "intermediates"))
+			if err != nil {
+				log.Errorf("Failed to resolve absolute path for intermediates directory: %v", err)
+				os.Exit(1)
+			}
+
+			fileutils.CopyDir(dlibPath, intermediatesDirectoryPath)
+			if fileutils.IsFileExists(filepath.Join(dlibPath, "README.md")) {
+				readmeName := fmt.Sprintf("README-%s.md", dep.name)
+				fileutils.CopyFile(filepath.Join(dlibPath, "README.md"), filepath.Join(intermediatesDirectoryPath, readmeName))
+				_ = os.Remove(filepath.Join(intermediatesDirectoryPath, "README.md"))
+			}
+		}
+	}
 }
 
 func listPlatformPlugin() ([]PubDep, error) {

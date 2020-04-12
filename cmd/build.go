@@ -396,6 +396,7 @@ func buildNormal(targetOS string, vmArguments []string) {
 			os.Exit(1)
 		}
 	}
+	copyDlibToIntermediates()
 	fileutils.CopyDir(build.IntermediatesDirectoryPath(targetOS), build.OutputDirectoryPath(targetOS))
 
 	err := os.MkdirAll(build.OutputDirectoryPath(targetOS), 0775)
