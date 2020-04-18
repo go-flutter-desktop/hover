@@ -17,4 +17,5 @@ var LinuxPkgTask = &packagingTask{
 	buildOutputDirectory:           "src/usr/lib/{{.projectName}}",
 	packagingScriptTemplate:        "makepkg && mv {{.projectName}}-{{.version}}-{{.release}}-x86_64.pkg.tar.xz {{.projectName}}-{{.version}}.pkg.tar.xz",
 	outputFileExtension:            "pkg.tar.xz",
+	outputFileContainsVersion:      true,
 }

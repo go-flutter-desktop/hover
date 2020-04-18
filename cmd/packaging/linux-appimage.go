@@ -11,8 +11,9 @@ var LinuxAppImageTask = &packagingTask{
 		"AppRun",
 		"{{.projectName}}.desktop",
 	},
-	linuxDesktopFileIconPath: "/build/assets/icon",
-	buildOutputDirectory:     "build",
-	packagingScriptTemplate:  "appimagetool . && mv {{.projectName}}-x86_64.AppImage {{.projectName}}-{{.version}}.AppImage",
-	outputFileExtension:      "AppImage",
+	linuxDesktopFileIconPath:  "/build/assets/icon",
+	buildOutputDirectory:      "build",
+	packagingScriptTemplate:   "appimagetool . && mv {{.projectName}}-x86_64.AppImage {{.projectName}}-{{.version}}.AppImage",
+	outputFileExtension:       "AppImage",
+	outputFileContainsVersion: true,
 }

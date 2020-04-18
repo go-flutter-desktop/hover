@@ -344,14 +344,10 @@ func buildGoBinary(targetOS string, vmArguments []string) {
 		os.Exit(1)
 	}
 
-	err = copy.Copy(
+	fileutils.CopyDir(
 		filepath.Join(build.BuildPath, "assets"),
 		filepath.Join(build.OutputDirectoryPath(targetOS), "assets"),
 	)
-	if err != nil {
-		log.Errorf("Failed to copy %s/assets: %v", build.BuildPath, err)
-		os.Exit(1)
-	}
 
 	wd, err := os.Getwd()
 	if err != nil {

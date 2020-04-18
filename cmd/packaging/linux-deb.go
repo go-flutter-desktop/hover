@@ -17,4 +17,5 @@ var LinuxDebTask = &packagingTask{
 	buildOutputDirectory:           "usr/lib/{{.projectName}}",
 	packagingScriptTemplate:        "dpkg-deb --build . {{.projectName}}-{{.version}}.deb",
 	outputFileExtension:            "deb",
+	outputFileContainsVersion:      true,
 }

@@ -1,6 +1,6 @@
 package packaging
 
-// LinuxSnapTask packaging for linux as snao
+// LinuxSnapTask packaging for linux as snap
 var LinuxSnapTask = &packagingTask{
 	packagingFormatName: "linux-snap",
 	templateFiles: map[string]string{
@@ -12,4 +12,5 @@ var LinuxSnapTask = &packagingTask{
 	buildOutputDirectory:           "build",
 	packagingScriptTemplate:        "snapcraft && mv {{.strippedProjectName}}_{{.version}}_{{.arch}}.snap {{.projectName}}-{{.version}}.snap",
 	outputFileExtension:            "snap",
+	outputFileContainsVersion:      true,
 }
