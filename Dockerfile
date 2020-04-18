@@ -6,19 +6,19 @@ RUN apt-get update \
 	&& apt-get install -y \
 		wget tar libssl1.0-dev libxml2-dev make g++
 RUN cd /tmp \
-	&& wget https://github.com/downloads/mackyle/xar/xar-1.6.1.tar.gz \
-	&& tar -zxvf xar-1.6.1.tar.gz > /dev/null \
+	&& wget https://github.com/downloads/mackyle/xar/xar-1.6.1.tar.gz 2>&1 \
+	&& tar -zxvf xar-1.6.1.tar.gz 2>&1 \
 	&& mv xar-1.6.1 xar \
 	&& cd xar \
-	&& ./configure > /dev/null \
-	&& make > /dev/null \
-	&& make install > /dev/null
+	&& ./configure 2>&1 \
+	&& make 2>&1 \
+	&& make install 2>&1
 
 FROM goflutter/golang-cross:latest AS hover
 
 # Add dart apt repository
-RUN sh -c 'wget -qO- https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add -' \
-	&& sh -c 'wget -qO- https://storage.googleapis.com/download.dartlang.org/linux/debian/dart_stable.list > /etc/apt/sources.list.d/dart_stable.list'
+RUN wget -qO- https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - 2>&1 \
+	&& wget -qO- https://storage.googleapis.com/download.dartlang.org/linux/debian/dart_stable.list > /etc/apt/sources.list.d/dart_stable.list
 
 # Install dependencies via apt
 RUN apt-get update \
@@ -50,10 +50,10 @@ RUN apt-get update \
 # Install darwin-pkg dependencies
 # TODO, optimization: make bomutils in a separate stage, copy binaries/libs, like xar.
 RUN cd /tmp \
-	&& git clone https://github.com/hogliux/bomutils \
+	&& git clone https://github.com/hogliux/bomutils 2>&1 \
 	&& cd bomutils \
-	&& make > /dev/null \
-	&& make install > /dev/null
+	&& make 2>&1 \
+	&& make install 2>&1
 COPY --from=xarbuilder /usr/local/bin/xar /usr/local/bin/xar
 COPY --from=xarbuilder /usr/local/lib/libxar.so.1 /usr/local/lib/libxar.so.1
 COPY --from=xarbuilder /usr/lib/x86_64-linux-gnu/libcrypto.so.1.0.0 /usr/lib/x86_64-linux-gnu/libcrypto.so.1.0.0
@@ -85,15 +85,15 @@ ENV SNAP_ARCH="amd64"
 # TODO: Add pacman pkg packaging
 
 # Install Flutter from the beta channel
-RUN git clone --single-branch --depth=1 --branch beta https://github.com/flutter/flutter /opt/flutter \
+RUN git clone --single-branch --depth=1 --branch beta https://github.com/flutter/flutter /opt/flutter 2>&1 \
 	&& ln -sf /opt/flutter/bin/flutter /usr/bin/flutter \
 	&& flutter doctor -v
 
 # Build hover
 WORKDIR /go/src/app
 COPY . .
-RUN go get -d -v ./...
-RUN go install -v ./...
+RUN go get -d -v ./... 2>&1
+RUN go install -v ./... 2>&1
 
 COPY docker/hover-safe.sh /usr/local/bin/hover-safe.sh
 
