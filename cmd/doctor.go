@@ -35,15 +35,16 @@ var doctorCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		assertInFlutterProject()
 
-		log.Infof("Running on %s", runtime.GOOS)
+		version := hoverVersion()
+		log.Infof("Hover version %s running on %s", version, runtime.GOOS)
 
 		log.Infof("Sharing flutter version")
-		cmdFlutterDoctor := exec.Command(build.FlutterBin(), "--version")
-		cmdFlutterDoctor.Stderr = os.Stderr
-		cmdFlutterDoctor.Stdout = os.Stdout
-		err := cmdFlutterDoctor.Run()
+		cmdFlutterVersion := exec.Command(build.FlutterBin(), "--version")
+		cmdFlutterVersion.Stderr = os.Stderr
+		cmdFlutterVersion.Stdout = os.Stdout
+		err := cmdFlutterVersion.Run()
 		if err != nil {
-			log.Errorf("Flutter doctor failed: %v", err)
+			log.Errorf("Flutter --version failed: %v", err)
 		}
 
 		engineCommitHash := flutterversion.FlutterRequiredEngineVersion()

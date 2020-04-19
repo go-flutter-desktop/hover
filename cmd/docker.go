@@ -86,9 +86,12 @@ func dockerHoverBuild(targetOS string, packagingTask packaging.Task, buildFlags 
 		// intended to be abused and may disappear at any time.
 		dockerArgs = append(dockerArgs, "--env", "HOVER_IN_DOCKER_BUILD_VMARGS="+strings.Join(vmArguments, ","))
 	}
-	// TODO: Use hover container of version of the current running hover.
-	// 		Use debug package to obtain Module info which contains the version.
-	dockerImage := "goflutter/hover:latest"
+
+	version := hoverVersion()
+	if version == "(devel)" {
+		version = "latest"
+	}
+	dockerImage := "goflutter/hover:" + version
 	dockerArgs = append(dockerArgs, dockerImage)
 	targetOSAndPackaging := targetOS
 	if packName := packagingTask.Name(); packName != "" {
