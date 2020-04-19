@@ -14,7 +14,7 @@ RUN cd /tmp \
 	&& make 2>&1 \
 	&& make install 2>&1
 
-FROM goflutter/golang-cross:latest AS hover
+FROM dockercore/golang-cross:latest AS hover
 
 # Add dart apt repository
 RUN wget -qO- https://dl-ssl.google.com/linux/linux_signing_key.pub | apt-key add - 2>&1 \
