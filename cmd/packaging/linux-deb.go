@@ -1,7 +1,7 @@
 package packaging
 
-// LinuxDebPackagingTask packaging for linux as deb
-var LinuxDebPackagingTask = &packagingTask{
+// LinuxDebTask packaging for linux as deb
+var LinuxDebTask = &packagingTask{
 	packagingFormatName: "linux-deb",
 	templateFiles: map[string]string{
 		"linux-deb/control.tmpl.tmpl": "DEBIAN/control.tmpl",
@@ -14,11 +14,8 @@ var LinuxDebPackagingTask = &packagingTask{
 	},
 	linuxDesktopFileExecutablePath: "/usr/lib/{{.projectName}}/{{.projectName}}",
 	linuxDesktopFileIconPath:       "/usr/lib/{{.projectName}}/assets/icon.png",
-	dockerfileContent: []string{
-		"FROM ubuntu:bionic",
-	},
-	buildOutputDirectory:      "usr/lib/{{.projectName}}",
-	packagingScriptTemplate:   "dpkg-deb --build . {{.projectName}}-{{.version}}.deb",
-	outputFileExtension:       "deb",
-	outputFileContainsVersion: true,
+	buildOutputDirectory:           "usr/lib/{{.projectName}}",
+	packagingScriptTemplate:        "dpkg-deb --build . {{.projectName}}-{{.version}}.deb",
+	outputFileExtension:            "deb",
+	outputFileContainsVersion:      true,
 }

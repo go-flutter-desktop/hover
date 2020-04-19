@@ -2,9 +2,9 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/go-flutter-desktop/hover/internal/androidmanifest"
 	"os"
 	"os/exec"
-	"os/user"
 	"path/filepath"
 	"runtime"
 	"strings"
@@ -14,7 +14,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/go-flutter-desktop/hover/cmd/packaging"
-	"github.com/go-flutter-desktop/hover/internal/androidmanifest"
 	"github.com/go-flutter-desktop/hover/internal/build"
 	"github.com/go-flutter-desktop/hover/internal/config"
 	"github.com/go-flutter-desktop/hover/internal/enginecache"
@@ -27,35 +26,37 @@ import (
 var dotSlash = string([]byte{'.', filepath.Separator})
 
 var (
-	buildTarget            string
-	buildBranch            string
-	buildDebug             bool
-	buildCachePath         string
-	buildOmitEmbedder      bool
-	buildOmitFlutterBundle bool
-	buildOpenGlVersion     string
-	buildDocker            bool
-	buildVersion           string
-	buildEngineVersion     string
+	// common build flages (shared with `hover run`)
+	buildTarget          string
+	buildGoFlutterBranch string
+	buildCachePath       string
+	buildOpenGlVersion   string
+	buildEngineVersion   string
+
+	// `hover build`-only build flags
+	buildDocker                 bool
+	buildDebug                  bool
+	buildVersionNumber          string
+	buildSkipEngineDownload     bool
+	buildSkipFlutterBuildBundle bool
 )
 
 const mingwGccBinName = "x86_64-w64-mingw32-gcc"
 const clangBinName = "o32-clang"
 
-var crossCompile = false
 var engineCachePath string
 
 func init() {
 	buildCmd.PersistentFlags().StringVarP(&buildTarget, "target", "t", config.BuildTargetDefault, "The main entry-point file of the application.")
-	buildCmd.PersistentFlags().StringVarP(&buildBranch, "branch", "b", config.BuildBranchDefault, "The 'go-flutter' version to use. (@master or @v0.20.0 for example)")
+	buildCmd.PersistentFlags().StringVarP(&buildGoFlutterBranch, "branch", "b", config.BuildBranchDefault, "The 'go-flutter' version to use. (@master or @v0.20.0 for example)")
 	buildCmd.PersistentFlags().StringVar(&buildEngineVersion, "engine-version", config.BuildEngineDefault, "The flutter engine version to use.")
-	buildCmd.PersistentFlags().BoolVar(&buildDebug, "debug", false, "Build a debug version of the app.")
-	buildCmd.PersistentFlags().StringVarP(&buildCachePath, "cache-path", "", config.BuildCachePathDefault, "The path that hover uses to cache dependencies such as the Flutter engine .so/.dll (defaults to the standard user cache directory)")
+	buildCmd.PersistentFlags().StringVar(&buildCachePath, "cache-path", "", "The path that hover uses to cache dependencies such as the Flutter engine .so/.dll (defaults to the standard user cache directory)")
 	buildCmd.PersistentFlags().StringVar(&buildOpenGlVersion, "opengl", config.BuildOpenGlVersionDefault, "The OpenGL version specified here is only relevant for external texture plugin (i.e. video_plugin).\nIf 'none' is provided, texture won't be supported. Note: the Flutter Engine still needs a OpenGL compatible context.")
-	buildCmd.PersistentFlags().StringVar(&buildVersion, "version-number", "", "Override the version number used in build and packaging. You may use it with $(git describe --tags)")
-	buildCmd.PersistentFlags().BoolVar(&buildDocker, "docker", false, "Compile in Docker container only. No need to install go")
-	buildCmd.PersistentFlags().BoolVar(&buildOmitEmbedder, "omit-embedder", false, "Don't (re)compile 'go-flutter' source code, useful when only working with Dart code")
-	buildCmd.PersistentFlags().BoolVar(&buildOmitFlutterBundle, "omit-flutter", false, "Don't (re)compile the current Flutter project, useful when only working with Golang code (plugin)")
+	buildCmd.PersistentFlags().StringVar(&buildVersionNumber, "version-number", "", "Override the version number used in build and packaging. You may use it with $(git describe --tags)")
+	buildCmd.PersistentFlags().BoolVar(&buildDebug, "debug", false, "Build a debug version of the app.")
+	buildCmd.PersistentFlags().BoolVar(&buildDocker, "docker", false, "Execute the go build and packaging in a docker container. The Flutter build is always run locally.")
+	buildCmd.PersistentFlags().BoolVar(&buildSkipEngineDownload, "skip-engine-download", false, "Skip donwloading the Flutter Engine and artifacts.")
+	buildCmd.PersistentFlags().BoolVar(&buildSkipFlutterBuildBundle, "skip-flutter-build-bundle", false, "Skip the 'flutter build bundle' step.")
 	buildCmd.AddCommand(buildLinuxCmd)
 	buildCmd.AddCommand(buildLinuxSnapCmd)
 	buildCmd.AddCommand(buildLinuxDebCmd)
@@ -80,9 +81,7 @@ var buildLinuxCmd = &cobra.Command{
 	Use:   "linux",
 	Short: "Build a desktop release for linux",
 	Run: func(cmd *cobra.Command, args []string) {
-		assertHoverInitialized()
-
-		buildNormal("linux", nil)
+		subcommandBuild("linux", packaging.NoopTask)
 	},
 }
 
@@ -90,12 +89,7 @@ var buildLinuxSnapCmd = &cobra.Command{
 	Use:   "linux-snap",
 	Short: "Build a desktop release for linux and package it for snap",
 	Run: func(cmd *cobra.Command, args []string) {
-		assertHoverInitialized()
-		packaging.LinuxSnapPackagingTask.AssertInitialized()
-		packaging.AssertDockerInstalled()
-
-		buildNormal("linux", nil)
-		packaging.LinuxSnapPackagingTask.Pack(buildVersion)
+		subcommandBuild("linux", packaging.LinuxSnapTask)
 	},
 }
 
@@ -103,12 +97,7 @@ var buildLinuxDebCmd = &cobra.Command{
 	Use:   "linux-deb",
 	Short: "Build a desktop release for linux and package it for deb",
 	Run: func(cmd *cobra.Command, args []string) {
-		assertHoverInitialized()
-		packaging.LinuxDebPackagingTask.AssertInitialized()
-		packaging.AssertDockerInstalled()
-
-		buildNormal("linux", nil)
-		packaging.LinuxDebPackagingTask.Pack(buildVersion)
+		subcommandBuild("linux", packaging.LinuxDebTask)
 	},
 }
 
@@ -116,12 +105,7 @@ var buildLinuxAppImageCmd = &cobra.Command{
 	Use:   "linux-appimage",
 	Short: "Build a desktop release for linux and package it for AppImage",
 	Run: func(cmd *cobra.Command, args []string) {
-		assertHoverInitialized()
-		packaging.LinuxAppImagePackagingTask.AssertInitialized()
-		packaging.AssertDockerInstalled()
-
-		buildNormal("linux", nil)
-		packaging.LinuxAppImagePackagingTask.Pack(buildVersion)
+		subcommandBuild("linux", packaging.LinuxAppImageTask)
 	},
 }
 
@@ -129,12 +113,7 @@ var buildLinuxRpmCmd = &cobra.Command{
 	Use:   "linux-rpm",
 	Short: "Build a desktop release for linux and package it for rpm",
 	Run: func(cmd *cobra.Command, args []string) {
-		assertHoverInitialized()
-		packaging.LinuxRpmPackagingTask.AssertInitialized()
-		packaging.AssertDockerInstalled()
-
-		buildNormal("linux", nil)
-		packaging.LinuxRpmPackagingTask.Pack(buildVersion)
+		subcommandBuild("linux", packaging.LinuxRpmTask)
 	},
 }
 
@@ -142,12 +121,7 @@ var buildLinuxPkgCmd = &cobra.Command{
 	Use:   "linux-pkg",
 	Short: "Build a desktop release for linux and package it for pacman pkg",
 	Run: func(cmd *cobra.Command, args []string) {
-		assertHoverInitialized()
-		packaging.LinuxPkgPackagingTask.AssertInitialized()
-		packaging.AssertDockerInstalled()
-
-		buildNormal("linux", nil)
-		packaging.LinuxPkgPackagingTask.Pack(buildVersion)
+		subcommandBuild("linux", packaging.LinuxPkgTask)
 	},
 }
 
@@ -155,9 +129,7 @@ var buildDarwinCmd = &cobra.Command{
 	Use:   "darwin",
 	Short: "Build a desktop release for darwin",
 	Run: func(cmd *cobra.Command, args []string) {
-		assertHoverInitialized()
-
-		buildNormal("darwin", nil)
+		subcommandBuild("darwin", packaging.NoopTask)
 	},
 }
 
@@ -165,12 +137,7 @@ var buildDarwinBundleCmd = &cobra.Command{
 	Use:   "darwin-bundle",
 	Short: "Build a desktop release for darwin and package it for OSX bundle",
 	Run: func(cmd *cobra.Command, args []string) {
-		assertHoverInitialized()
-		packaging.DarwinBundlePackagingTask.AssertInitialized()
-		packaging.AssertDockerInstalled()
-
-		buildNormal("darwin", nil)
-		packaging.DarwinBundlePackagingTask.Pack(buildVersion)
+		subcommandBuild("darwin", packaging.DarwinBundleTask)
 	},
 }
 
@@ -178,12 +145,7 @@ var buildDarwinPkgCmd = &cobra.Command{
 	Use:   "darwin-pkg",
 	Short: "Build a desktop release for darwin and package it for OSX pkg installer",
 	Run: func(cmd *cobra.Command, args []string) {
-		assertHoverInitialized()
-		packaging.DarwinPkgPackagingTask.AssertInitialized()
-		packaging.AssertDockerInstalled()
-
-		buildNormal("darwin", nil)
-		packaging.DarwinPkgPackagingTask.Pack(buildVersion)
+		subcommandBuild("darwin", packaging.DarwinPkgTask)
 	},
 }
 
@@ -191,12 +153,7 @@ var buildDarwinDmgCmd = &cobra.Command{
 	Use:   "darwin-dmg",
 	Short: "Build a desktop release for darwin and package it for OSX dmg",
 	Run: func(cmd *cobra.Command, args []string) {
-		assertHoverInitialized()
-		packaging.DarwinDmgPackagingTask.AssertInitialized()
-		packaging.AssertDockerInstalled()
-
-		buildNormal("darwin", nil)
-		packaging.DarwinDmgPackagingTask.Pack(buildVersion)
+		subcommandBuild("darwin", packaging.DarwinDmgTask)
 	},
 }
 
@@ -204,9 +161,7 @@ var buildWindowsCmd = &cobra.Command{
 	Use:   "windows",
 	Short: "Build a desktop release for windows",
 	Run: func(cmd *cobra.Command, args []string) {
-		assertHoverInitialized()
-
-		buildNormal("windows", nil)
+		subcommandBuild("windows", packaging.NoopTask)
 	},
 }
 
@@ -214,30 +169,65 @@ var buildWindowsMsiCmd = &cobra.Command{
 	Use:   "windows-msi",
 	Short: "Build a desktop release for windows and package it for msi",
 	Run: func(cmd *cobra.Command, args []string) {
-		assertHoverInitialized()
-		packaging.WindowsMsiPackagingTask.AssertInitialized()
-		packaging.AssertDockerInstalled()
-
-		buildNormal("windows", nil)
-		packaging.WindowsMsiPackagingTask.Pack(buildVersion)
+		subcommandBuild("windows", packaging.WindowsMsiTask)
 	},
 }
 
-// checkForMainDesktop checks and adds the lib/main_desktop.dart dart entry
-// point if needed
-func checkForMainDesktop() {
-	if buildTarget != "lib/main_desktop.dart" {
-		return
+// TODO: replace targetOS with a same Task type for build (build.Task) ?
+func subcommandBuild(targetOS string, packagingTask packaging.Task) {
+	assertHoverInitialized()
+	packagingTask.AssertInitialized()
+
+	if !buildSkipFlutterBuildBundle {
+		cleanBuildOutputsDir(targetOS)
+		buildFlutterBundle(targetOS)
 	}
-	_, err := os.Stat("lib/main_desktop.dart")
+	if buildDocker {
+		var buildFlags []string
+		buildFlags = append(buildFlags, commonFlags()...)
+		buildFlags = append(buildFlags, "--skip-flutter-build-bundle")
+		buildFlags = append(buildFlags, "--skip-engine-download")
+		if buildVersionNumber != "" {
+			buildFlags = append(buildFlags, "--version-number", buildVersionNumber)
+		}
+		if buildDebug {
+			buildFlags = append(buildFlags, "--debug")
+		}
+		dockerHoverBuild(targetOS, packagingTask, buildFlags, nil)
+	} else {
+		buildGoBinary(targetOS, nil)
+		packagingTask.Pack(buildVersionNumber)
+	}
+}
+
+func commonFlags() []string {
+	f := []string{}
+	if buildTarget != config.BuildTargetDefault {
+		f = append(f, "--target", buildTarget)
+	}
+	if buildGoFlutterBranch != config.BuildBranchDefault {
+		f = append(f, "--branch", buildGoFlutterBranch)
+	}
+	if buildOpenGlVersion != config.BuildOpenGlVersionDefault {
+		f = append(f, "--opengl", buildOpenGlVersion)
+	}
+	return f
+}
+
+// assertTargetFileExists checks and adds the lib/main_desktop.dart dart entry
+// point if needed
+func assertTargetFileExists(targetFilename string) {
+	_, err := os.Stat(targetFilename)
 	if os.IsNotExist(err) {
-		log.Warnf("Target file \"lib/main_desktop.dart\" not found.")
-		log.Warnf("Let hover add the \"lib/main_desktop.dart\" file? ")
-		if askForConfirmation() {
-			fileutils.CopyAsset("app/main_desktop.dart", filepath.Join("lib", "main_desktop.dart"), fileutils.AssetsBox)
-			log.Infof("Target file \"lib/main_desktop.dart\" has been created.")
-			log.Infof("       Depending on your project, you might want to tweak it.")
-			return
+		log.Warnf("Target file \"%s\" not found.", targetFilename)
+		if targetFilename == config.BuildTargetDefault {
+			log.Warnf("Let hover add the \"lib/main_desktop.dart\" file? ")
+			if askForConfirmation() {
+				fileutils.CopyAsset("app/main_desktop.dart", filepath.Join("lib", "main_desktop.dart"), fileutils.AssetsBox)
+				log.Infof("Target file \"lib/main_desktop.dart\" has been created.")
+				log.Infof("       Depending on your project, you might want to tweak it.")
+				return
+			}
 		}
 		log.Printf("You can define a custom traget by using the %s flag.", log.Au().Magenta("--target"))
 		os.Exit(1)
@@ -248,120 +238,69 @@ func checkForMainDesktop() {
 	}
 }
 
-func buildInDocker(targetOS string, vmArguments []string) {
-	crossCompilingDir, _ := filepath.Abs(filepath.Join(build.BuildPath, "cross-compiling"))
-	err := os.MkdirAll(crossCompilingDir, 0755)
+func cleanBuildOutputsDir(targetOS string) {
+	err := os.RemoveAll(build.OutputDirectoryPath(targetOS))
+	log.Printf("Cleaning the build directory")
 	if err != nil {
-		log.Errorf("Cannot create the cross-compiling directory: %v", err)
+		log.Errorf("Failed to remove output directory %s: %v", build.OutputDirectoryPath(targetOS), err)
 		os.Exit(1)
 	}
-	userCacheDir, err := os.UserCacheDir()
+	err = os.MkdirAll(build.OutputDirectoryPath(targetOS), 0775)
 	if err != nil {
-		log.Errorf("Cannot get the path for the system cache directory: %v", err)
+		log.Errorf("Failed to create output directory %s: %v", build.OutputDirectoryPath(targetOS), err)
 		os.Exit(1)
 	}
-	goPath := filepath.Join(userCacheDir, "hover-cc")
-	err = os.MkdirAll(goPath, 0755)
-	if err != nil {
-		log.Errorf("Cannot create the hover-cc GOPATH under the system cache directory: %v", err)
-		os.Exit(1)
-	}
-	wd, err := os.Getwd()
-	if err != nil {
-		log.Errorf("Cannot get the path for current directory %s", err)
-		os.Exit(1)
-	}
-	dockerFilePath, err := filepath.Abs(filepath.Join(crossCompilingDir, "Dockerfile"))
-	if err != nil {
-		log.Errorf("Failed to resolve absolute path for Dockerfile %s: %v", dockerFilePath, err)
-		os.Exit(1)
-	}
-	if _, err := os.Stat(dockerFilePath); os.IsNotExist(err) {
-		dockerFile, err := os.Create(dockerFilePath)
-		if err != nil {
-			log.Errorf("Failed to create Dockerfile %s: %v", dockerFilePath, err)
-			os.Exit(1)
-		}
-		dockerFileContent := []string{
-			// TODO: Once golang 1.13 is available in the 'dockercore/golang-cross' image.
-			// Use the 'dockercore' image instead. Pending PR: https://github.com/docker/golang-cross/pull/45
-			"FROM goreng/golang-cross:v1.13.5", // v1.13.5.1 is broken
-			"RUN apt-get update && apt-get install libgl1-mesa-dev xorg-dev -y",
-		}
-
-		for _, line := range dockerFileContent {
-			if _, err := dockerFile.WriteString(line + "\n"); err != nil {
-				log.Errorf("Could not write Dockerfile: %v", err)
-				os.Exit(1)
-			}
-		}
-		err = dockerFile.Close()
-		if err != nil {
-			log.Errorf("Could not close Dockerfile: %v", err)
-			os.Exit(1)
-		}
-		log.Infof("A Dockerfile for cross-compiling for %s has been created at %s. You can add it to git.", targetOS, filepath.Join(build.BuildPath, "cross-compiling", targetOS))
-	}
-	dockerBuildCmd := exec.Command(build.DockerBin, "build", "-t", "hover-build-cc", ".")
-	dockerBuildCmd.Stdout = os.Stdout
-	dockerBuildCmd.Stderr = os.Stderr
-	dockerBuildCmd.Dir = crossCompilingDir
-	err = dockerBuildCmd.Run()
-	if err != nil {
-		log.Errorf("Docker build failed: %v", err)
-		os.Exit(1)
-	}
-
-	log.Infof("Cross-Compiling 'go-flutter' and plugins using docker")
-
-	u, err := user.Current()
-	if err != nil {
-		log.Errorf("Couldn't get current user: %v", err)
-		os.Exit(1)
-	}
-	args := []string{
-		"run",
-		"--rm",
-		"-w", "/app/go",
-		"-v", goPath + ":/go",
-		"-v", wd + ":/app",
-		"-v", engineCachePath + ":/engine",
-		"-v", filepath.Join(userCacheDir, "go-build") + ":/cache",
-	}
-	for _, env := range buildEnv(targetOS, "/engine") {
-		args = append(args, "-e", env)
-	}
-	args = append(args, "hover-build-cc")
-	chownStr := ""
-	if runtime.GOOS != "windows" {
-		chownStr = fmt.Sprintf(" && chown %s:%s ./ -R", u.Uid, u.Gid)
-	}
-	stripStr := ""
-	if targetOS == "linux" {
-		outputEngineFile := filepath.Join("/app", build.BuildPath, "build", "outputs", targetOS, build.EngineFile(targetOS))
-		stripStr = fmt.Sprintf("strip -s %s && ", outputEngineFile)
-	}
-	args = append(args, "bash", "-c", fmt.Sprintf("%s%s%s", stripStr, strings.Join(buildCommand(targetOS, vmArguments, "build/outputs/"+targetOS+"/"+build.OutputBinaryName(pubspec.GetPubSpec().Name, targetOS)), " "), chownStr))
-	dockerRunCmd := exec.Command(build.DockerBin, args...)
-	dockerRunCmd.Stderr = os.Stderr
-	dockerRunCmd.Stdout = os.Stdout
-	dockerRunCmd.Dir = crossCompilingDir
-	err = dockerRunCmd.Run()
-	if err != nil {
-		log.Errorf("Docker run failed: %v", err)
-		os.Exit(1)
-	}
-	log.Infof("Successfully cross-compiled for " + targetOS)
 }
 
-func buildNormal(targetOS string, vmArguments []string) {
+func buildFlutterBundle(targetOS string) {
 	if buildTarget == config.BuildTargetDefault && config.GetConfig().Target != "" {
 		buildTarget = config.GetConfig().Target
 	}
-	if buildBranch == config.BuildBranchDefault && config.GetConfig().Branch != "" {
-		buildBranch = config.GetConfig().Branch
+	assertTargetFileExists(buildTarget)
+
+	runPluginGet, err := shouldRunPluginGet()
+	if err != nil {
+		log.Errorf("Failed to check if plugin get should be run: %v.\n", err)
+		os.Exit(1)
 	}
-	if buildCachePath == config.BuildCachePathDefault && config.GetConfig().CachePath != "" {
+	if runPluginGet {
+		log.Printf("listing available plugins:")
+		if hoverPluginGet(true) {
+			// TODO: change this so that it only logs when there are plugins missing..
+			log.Infof(fmt.Sprintf("Run `%s` to update plugins", log.Au().Magenta("hover plugins get")))
+		}
+	}
+
+	checkFlutterChannel()
+
+	var flutterBuildBundleArgs = []string{
+		"build", "bundle",
+		"--asset-dir", filepath.Join(build.OutputDirectoryPath(targetOS), "flutter_assets"),
+		"--target", buildTarget,
+	}
+	if buildDebug {
+		flutterBuildBundleArgs = append(flutterBuildBundleArgs, "--track-widget-creation")
+	}
+	cmdFlutterBuildBundle := exec.Command(build.FlutterBin(), flutterBuildBundleArgs...)
+	cmdFlutterBuildBundle.Stderr = os.Stderr
+	cmdFlutterBuildBundle.Stdout = os.Stdout
+
+	log.Infof("Building flutter bundle")
+	err = cmdFlutterBuildBundle.Run()
+	if err != nil {
+		log.Errorf("Flutter build failed: %v", err)
+		os.Exit(1)
+	}
+}
+
+func buildGoBinary(targetOS string, vmArguments []string) {
+	if vmArgsFromEnv := os.Getenv("HOVER_IN_DOCKER_BUILD_VMARGS"); len(vmArgsFromEnv) > 0 {
+		vmArguments = append(vmArguments, strings.Split(vmArgsFromEnv, ",")...)
+	}
+	if buildGoFlutterBranch == config.BuildBranchDefault && config.GetConfig().Branch != "" {
+		buildGoFlutterBranch = config.GetConfig().Branch
+	}
+	if buildCachePath == "" && config.GetConfig().CachePath != "" {
 		buildCachePath = config.GetConfig().CachePath
 	}
 	if buildEngineVersion == config.BuildEngineDefault && config.GetConfig().Engine != "" {
@@ -371,92 +310,28 @@ func buildNormal(targetOS string, vmArguments []string) {
 	if buildOpenGlVersion == config.BuildOpenGlVersionDefault && config.GetConfig().OpenGL != "" {
 		buildOpenGlVersion = config.GetConfig().OpenGL
 	}
-	if !buildDocker && config.GetConfig().Docker {
-		buildDocker = config.GetConfig().Docker
-	}
-	if buildVersion == "" {
-		buildVersion = pubspec.GetPubSpec().Version
+	if buildVersionNumber == "" {
+		buildVersionNumber = pubspec.GetPubSpec().Version
 	}
 
-	checkForMainDesktop()
-	crossCompile = targetOS != runtime.GOOS
-	buildDocker = crossCompile || buildDocker
-
-	if buildCachePath != "" {
-		engineCachePath = enginecache.ValidateOrUpdateEngineAtPath(targetOS, buildCachePath, buildEngineVersion)
+	if buildCachePath == "" {
+		buildCachePath = enginecache.DefaultCachePath()
+	}
+	if buildSkipEngineDownload {
+		engineCachePath = enginecache.EngineCachePath(targetOS, buildCachePath)
 	} else {
 		engineCachePath = enginecache.ValidateOrUpdateEngine(targetOS, buildEngineVersion)
 	}
 
-	if !buildOmitFlutterBundle && !buildOmitEmbedder {
-		err := os.RemoveAll(build.OutputDirectoryPath(targetOS))
-		log.Printf("Cleaning the build directory")
-		if err != nil {
-			log.Errorf("Failed to clean output directory %s: %v", build.OutputDirectoryPath(targetOS), err)
-			os.Exit(1)
-		}
-	}
 	fileutils.CopyDir(build.IntermediatesDirectoryPath(targetOS), build.OutputDirectoryPath(targetOS))
 
-	err := os.MkdirAll(build.OutputDirectoryPath(targetOS), 0775)
-	if err != nil {
-		log.Errorf("Failed to create output directory %s: %v", build.OutputDirectoryPath(targetOS), err)
-		os.Exit(1)
-	}
-
-	checkFlutterChannel()
-
-	var (
-		trackWidgetCreation string
-	)
-
-	if buildDebug {
-		trackWidgetCreation = "--track-widget-creation"
-	}
-
-	// must be run before `flutter build bundle`
-	// because `build bundle` will update the file timestamp
-	runPluginGet, err := shouldRunPluginGet()
-	if err != nil {
-		log.Errorf("Failed to check if plugin get should be run: %v.\n", err)
-		os.Exit(1)
-	}
-
-	cmdFlutterBuild := exec.Command(build.FlutterBin, "build", "bundle",
-		"--asset-dir", filepath.Join(build.OutputDirectoryPath(targetOS), "flutter_assets"),
-		"--target", buildTarget,
-		trackWidgetCreation,
-	)
-
-	cmdFlutterBuild.Stderr = os.Stderr
-	cmdFlutterBuild.Stdout = os.Stdout
-
-	if !buildOmitFlutterBundle {
-		log.Infof("Bundling flutter app")
-		err = cmdFlutterBuild.Run()
-		if err != nil {
-			log.Errorf("Flutter build failed: %v", err)
-			os.Exit(1)
-		}
-	}
-
-	if runPluginGet {
-		log.Printf("listing available plugins:")
-		if hoverPluginGet(true) {
-			log.Infof(fmt.Sprintf("run `%s`? ", log.Au().Magenta("hover plugins get")))
-			if askForConfirmation() {
-				hoverPluginGet(false)
-			}
-		}
-	}
-
-	outputEngineFile := filepath.Join(build.OutputDirectoryPath(targetOS), build.EngineFile(targetOS))
-	err = copy.Copy(
-		filepath.Join(engineCachePath, build.EngineFile(targetOS)),
+	outputEngineFile := filepath.Join(build.OutputDirectoryPath(targetOS), build.EngineFilename(targetOS))
+	err := copy.Copy(
+		filepath.Join(engineCachePath, build.EngineFilename(targetOS)),
 		outputEngineFile,
 	)
 	if err != nil {
-		log.Errorf("Failed to copy %s: %v", build.EngineFile(targetOS), err)
+		log.Errorf("Failed to copy %s: %v", build.EngineFilename(targetOS), err)
 		os.Exit(1)
 	}
 
@@ -474,18 +349,13 @@ func buildNormal(targetOS string, vmArguments []string) {
 		filepath.Join(build.OutputDirectoryPath(targetOS), "assets"),
 	)
 
-	if buildOmitEmbedder {
-		// Omit the 'go-flutter' build
-		return
-	}
-
 	wd, err := os.Getwd()
 	if err != nil {
 		log.Errorf("Failed to get working dir: %v", err)
 		os.Exit(1)
 	}
 
-	if buildBranch == "" {
+	if buildGoFlutterBranch == "" {
 		currentTag, err := versioncheck.CurrentGoFlutterTag(filepath.Join(wd, build.BuildPath))
 		if err != nil {
 			log.Errorf("%v", err)
@@ -514,7 +384,7 @@ func buildNormal(targetOS string, vmArguments []string) {
 		}
 
 	} else {
-		log.Printf("Downloading 'go-flutter' %s", buildBranch)
+		log.Printf("Downloading 'go-flutter' %s", buildGoFlutterBranch)
 
 		// when the buildBranch is set, fetch the go-flutter branch version.
 		err = upgradeGoFlutter(targetOS, engineCachePath)
@@ -525,14 +395,6 @@ func buildNormal(targetOS string, vmArguments []string) {
 
 	if buildOpenGlVersion == "none" {
 		log.Warnf("The '--opengl=none' flag makes go-flutter incompatible with texture plugins!")
-	}
-
-	if buildDocker {
-		if crossCompile {
-			log.Infof("Because %s is not able to compile for %s out of the box, a cross-compiling container is used", runtime.GOOS, targetOS)
-		}
-		buildInDocker(targetOS, vmArguments)
-		return
 	}
 
 	if !buildDebug && targetOS == "linux" {
@@ -586,12 +448,7 @@ func buildEnv(targetOS string, engineCachePath string) []string {
 		"GOARCH=amd64",
 		"CGO_ENABLED=1",
 	}
-	if buildDocker {
-		env = append(env,
-			"GOCACHE=/cache",
-			"GOPROXY="+os.Getenv("GOPROXY"),
-			"GOPRIVATE="+os.Getenv("GOPRIVATE"),
-		)
+	if runtime.GOOS == "linux" {
 		if targetOS == "windows" {
 			env = append(env,
 				"CC="+mingwGccBinName,
@@ -631,7 +488,7 @@ func buildCommand(targetOS string, vmArguments []string, outputBinaryPath string
 			" -X github.com/go-flutter-desktop/go-flutter.PlatformVersion=%s "+
 			" -X github.com/go-flutter-desktop/go-flutter.ProjectName=%s "+
 			" -X github.com/go-flutter-desktop/go-flutter.ProjectOrganizationName=%s",
-		buildVersion,
+		buildVersionNumber,
 		currentTag,
 		pubspec.GetPubSpec().Name,
 		androidmanifest.AndroidOrganizationName()))
@@ -643,11 +500,7 @@ func buildCommand(targetOS string, vmArguments []string, outputBinaryPath string
 		"-o", outputBinaryPath,
 		"-v",
 	}
-	if buildDocker {
-		outputCommand = append(outputCommand, fmt.Sprintf("-ldflags=\"%s\"", strings.Join(ldflags, " ")))
-	} else {
-		outputCommand = append(outputCommand, fmt.Sprintf("-ldflags=%s", strings.Join(ldflags, " ")))
-	}
+	outputCommand = append(outputCommand, fmt.Sprintf("-ldflags=%s", strings.Join(ldflags, " ")))
 	outputCommand = append(outputCommand, dotSlash+"cmd")
 	return outputCommand
 }

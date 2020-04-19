@@ -194,11 +194,16 @@ func downloadFile(filepath string, url string) error {
 	return nil
 }
 
+//noinspection GoNameStartsWithPackageName
+func EngineCachePath(targetOS, cachePath string) string {
+	return filepath.Join(cachePath, "hover", "engine", targetOS)
+}
+
 // ValidateOrUpdateEngineAtPath validates the engine we have cached matches the
 // flutter version, or otherwise downloads a new engine. The engine cache
 // location is set by the the user.
-func ValidateOrUpdateEngineAtPath(targetOS string, cachePath string, requiredEngineVersion string) (engineCachePath string) {
-	engineCachePath = filepath.Join(cachePath, "hover", "engine", targetOS)
+func ValidateOrUpdateEngineAtPath(targetOS, cachePath, requiredEngineVersion string) (engineCachePath string) {
+	engineCachePath = EngineCachePath(targetOS, cachePath)
 
 	if strings.Contains(engineCachePath, " ") {
 		log.Errorf("Cannot save the engine to '%s', engine cache is not compatible with path containing spaces.", cachePath)
@@ -222,7 +227,7 @@ func ValidateOrUpdateEngineAtPath(targetOS string, cachePath string, requiredEng
 	if cachedEngineVersion != "" {
 		if cachedEngineVersion == requiredEngineVersion {
 			log.Printf("Using engine from cache")
-			return
+			return engineCachePath
 		}
 
 		// Engine is outdated, we remove the old engine and continue to download
@@ -288,7 +293,7 @@ func ValidateOrUpdateEngineAtPath(targetOS string, cachePath string, requiredEng
 		os.Exit(1)
 	}
 
-	// TODO: make artifacts download a separate function, it doesn't need to be
+	// TODO, optimization: make artifacts download a separate function, it doesn't need to be
 	// downloaded with engine because it's OS independent.
 	log.Printf("Downloading artifacts at version %s...", requiredEngineVersion)
 	err = downloadFile(artifactsZipPath, icudtlDownloadURL)
@@ -351,13 +356,13 @@ func ValidateOrUpdateEngineAtPath(targetOS string, cachePath string, requiredEng
 		os.Exit(1)
 	}
 
-	return
+	return engineCachePath
 }
 
 // ValidateOrUpdateEngine validates the engine we have cached matches the
 // flutter version, or otherwise downloads a new engine. The returned path is
 // that of the engine location.
 func ValidateOrUpdateEngine(targetOS string, requiredEngineVersion string) (engineCachePath string) {
-	engineCachePath = ValidateOrUpdateEngineAtPath(targetOS, cachePath(), requiredEngineVersion)
+	engineCachePath = ValidateOrUpdateEngineAtPath(targetOS, DefaultCachePath(), requiredEngineVersion)
 	return
 }

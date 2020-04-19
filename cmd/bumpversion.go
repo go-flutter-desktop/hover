@@ -43,6 +43,7 @@ func upgrade(targetOS string) (err error) {
 	} else {
 		engineCachePath = enginecache.ValidateOrUpdateEngine(targetOS, "")
 	}
+	engineCachePath = enginecache.ValidateOrUpdateEngine(targetOS, buildCachePath)
 	return upgradeGoFlutter(targetOS, engineCachePath)
 }
 
@@ -66,11 +67,11 @@ func upgradeGoFlutter(targetOS string, engineCachePath string) (err error) {
 		return
 	}
 
-	if buildBranch == "" {
-		buildBranch = "@latest"
+	if buildGoFlutterBranch == "" {
+		buildGoFlutterBranch = "@latest"
 	}
 
-	cmdGoGetU := exec.Command(build.GoBin, "get", "-u", "github.com/go-flutter-desktop/go-flutter"+buildBranch)
+	cmdGoGetU := exec.Command(build.GoBin(), "get", "-u", "github.com/go-flutter-desktop/go-flutter"+buildGoFlutterBranch)
 	cmdGoGetU.Dir = filepath.Join(wd, build.BuildPath)
 	cmdGoGetU.Env = append(os.Environ(),
 		"GOPROXY=direct", // github.com/golang/go/issues/32955 (allows '/' in branch name)
@@ -82,12 +83,12 @@ func upgradeGoFlutter(targetOS string, engineCachePath string) (err error) {
 
 	err = cmdGoGetU.Run()
 	// When cross-compiling the command fails, but that is not an error
-	if err != nil && !buildDocker {
-		log.Errorf("Updating go-flutter to %s version failed: %v", buildBranch, err)
+	if err != nil {
+		log.Errorf("Updating go-flutter to %s version failed: %v", buildGoFlutterBranch, err)
 		return
 	}
 
-	cmdGoModDownload := exec.Command(build.GoBin, "mod", "download")
+	cmdGoModDownload := exec.Command(build.GoBin(), "mod", "download")
 	cmdGoModDownload.Dir = filepath.Join(wd, build.BuildPath)
 	cmdGoModDownload.Env = append(os.Environ(),
 		"GO111MODULE=on",

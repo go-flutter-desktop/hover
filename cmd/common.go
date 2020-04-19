@@ -19,39 +19,6 @@ import (
 	"github.com/go-flutter-desktop/hover/internal/pubspec"
 )
 
-// initBinaries is used to ensure go and flutter exec are found in the
-// user's path
-func initBinaries() {
-	var err error
-	goAvailable := false
-	dockerAvailable := false
-	build.GoBin, err = exec.LookPath("go")
-	if err == nil {
-		goAvailable = true
-	}
-	build.DockerBin, err = exec.LookPath("docker")
-	if err == nil {
-		dockerAvailable = true
-	}
-	if !dockerAvailable && !goAvailable {
-		log.Errorf("Failed to lookup `go` and `docker` executable. Please install one of them:\nGo: https://golang.org/doc/install\nDocker: https://docs.docker.com/install")
-		os.Exit(1)
-	}
-	if dockerAvailable && !goAvailable && !buildDocker {
-		log.Errorf("Failed to lookup `go` executable. Please install go or add '--docker' to force running in Docker container.\nhttps://golang.org/doc/install")
-		os.Exit(1)
-	}
-	build.FlutterBin, err = exec.LookPath("flutter")
-	if err != nil {
-		log.Errorf("Failed to lookup 'flutter' executable. Please install flutter.\nhttps://flutter.dev/docs/get-started/install")
-		os.Exit(1)
-	}
-	build.GitBin, err = exec.LookPath("git")
-	if err != nil {
-		log.Warnf("Failed to lookup 'git' executable.")
-	}
-}
-
 // assertInFlutterProject asserts this command is executed in a flutter project
 func assertInFlutterProject() {
 	pubspec.GetPubSpec()
@@ -68,7 +35,7 @@ func assertInFlutterPluginProject() {
 func assertHoverInitialized() {
 	_, err := os.Stat(build.BuildPath)
 	if os.IsNotExist(err) {
-		if hoverMigration() {
+		if hoverMigrateDesktopToGo() {
 			return
 		}
 		log.Errorf("Directory '%s' is missing. Please init go-flutter first: %s", build.BuildPath, log.Au().Magenta("hover init"))
@@ -89,8 +56,8 @@ func checkFlutterChannel() {
 	}
 }
 
-// hoverMigration migrates from old hover buildPath directory to the new one ("desktop" -> "go")
-func hoverMigration() bool {
+// hoverMigrateDesktopToGo migrates from old hover buildPath directory to the new one ("desktop" -> "go")
+func hoverMigrateDesktopToGo() bool {
 	oldBuildPath := "desktop"
 	file, err := os.Open(filepath.Join(oldBuildPath, "go.mod"))
 	if err != nil {
@@ -118,6 +85,12 @@ func hoverMigration() bool {
 // askForConfirmation asks the user for confirmation.
 func askForConfirmation() bool {
 	fmt.Print(log.Au().Bold(log.Au().Cyan("hover: ")).String() + "[y/N]? ")
+
+	if len(os.Getenv("HOVER_DISABLE_INTERACTIONS")) > 0 {
+		fmt.Println(log.Au().Bold(log.Au().Yellow("Interactions disabled, assuming 'no'.")).String())
+		return false
+	}
+
 	in := bufio.NewReader(os.Stdin)
 	s, err := in.ReadString('\n')
 	if err != nil {
@@ -150,7 +123,7 @@ func initializeGoModule(projectPath string) {
 		os.Exit(1)
 	}
 
-	cmdGoModInit := exec.Command(build.GoBin, "mod", "init", projectPath+"/"+build.BuildPath)
+	cmdGoModInit := exec.Command(build.GoBin(), "mod", "init", projectPath+"/"+build.BuildPath)
 	cmdGoModInit.Dir = filepath.Join(wd, build.BuildPath)
 	cmdGoModInit.Env = append(os.Environ(),
 		"GO111MODULE=on",
@@ -163,7 +136,7 @@ func initializeGoModule(projectPath string) {
 		os.Exit(1)
 	}
 
-	cmdGoModTidy := exec.Command(build.GoBin, "mod", "tidy")
+	cmdGoModTidy := exec.Command(build.GoBin(), "mod", "tidy")
 	cmdGoModTidy.Dir = filepath.Join(wd, build.BuildPath)
 	log.Infof("You can add the '%s' directory to git.", cmdGoModTidy.Dir)
 	cmdGoModTidy.Env = append(os.Environ(),

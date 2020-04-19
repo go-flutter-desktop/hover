@@ -8,7 +8,7 @@ import (
 	"github.com/go-flutter-desktop/hover/internal/log"
 )
 
-func cachePath() string {
+func DefaultCachePath() string {
 	homePath, err := os.UserHomeDir()
 	if err != nil {
 		log.Errorf("Failed to resolve home path: %v", err)

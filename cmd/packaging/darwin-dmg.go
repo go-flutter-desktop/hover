@@ -1,14 +1,10 @@
 package packaging
 
-// DarwinDmgPackagingTask packaging for darwin as dmg
-var DarwinDmgPackagingTask = &packagingTask{
+// DarwinDmgTask packaging for darwin as dmg
+var DarwinDmgTask = &packagingTask{
 	packagingFormatName: "darwin-dmg",
 	dependsOn: map[*packagingTask]string{
-		DarwinBundlePackagingTask: "dmgdir",
-	},
-	dockerfileContent: []string{
-		"FROM ubuntu:bionic",
-		"RUN apt-get update && apt-get install genisoimage -y ",
+		DarwinBundleTask: "dmgdir",
 	},
 	packagingScriptTemplate:   "ln -sf /Applications dmgdir/Applications && genisoimage -V '{{.projectName}}' -D -R -apple -no-pad -o '{{.projectName}}-{{.version}}.dmg' dmgdir",
 	outputFileExtension:       "dmg",

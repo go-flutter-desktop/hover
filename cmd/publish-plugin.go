@@ -31,14 +31,8 @@ var publishPluginCmd = &cobra.Command{
 	},
 	Run: func(cmd *cobra.Command, args []string) {
 		assertInFlutterPluginProject()
-
-		if build.GitBin == "" {
-			log.Errorf("Failed to lookup `git` executable. Please install git")
-			os.Exit(1)
-		}
-
 		// check if dir 'go' is tracked
-		goCheckTrackedCmd := exec.Command(build.GitBin, "ls-files", "--error-unmatch", build.BuildPath)
+		goCheckTrackedCmd := exec.Command(build.GitBin(), "ls-files", "--error-unmatch", build.BuildPath)
 		goCheckTrackedCmd.Stderr = os.Stderr
 		err := goCheckTrackedCmd.Run()
 		if err != nil {
@@ -47,7 +41,7 @@ var publishPluginCmd = &cobra.Command{
 		}
 
 		// check if dir 'go' is clean (all tracked files are committed)
-		goCheckCleanCmd := exec.Command(build.GitBin, "status", "--untracked-file=no", "--porcelain", build.BuildPath)
+		goCheckCleanCmd := exec.Command(build.GitBin(), "status", "--untracked-file=no", "--porcelain", build.BuildPath)
 		goCheckCleanCmd.Stderr = os.Stderr
 		cleanOut, err := goCheckCleanCmd.Output()
 		if err != nil {
@@ -87,7 +81,7 @@ import (
 		path := strings.TrimPrefix(url.Path, "/")
 		path = strings.TrimSuffix(path, "/go")
 		re := regexp.MustCompile(`(\w+)\s+(\S+)` + url.Host + "." + path + ".git")
-		goCheckRemote := exec.Command(build.GitBin, "remote", "-v")
+		goCheckRemote := exec.Command(build.GitBin(), "remote", "-v")
 		goCheckRemote.Stderr = os.Stderr
 		remoteOut, err := goCheckRemote.Output()
 		if err != nil {
@@ -114,7 +108,7 @@ import (
 
 		log.Infof(fmt.Sprintf("Let hover run those commands? "))
 		if askForConfirmation() {
-			gitTag := exec.Command(build.GitBin, "tag", tag)
+			gitTag := exec.Command(build.GitBin(), "tag", tag)
 			gitTag.Stderr = os.Stderr
 			gitTag.Stdout = os.Stdout
 			err = gitTag.Run()
@@ -123,7 +117,7 @@ import (
 				os.Exit(1)
 			}
 
-			gitPush := exec.Command(build.GitBin, "push", match[1], tag)
+			gitPush := exec.Command(build.GitBin(), "push", match[1], tag)
 			gitPush.Stderr = os.Stderr
 			gitPush.Stdout = os.Stdout
 			err = gitPush.Run()

@@ -20,7 +20,7 @@ func FlutterChannel() string {
 }
 
 func readFlutterVersion() flutterVersionResponse {
-	out, err := exec.Command(build.FlutterBin, "--version", "--machine").Output()
+	out, err := exec.Command(build.FlutterBin(), "--version", "--machine").Output()
 	if err != nil {
 		log.Errorf("Failed to run %s: %v", log.Au().Magenta("flutter --version --machine"), err)
 		os.Exit(1)

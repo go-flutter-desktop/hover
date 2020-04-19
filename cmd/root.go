@@ -10,16 +10,17 @@ import (
 )
 
 var colors bool
+var docker bool
 
 func init() {
 	rootCmd.PersistentFlags().BoolVar(&colors, "colors", true, "Add colors to log")
+	rootCmd.PersistentFlags().BoolVar(&docker, "docker", false, "Run the command in a docker container for hover")
 }
 
 func initHover() {
 	if colors {
 		log.Colorize()
 	}
-	initBinaries()
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
 	go func() {

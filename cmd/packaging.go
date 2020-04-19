@@ -29,9 +29,8 @@ var initLinuxSnapCmd = &cobra.Command{
 	Short: "Create configuration files for snap packaging",
 	Run: func(cmd *cobra.Command, args []string) {
 		assertHoverInitialized()
-		packaging.AssertDockerInstalled()
 
-		packaging.LinuxSnapPackagingTask.Init()
+		packaging.LinuxSnapTask.Init()
 	},
 }
 
@@ -40,9 +39,8 @@ var initLinuxDebCmd = &cobra.Command{
 	Short: "Create configuration files for deb packaging",
 	Run: func(cmd *cobra.Command, args []string) {
 		assertHoverInitialized()
-		packaging.AssertDockerInstalled()
 
-		packaging.LinuxDebPackagingTask.Init()
+		packaging.LinuxDebTask.Init()
 	},
 }
 
@@ -51,9 +49,8 @@ var initLinuxAppImageCmd = &cobra.Command{
 	Short: "Create configuration files for AppImage packaging",
 	Run: func(cmd *cobra.Command, args []string) {
 		assertHoverInitialized()
-		packaging.AssertDockerInstalled()
 
-		packaging.LinuxAppImagePackagingTask.Init()
+		packaging.LinuxAppImageTask.Init()
 	},
 }
 var initLinuxRpmCmd = &cobra.Command{
@@ -61,9 +58,8 @@ var initLinuxRpmCmd = &cobra.Command{
 	Short: "Create configuration files for rpm packaging",
 	Run: func(cmd *cobra.Command, args []string) {
 		assertHoverInitialized()
-		packaging.AssertDockerInstalled()
 
-		packaging.LinuxRpmPackagingTask.Init()
+		packaging.LinuxRpmTask.Init()
 	},
 }
 var initLinuxPkgCmd = &cobra.Command{
@@ -71,9 +67,8 @@ var initLinuxPkgCmd = &cobra.Command{
 	Short: "Create configuration files for pacman pkg packaging",
 	Run: func(cmd *cobra.Command, args []string) {
 		assertHoverInitialized()
-		packaging.AssertDockerInstalled()
 
-		packaging.LinuxPkgPackagingTask.Init()
+		packaging.LinuxPkgTask.Init()
 	},
 }
 var initWindowsMsiCmd = &cobra.Command{
@@ -81,9 +76,8 @@ var initWindowsMsiCmd = &cobra.Command{
 	Short: "Create configuration files for msi packaging",
 	Run: func(cmd *cobra.Command, args []string) {
 		assertHoverInitialized()
-		packaging.AssertDockerInstalled()
 
-		packaging.WindowsMsiPackagingTask.Init()
+		packaging.WindowsMsiTask.Init()
 	},
 }
 
@@ -92,9 +86,8 @@ var initDarwinBundleCmd = &cobra.Command{
 	Short: "Create configuration files for OSX bundle packaging",
 	Run: func(cmd *cobra.Command, args []string) {
 		assertHoverInitialized()
-		packaging.AssertDockerInstalled()
 
-		packaging.DarwinBundlePackagingTask.Init()
+		packaging.DarwinBundleTask.Init()
 	},
 }
 
@@ -103,9 +96,8 @@ var initDarwinPkgCmd = &cobra.Command{
 	Short: "Create configuration files for OSX pkg installer packaging",
 	Run: func(cmd *cobra.Command, args []string) {
 		assertHoverInitialized()
-		packaging.AssertDockerInstalled()
 
-		packaging.DarwinPkgPackagingTask.Init()
+		packaging.DarwinPkgTask.Init()
 	},
 }
 
@@ -114,8 +106,7 @@ var initDarwinDmgCmd = &cobra.Command{
 	Short: "Create configuration files for OSX dmg packaging",
 	Run: func(cmd *cobra.Command, args []string) {
 		assertHoverInitialized()
-		packaging.AssertDockerInstalled()
 
-		packaging.DarwinDmgPackagingTask.Init()
+		packaging.DarwinDmgTask.Init()
 	},
 }

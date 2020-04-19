@@ -1,7 +1,7 @@
 package packaging
 
-// LinuxSnapPackagingTask packaging for linux as snao
-var LinuxSnapPackagingTask = &packagingTask{
+// LinuxSnapTask packaging for linux as snap
+var LinuxSnapTask = &packagingTask{
 	packagingFormatName: "linux-snap",
 	templateFiles: map[string]string{
 		"linux-snap/snapcraft.yaml.tmpl.tmpl": "snap/snapcraft.yaml.tmpl",
@@ -9,11 +9,8 @@ var LinuxSnapPackagingTask = &packagingTask{
 	},
 	linuxDesktopFileExecutablePath: "/{{.projectName}}",
 	linuxDesktopFileIconPath:       "/icon.png",
-	dockerfileContent: []string{
-		"FROM snapcore/snapcraft",
-	},
-	buildOutputDirectory:      "build",
-	packagingScriptTemplate:   "snapcraft && mv {{.strippedProjectName}}_{{.version}}_{{.arch}}.snap {{.projectName}}-{{.version}}.snap",
-	outputFileExtension:       "snap",
-	outputFileContainsVersion: true,
+	buildOutputDirectory:           "build",
+	packagingScriptTemplate:        "snapcraft && mv {{.strippedProjectName}}_{{.version}}_{{.arch}}.snap {{.projectName}}-{{.version}}.snap",
+	outputFileExtension:            "snap",
+	outputFileContainsVersion:      true,
 }
