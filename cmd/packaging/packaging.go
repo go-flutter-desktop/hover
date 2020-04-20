@@ -154,7 +154,7 @@ func (t *packagingTask) init(ignoreAlreadyExists bool) {
 				log.Errorf("Failed to create directory %s: %v", filepath.Dir(destinationFile), err)
 				os.Exit(1)
 			}
-			fileutils.ExecuteTemplateFromAssetsBox(fmt.Sprintf("packaging/%s", sourceFile), destinationFile, fileutils.AssetsBox, templateData)
+			fileutils.ExecuteTemplateFromAssetsBox(fmt.Sprintf("packaging/%s", sourceFile), destinationFile, fileutils.AssetsBox(), templateData)
 		}
 		log.Infof("go/packaging/%s has been created. You can modify the configuration files and add it to git.", t.packagingFormatName)
 		log.Infof(fmt.Sprintf("You now can package the %s using `%s`", strings.Split(t.packagingFormatName, "-")[0], log.Au().Magenta("hover build "+t.packagingFormatName)))

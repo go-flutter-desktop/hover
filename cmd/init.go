@@ -60,11 +60,11 @@ var initCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		fileutils.CopyAsset("app/main.go", filepath.Join(desktopCmdPath, "main.go"), fileutils.AssetsBox)
-		fileutils.CopyAsset("app/options.go", filepath.Join(desktopCmdPath, "options.go"), fileutils.AssetsBox)
-		fileutils.CopyAsset("app/icon.png", filepath.Join(desktopAssetsPath, "icon.png"), fileutils.AssetsBox)
-		fileutils.CopyAsset("app/gitignore", filepath.Join(build.BuildPath, ".gitignore"), fileutils.AssetsBox)
-		fileutils.CopyAsset("app/hover.yaml", filepath.Join(build.BuildPath, "hover.yaml"), fileutils.AssetsBox)
+		fileutils.CopyAsset("app/main.go", filepath.Join(desktopCmdPath, "main.go"), fileutils.AssetsBox())
+		fileutils.CopyAsset("app/options.go", filepath.Join(desktopCmdPath, "options.go"), fileutils.AssetsBox())
+		fileutils.CopyAsset("app/icon.png", filepath.Join(desktopAssetsPath, "icon.png"), fileutils.AssetsBox())
+		fileutils.CopyAsset("app/gitignore", filepath.Join(build.BuildPath, ".gitignore"), fileutils.AssetsBox())
+		fileutils.CopyAsset("app/hover.yaml", filepath.Join(build.BuildPath, "hover.yaml"), fileutils.AssetsBox())
 
 		initializeGoModule(projectPath)
 		log.Printf("Available plugin for this project:")

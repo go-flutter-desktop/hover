@@ -2,12 +2,13 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/go-flutter-desktop/hover/internal/androidmanifest"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
+
+	"github.com/go-flutter-desktop/hover/internal/androidmanifest"
 
 	"github.com/hashicorp/go-version"
 	"github.com/otiai10/copy"
@@ -223,7 +224,7 @@ func assertTargetFileExists(targetFilename string) {
 		if targetFilename == config.BuildTargetDefault {
 			log.Warnf("Let hover add the \"lib/main_desktop.dart\" file? ")
 			if askForConfirmation() {
-				fileutils.CopyAsset("app/main_desktop.dart", filepath.Join("lib", "main_desktop.dart"), fileutils.AssetsBox)
+				fileutils.CopyAsset("app/main_desktop.dart", filepath.Join("lib", "main_desktop.dart"), fileutils.AssetsBox())
 				log.Infof("Target file \"lib/main_desktop.dart\" has been created.")
 				log.Infof("       Depending on your project, you might want to tweak it.")
 				return
