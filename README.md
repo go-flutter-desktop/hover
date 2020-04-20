@@ -10,14 +10,13 @@ Hover is part of the [go-flutter](https://github.com/go-flutter-desktop/go-flutt
 
 Hover uses [Go](https://golang.org) to build your Flutter application to desktop. Hover itself is also written using the Go language. You will need to [install go](https://golang.org/doc/install) on your development machine.
 
-Then install hover like this:
+Run `go version` and make sure that your Go version is 1.13 or higher.
+
+Then install hover by running this in your home directory:
 
 ```bash
-$ go version
-go version go1.13 XX/YYY
-$ go get -u github.com/go-flutter-desktop/hover
+GO111MODULE=on go get -u -a github.com/go-flutter-desktop/hover
 ```
-Go 1.13 is required and `GO111MODULE` must not be set to `on` (`auto` and `off` is fine)
 
 Run the same command to update when a newer version becomes available.
 
@@ -27,10 +26,10 @@ Install these dependencies:
   The recommended C compiler are documented [here](https://github.com/golang/go/wiki/InstallFromSource#install-c-tools).
 
 * You need to make sure you have dependencies of GLFW:
-	* On macOS, you need Xcode or Command Line Tools for Xcode (`xcode-select --install`) for required headers and libraries.
-	* On Ubuntu/Debian-like Linux distributions, you need `libgl1-mesa-dev xorg-dev` packages.
-	* On CentOS/Fedora-like Linux distributions, you need `libX11-devel libXcursor-devel libXrandr-devel libXinerama-devel mesa-libGL-devel libXi-devel` packages.
-	* See [here](http://www.glfw.org/docs/latest/compile.html#compile_deps) for full details.
+  * On macOS, you need Xcode or Command Line Tools for Xcode (`xcode-select --install`) for required headers and libraries.
+  * On Ubuntu/Debian-like Linux distributions, you need `libgl1-mesa-dev xorg-dev` packages.
+  * On CentOS/Fedora-like Linux distributions, you need `libX11-devel libXcursor-devel libXrandr-devel libXinerama-devel mesa-libGL-devel libXi-devel` packages.
+  * See [here](http://www.glfw.org/docs/latest/compile.html#compile_deps) for full details.
 
 ## Getting started with an existing Flutter project
 
@@ -60,10 +59,8 @@ It's the following code before `runApp(..)` that makes Flutter run on other plat
 debugDefaultTargetPlatformOverride = TargetPlatform.fuchsia;
 ```
 
-
 Optionally, you may add [plugins](https://github.com/go-flutter-desktop/plugins) to `go/cmd/options.go`  
 Optionally, change the logo in `go/assets/logo.png`, which is used as icon for the window.
-
 
 ### Run with hot-reload
 
@@ -94,8 +91,9 @@ To create a standalone release (JIT mode) build run this command:
 ```bash
 hover build linux # or darwin or windows
 ```
+
 You can create a build for any of the supported OSs using cross-compiling which needs [Docker to be installed](https://docs.docker.com/install/).
-Then just run the command from above and it will do everything for you.
+Then run the command from above and it will do everything for you.
 
 The output will be in `go/build/outputs/linux` or windows or darwin.
 
@@ -108,27 +106,32 @@ To start the binary: (replace `yourApplicationName` with your app name)
 It's possible to zip the whole dir `go/build/outputs/linux` and ship it to a different machine.
 
 ### Packaging
+
 You can package your application for different packaging formats.  
 First initialize the packaging format:
+
 ```bash
 hover init-packaging linux-appimage
 ```
+
 Update the configuration files located in `go/packaging/linux-appimage/`to your needs.  
 Then create a build and package it using this command:
+
 ```bash
 hover build linux-appimage
 ```
-The packaging output will be located in `go/build/outputs/linux-appimage/`
+
+The packaging output is placed in `go/build/outputs/linux-appimage/`
 
 To get a list of all available packaging formats run:
+
 ```bash
 hover build --help
 ```
 
 ## Fonts
 
-No text visible? Make sure to use fonts who are included in the flutter assets/fonts system. The default font for `MaterialApp`, Roboto, is not installed on all machines.
-
+No text visible? Make sure to use fonts that are included in the flutter assets/fonts system. The default font for `MaterialApp`, Roboto, is not installed on all machines.
 
 ## Issues
 
