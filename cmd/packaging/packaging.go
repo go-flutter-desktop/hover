@@ -126,6 +126,7 @@ type packagingTask struct {
 	packagingScriptTemplate        string                         // Template for the command that actually packages the app
 	outputFileExtension            string                         // File extension of the packaged app
 	outputFileContainsVersion      bool                           // Whether the output file name contains the version
+	skipAssertInitialized          bool                           // Set to true when a task doesn't need to be initialized.
 }
 
 func (t *packagingTask) Name() string {
@@ -232,6 +233,9 @@ func (t *packagingTask) Pack(buildVersion string) {
 }
 
 func (t *packagingTask) AssertInitialized() {
+	if t.skipAssertInitialized {
+		return
+	}
 	if !t.IsInitialized() {
 		log.Errorf("%s is not initialized for packaging. Please run `hover init-packaging %s` first.", t.packagingFormatName, t.packagingFormatName)
 		os.Exit(1)

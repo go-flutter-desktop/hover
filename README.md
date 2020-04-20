@@ -43,7 +43,7 @@ cd into a flutter project.
 cd projects/simpleApplication
 ```
 
-The first time you use hover for a project, you'll need to initialize the project for desktop. An argument can be passed to `hover init` to set the project path. This is usually the path for your project on github or a self-hosted git service. _If you are unsure, use `hover init`, the generated path can always be changed later._
+The first time you use hover for a project, you'll need to initialize the project for use with hover. An argument can be passed to `hover init` to set the project path. This is usually the path for your project on github or a self-hosted git service. _If you are unsure use `hover init` without a path. You can change the path later._
 
 ```bash
 hover init github.com/my-organization/simpleApplication
@@ -55,6 +55,7 @@ Make sure you have the following
 [main_desktop.dart](https://github.com/go-flutter-desktop/examples/blob/5508a59ff4916fca9c05dfde4929d8848fd2a947/pointer_demo/lib/main_desktop.dart)
 in the root librairie of your application.  
 It's the following code before `runApp(..)` that makes Flutter run on other platforms:
+
 ```dart
 debugDefaultTargetPlatformOverride = TargetPlatform.fuchsia;
 ```
