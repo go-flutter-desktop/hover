@@ -9,4 +9,5 @@ var DarwinDmgTask = &packagingTask{
 	packagingScriptTemplate:   "ln -sf /Applications dmgdir/Applications && genisoimage -V '{{.projectName}}' -D -R -apple -no-pad -o '{{.projectName}}-{{.version}}.dmg' dmgdir",
 	outputFileExtension:       "dmg",
 	outputFileContainsVersion: true,
+	skipAssertInitialized:     true,
 }
