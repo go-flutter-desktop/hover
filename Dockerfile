@@ -59,14 +59,15 @@ COPY --from=xarbuilder /usr/local/lib/libxar.so.1 /usr/local/lib/libxar.so.1
 COPY --from=xarbuilder /usr/lib/x86_64-linux-gnu/libcrypto.so.1.0.0 /usr/lib/x86_64-linux-gnu/libcrypto.so.1.0.0
 
 # Install linux-appimage dependencies
-# Currently broken
-#RUN cd /opt \
-#	&& curl -LO https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage \
-#	&& chmod a+x appimagetool-x86_64.AppImage \
-#	&& ./appimagetool-x86_64.AppImage --appimage-extract \
-#	&& mv squashfs-root appimagetool \
-#	&& rm appimagetool-x86_64.AppImage
-#ENV PATH=/opt/appimagetool/usr/bin:$PATH
+# Fixed using https://github.com/AppImage/AppImageKit/issues/828
+RUN cd /opt \
+	&& curl -LO https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage \
+	&& chmod a+x appimagetool-x86_64.AppImage \
+	&& sed 's|AI\x02|\x00\x00\x00|g' -i appimagetool-x86_64.AppImage \
+	&& ./appimagetool-x86_64.AppImage --appimage-extract \
+	&& mv squashfs-root appimagetool \
+	&& rm appimagetool-x86_64.AppImage
+ENV PATH=/opt/appimagetool/usr/bin:$PATH
 
 # Install linux-snap dependencies (based on https://hub.docker.com/r/snapcore/snapcraft/dockerfile)
 COPY --from=snapcraft /snap/core /snap/core
