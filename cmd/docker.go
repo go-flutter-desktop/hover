@@ -17,7 +17,7 @@ import (
 )
 
 func dockerHoverBuild(targetOS string, packagingTask packaging.Task, buildFlags []string, vmArguments []string) {
-	setBuildParameters(targetOS)
+	initBuildParameters(targetOS)
 	var err error
 	dockerBin := build.DockerBin()
 

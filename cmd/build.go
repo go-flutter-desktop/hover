@@ -2,12 +2,13 @@ package cmd
 
 import (
 	"fmt"
-	"github.com/go-flutter-desktop/hover/internal/enginecache"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
+
+	"github.com/go-flutter-desktop/hover/internal/enginecache"
 
 	"github.com/hashicorp/go-version"
 	"github.com/otiai10/copy"
@@ -200,7 +201,7 @@ func subcommandBuild(targetOS string, packagingTask packaging.Task) {
 	}
 }
 
-func setBuildParameters(targetOS string) {
+func initBuildParameters(targetOS string) {
 	if buildGoFlutterBranch == config.BuildBranchDefault && config.GetConfig().Branch != "" {
 		buildGoFlutterBranch = config.GetConfig().Branch
 	}
@@ -325,7 +326,7 @@ func buildGoBinary(targetOS string, vmArguments []string) {
 	if vmArgsFromEnv := os.Getenv("HOVER_IN_DOCKER_BUILD_VMARGS"); len(vmArgsFromEnv) > 0 {
 		vmArguments = append(vmArguments, strings.Split(vmArgsFromEnv, ",")...)
 	}
-	setBuildParameters(targetOS)
+	initBuildParameters(targetOS)
 
 	fileutils.CopyDir(build.IntermediatesDirectoryPath(targetOS), build.OutputDirectoryPath(targetOS))
 
