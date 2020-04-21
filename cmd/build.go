@@ -205,23 +205,27 @@ func initBuildParameters(targetOS string) {
 	if buildGoFlutterBranch == config.BuildBranchDefault && config.GetConfig().Branch != "" {
 		buildGoFlutterBranch = config.GetConfig().Branch
 	}
+
 	if buildCachePath == "" && config.GetConfig().CachePath != "" {
 		buildCachePath = config.GetConfig().CachePath
 	}
+	if buildCachePath == "" {
+		buildCachePath = enginecache.DefaultCachePath()
+	}
+
 	if buildEngineVersion == config.BuildEngineDefault && config.GetConfig().Engine != "" {
 		log.Warnf("changing the engine version can lead to undesirable behavior")
 		buildEngineVersion = config.GetConfig().Engine
 	}
+
 	if buildOpenGlVersion == config.BuildOpenGlVersionDefault && config.GetConfig().OpenGL != "" {
 		buildOpenGlVersion = config.GetConfig().OpenGL
 	}
+
 	if buildVersionNumber == "" {
 		buildVersionNumber = pubspec.GetPubSpec().Version
 	}
 
-	if buildCachePath == "" {
-		buildCachePath = enginecache.DefaultCachePath()
-	}
 	if buildSkipEngineDownload {
 		engineCachePath = enginecache.EngineCachePath(targetOS, buildCachePath)
 	} else {

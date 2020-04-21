@@ -11,7 +11,6 @@ import (
 
 	"github.com/go-flutter-desktop/hover/cmd/packaging"
 	"github.com/go-flutter-desktop/hover/internal/build"
-	"github.com/go-flutter-desktop/hover/internal/config"
 	"github.com/go-flutter-desktop/hover/internal/log"
 	"github.com/go-flutter-desktop/hover/internal/logstreamer"
 )
@@ -20,17 +19,6 @@ func dockerHoverBuild(targetOS string, packagingTask packaging.Task, buildFlags 
 	initBuildParameters(targetOS)
 	var err error
 	dockerBin := build.DockerBin()
-
-	if buildCachePath == "" && config.GetConfig().CachePath != "" {
-		buildCachePath = config.GetConfig().CachePath
-	}
-	if buildCachePath == "" {
-		buildCachePath, err = os.UserCacheDir()
-		if err != nil {
-			log.Errorf("Cannot get the path for the user cache directory: %v", err)
-			os.Exit(1)
-		}
-	}
 
 	hoverCacheDir := filepath.Join(buildCachePath, "hover")
 

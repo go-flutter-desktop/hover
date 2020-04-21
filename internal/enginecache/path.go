@@ -9,6 +9,7 @@ import (
 )
 
 func DefaultCachePath() string {
+	// TODO: change to os.UserCacheDir()?
 	homePath, err := os.UserHomeDir()
 	if err != nil {
 		log.Errorf("Failed to resolve home path: %v", err)
