@@ -13,7 +13,7 @@ var LinuxAppImageTask = &packagingTask{
 	},
 	linuxDesktopFileIconPath:      "/build/assets/icon",
 	buildOutputDirectory:          "build",
-	packagingScriptTemplate:       "appimagetool . && mv {{.executableName}}-x86_64.AppImage {{.packageName}}-{{.version}}.AppImage",
+	packagingScriptTemplate:       "appimagetool . && mv -p {{.executableName}}-x86_64.AppImage {{.packageName}}-{{.version}}.AppImage",
 	outputFileExtension:           "AppImage",
 	outputFileContainsVersion:     true,
 	outputFileUsesApplicationName: false,

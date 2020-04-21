@@ -15,7 +15,7 @@ var LinuxRpmTask = &packagingTask{
 	linuxDesktopFileExecutablePath: "/usr/lib/{{.packageName}}/{{.executableName}}",
 	linuxDesktopFileIconPath:       "/usr/lib/{{.packageName}}/assets/icon.png",
 	buildOutputDirectory:           "BUILD/{{.packageName}}-{{.version}}-{{.release}}.x86_64/usr/lib/{{.packageName}}",
-	packagingScriptTemplate:        "rpmbuild --define \"_topdir $(pwd)\" --define \"_unpackaged_files_terminate_build 0\" -ba ./SPECS/{{.packageName}}.spec && mv RPMS/x86_64/{{.packageName}}-{{.version}}-{{.release}}.x86_64.rpm {{.packageName}}-{{.version}}.rpm",
+	packagingScriptTemplate:        "rpmbuild --define \"_topdir $(pwd)\" --define \"_unpackaged_files_terminate_build 0\" -ba ./SPECS/{{.packageName}}.spec && mv -p RPMS/x86_64/{{.packageName}}-{{.version}}-{{.release}}.x86_64.rpm {{.packageName}}-{{.version}}.rpm",
 	outputFileExtension:            "rpm",
 	outputFileContainsVersion:      true,
 	outputFileUsesApplicationName:  false,
