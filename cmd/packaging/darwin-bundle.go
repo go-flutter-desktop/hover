@@ -8,7 +8,7 @@ var DarwinBundleTask = &packagingTask{
 	},
 	executableFiles:               []string{},
 	buildOutputDirectory:          "{{.applicationName}} {{.version}}.app/Contents/MacOS",
-	packagingScriptTemplate:       "mkdir -p \"{{.applicationName}} {{.version}}.app/Contents/Resources\" && png2icns \"{{.applicationName}} {{.version}}.app/Contents/Resources/icon.icns\" \"{{.applicationName}} {{.version}}.app/Contents/MacOS/assets/icon.png\"",
+	packagingScriptTemplate:       "mkdir-n \"{{.applicationName}} {{.version}}.app/Contents/Resources\" && png2icns \"{{.applicationName}} {{.version}}.app/Contents/Resources/icon.icns\" \"{{.applicationName}} {{.version}}.app/Contents/MacOS/assets/icon.png\"",
 	outputFileExtension:           "app",
 	outputFileContainsVersion:     true,
 	outputFileUsesApplicationName: true,

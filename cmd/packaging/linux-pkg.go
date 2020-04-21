@@ -15,7 +15,7 @@ var LinuxPkgTask = &packagingTask{
 	linuxDesktopFileExecutablePath: "/usr/lib/{{.packageName}}/{{.executableName}}",
 	linuxDesktopFileIconPath:       "/usr/lib/{{.packageName}}/assets/icon.png",
 	buildOutputDirectory:           "src/usr/lib/{{.packageName}}",
-	packagingScriptTemplate:        "makepkg && mv -p {{.packageName}}-{{.version}}-{{.release}}-x86_64.pkg.tar.xz {{.packageName}}-{{.version}}.pkg.tar.xz",
+	packagingScriptTemplate:        "makepkg && mv -n {{.packageName}}-{{.version}}-{{.release}}-x86_64.pkg.tar.xz {{.packageName}}-{{.version}}.pkg.tar.xz",
 	outputFileExtension:            "pkg.tar.xz",
 	outputFileContainsVersion:      true,
 	outputFileUsesApplicationName:  false,

@@ -10,7 +10,7 @@ var LinuxSnapTask = &packagingTask{
 	linuxDesktopFileExecutablePath: "/{{.executableName}}",
 	linuxDesktopFileIconPath:       "/icon.png",
 	buildOutputDirectory:           "build",
-	packagingScriptTemplate:        "snapcraft && mv -p {{.packageName}}_{{.version}}_{{.arch}}.snap {{.packageName}}-{{.version}}.snap",
+	packagingScriptTemplate:        "snapcraft && mv -n {{.packageName}}_{{.version}}_{{.arch}}.snap {{.packageName}}-{{.version}}.snap",
 	outputFileExtension:            "snap",
 	outputFileContainsVersion:      true,
 	outputFileUsesApplicationName:  false,
