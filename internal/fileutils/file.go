@@ -155,7 +155,7 @@ func CopyTemplateDir(boxed, to string, templateData interface{}) {
 	}
 	for _, file := range files {
 		newFile := filepath.Join(to, strings.Join(strings.Split(file, "")[len(boxed)+1:], ""))
-		tmplFile, err := template.New("").Parse(newFile)
+		tmplFile, err := template.New("").Option("missingkey=error").Parse(newFile)
 		if err != nil {
 			log.Errorf("Failed to parse template string: %v\n", err)
 			os.Exit(1)
@@ -188,7 +188,7 @@ func CopyTemplateDir(boxed, to string, templateData interface{}) {
 }
 
 func executeTemplateFromString(templateString, to string, templateData interface{}) {
-	tmplFile, err := template.New("").Parse(templateString)
+	tmplFile, err := template.New("").Option("missingkey=error").Parse(templateString)
 	if err != nil {
 		log.Errorf("Failed to parse template string: %v\n", err)
 		os.Exit(1)

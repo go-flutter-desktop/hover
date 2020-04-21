@@ -17,41 +17,42 @@ var componentRefsFileContent []string
 var WindowsMsiTask = &packagingTask{
 	packagingFormatName: "windows-msi",
 	templateFiles: map[string]string{
-		"windows-msi/app.wxs.tmpl.tmpl": "{{.projectName}}.wxs.tmpl",
+		"windows-msi/app.wxs.tmpl": "{{.packageName}}.wxs.tmpl",
 	},
-	buildOutputDirectory:      "build",
-	packagingScriptTemplate:   "convert -resize x16 build/assets/icon.png build/assets/icon.ico && wixl -v {{.projectName}}.wxs && mv {{.projectName}}.msi {{.projectName}}-{{.version}}.msi",
-	outputFileExtension:       "msi",
-	outputFileContainsVersion: true,
-	generateBuildFiles: func(projectName, tmpPath string) {
+	buildOutputDirectory:          "build",
+	packagingScriptTemplate:       "convert -resize x16 build/assets/icon.png build/assets/icon.ico && wixl -v {{.packageName}}.wxs && mv -n {{.packageName}}.msi \"{{.applicationName}}.msi\"",
+	outputFileExtension:           "msi",
+	outputFileContainsVersion:     false,
+	outputFileUsesApplicationName: true,
+	generateBuildFiles: func(packageName, tmpPath string) {
 		directoriesFilePath, err := filepath.Abs(filepath.Join(tmpPath, "directories.wxi"))
 		if err != nil {
-			log.Errorf("Failed to resolve absolute path for directories.wxi file %s: %v", projectName, err)
+			log.Errorf("Failed to resolve absolute path for directories.wxi file %s: %v", packageName, err)
 			os.Exit(1)
 		}
 		directoriesFile, err := os.Create(directoriesFilePath)
 		if err != nil {
-			log.Errorf("Failed to create directories.wxi file %s: %v", projectName, err)
+			log.Errorf("Failed to create directories.wxi file %s: %v", packageName, err)
 			os.Exit(1)
 		}
 		directoryRefsFilePath, err := filepath.Abs(filepath.Join(tmpPath, "directory_refs.wxi"))
 		if err != nil {
-			log.Errorf("Failed to resolve absolute path for directory_refs.wxi file %s: %v", projectName, err)
+			log.Errorf("Failed to resolve absolute path for directory_refs.wxi file %s: %v", packageName, err)
 			os.Exit(1)
 		}
 		directoryRefsFile, err := os.Create(directoryRefsFilePath)
 		if err != nil {
-			log.Errorf("Failed to create directory_refs.wxi file %s: %v", projectName, err)
+			log.Errorf("Failed to create directory_refs.wxi file %s: %v", packageName, err)
 			os.Exit(1)
 		}
 		componentRefsFilePath, err := filepath.Abs(filepath.Join(tmpPath, "component_refs.wxi"))
 		if err != nil {
-			log.Errorf("Failed to resolve absolute path for component_refs.wxi file %s: %v", projectName, err)
+			log.Errorf("Failed to resolve absolute path for component_refs.wxi file %s: %v", packageName, err)
 			os.Exit(1)
 		}
 		componentRefsFile, err := os.Create(componentRefsFilePath)
 		if err != nil {
-			log.Errorf("Failed to create component_refs.wxi file %s: %v", projectName, err)
+			log.Errorf("Failed to create component_refs.wxi file %s: %v", packageName, err)
 			os.Exit(1)
 		}
 		directoriesFileContent = append(directoriesFileContent, `<Include>`)
@@ -64,35 +65,35 @@ var WindowsMsiTask = &packagingTask{
 
 		for _, line := range directoriesFileContent {
 			if _, err := directoriesFile.WriteString(line + "\n"); err != nil {
-				log.Errorf("Could not write directories.wxi: %v", projectName, err)
+				log.Errorf("Could not write directories.wxi: %v", packageName, err)
 				os.Exit(1)
 			}
 		}
 		err = directoriesFile.Close()
 		if err != nil {
-			log.Errorf("Could not close directories.wxi: %v", projectName, err)
+			log.Errorf("Could not close directories.wxi: %v", packageName, err)
 			os.Exit(1)
 		}
 		for _, line := range directoryRefsFileContent {
 			if _, err := directoryRefsFile.WriteString(line + "\n"); err != nil {
-				log.Errorf("Could not write directory_refs.wxi: %v", projectName, err)
+				log.Errorf("Could not write directory_refs.wxi: %v", packageName, err)
 				os.Exit(1)
 			}
 		}
 		err = directoryRefsFile.Close()
 		if err != nil {
-			log.Errorf("Could not close directory_refs.wxi: %v", projectName, err)
+			log.Errorf("Could not close directory_refs.wxi: %v", packageName, err)
 			os.Exit(1)
 		}
 		for _, line := range componentRefsFileContent {
 			if _, err := componentRefsFile.WriteString(line + "\n"); err != nil {
-				log.Errorf("Could not write component_refs.wxi: %v", projectName, err)
+				log.Errorf("Could not write component_refs.wxi: %v", packageName, err)
 				os.Exit(1)
 			}
 		}
 		err = componentRefsFile.Close()
 		if err != nil {
-			log.Errorf("Could not close component_refs.wxi: %v", projectName, err)
+			log.Errorf("Could not close component_refs.wxi: %v", packageName, err)
 			os.Exit(1)
 		}
 	},

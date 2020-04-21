@@ -6,8 +6,9 @@ var DarwinDmgTask = &packagingTask{
 	dependsOn: map[*packagingTask]string{
 		DarwinBundleTask: "dmgdir",
 	},
-	packagingScriptTemplate:   "ln -sf /Applications dmgdir/Applications && genisoimage -V '{{.projectName}}' -D -R -apple -no-pad -o '{{.projectName}}-{{.version}}.dmg' dmgdir",
-	outputFileExtension:       "dmg",
-	outputFileContainsVersion: true,
-	skipAssertInitialized:     true,
+	packagingScriptTemplate:       "ln -sf /Applications dmgdir/Applications && genisoimage -V {{.packageName}} -D -R -apple -no-pad -o \"{{.applicationName}} {{.version}}.dmg\" dmgdir",
+	outputFileExtension:           "dmg",
+	outputFileContainsVersion:     true,
+	outputFileUsesApplicationName: true,
+	skipAssertInitialized:         true,
 }

@@ -4,18 +4,19 @@ package packaging
 var LinuxRpmTask = &packagingTask{
 	packagingFormatName: "linux-rpm",
 	templateFiles: map[string]string{
-		"linux-rpm/app.spec.tmpl.tmpl": "rpmbuild/SPECS/{{.projectName}}.spec.tmpl",
-		"linux/bin.tmpl":               "rpmbuild/BUILDROOT/{{.projectName}}{{`-{{.version}}-{{.release}}`}}.x86_64/usr/bin/{{.projectName}}",
-		"linux/app.desktop.tmpl":       "rpmbuild/BUILDROOT/{{.projectName}}{{`-{{.version}}-{{.release}}`}}.x86_64/usr/share/applications/{{.projectName}}.desktop",
+		"linux-rpm/app.spec.tmpl": "SPECS/{{.packageName}}.spec.tmpl",
+		"linux/bin.tmpl":          "BUILDROOT/{{.packageName}}-{{.version}}-{{.release}}.x86_64/usr/bin/{{.executableName}}.tmpl",
+		"linux/app.desktop.tmpl":  "BUILDROOT/{{.packageName}}-{{.version}}-{{.release}}.x86_64/usr/share/applications/{{.executableName}}.desktop.tmpl",
 	},
 	executableFiles: []string{
-		"rpmbuild/BUILDROOT/{{.projectName}}-{{.version}}-{{.release}}.x86_64/usr/bin/{{.projectName}}",
-		"rpmbuild/BUILDROOT/{{.projectName}}-{{.version}}-{{.release}}.x86_64/usr/share/applications/{{.projectName}}.desktop",
+		"BUILDROOT/{{.packageName}}-{{.version}}-{{.release}}.x86_64/usr/bin/{{.executableName}}",
+		"BUILDROOT/{{.packageName}}-{{.version}}-{{.release}}.x86_64/usr/share/applications/{{.executableName}}.desktop",
 	},
-	linuxDesktopFileExecutablePath: "/usr/lib/{{.projectName}}/{{.projectName}}",
-	linuxDesktopFileIconPath:       "/usr/lib/{{.projectName}}/assets/icon.png",
-	buildOutputDirectory:           "rpmbuild/BUILDROOT/{{.projectName}}-{{.version}}-{{.version}}.x86_64/usr/lib/{{.projectName}}",
-	packagingScriptTemplate:        "rpmbuild --define '_topdir /app/rpmbuild' -ba /app/rpmbuild/SPECS/{{.projectName}}.spec && rm /root/.rpmdb -r && mv rpmbuild/RPMS/x86_64/{{.projectName}}-{{.version}}-{{.version}}.x86_64.rpm {{.projectName}}-{{.version}}.rpm",
+	linuxDesktopFileExecutablePath: "/usr/lib/{{.packageName}}/{{.executableName}}",
+	linuxDesktopFileIconPath:       "/usr/lib/{{.packageName}}/assets/icon.png",
+	buildOutputDirectory:           "BUILD/{{.packageName}}-{{.version}}-{{.release}}.x86_64/usr/lib/{{.packageName}}",
+	packagingScriptTemplate:        "rpmbuild --define \"_topdir $(pwd)\" --define \"_unpackaged_files_terminate_build 0\" -ba ./SPECS/{{.packageName}}.spec && mv -n RPMS/x86_64/{{.packageName}}-{{.version}}-{{.release}}.x86_64.rpm {{.packageName}}-{{.version}}.rpm",
 	outputFileExtension:            "rpm",
 	outputFileContainsVersion:      true,
+	outputFileUsesApplicationName:  false,
 }

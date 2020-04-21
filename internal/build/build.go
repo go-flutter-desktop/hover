@@ -46,10 +46,10 @@ func IntermediatesDirectoryPath(targetOS string) string {
 	return buildDirectoryPath(targetOS, "intermediates")
 }
 
-// OutputBinaryName returns the string of the executable used to launch the
+// OutputBinary returns the string of the executable used to launch the
 // main desktop app. (appends .exe for windows)
-func OutputBinaryName(projectName string, targetOS string) string {
-	var outputBinaryName = projectName
+func OutputBinary(executableName, targetOS string) string {
+	var outputBinaryName = executableName
 	switch targetOS {
 	case "darwin":
 		// no special filename
@@ -66,8 +66,8 @@ func OutputBinaryName(projectName string, targetOS string) string {
 
 // OutputBinaryPath returns the path to the go-flutter Application for a
 // specified platform.
-func OutputBinaryPath(projectName string, targetOS string) string {
-	outputBinaryPath := filepath.Join(OutputDirectoryPath(targetOS), OutputBinaryName(projectName, targetOS))
+func OutputBinaryPath(executableName, targetOS string) string {
+	outputBinaryPath := filepath.Join(OutputDirectoryPath(targetOS), OutputBinary(executableName, targetOS))
 	return outputBinaryPath
 }
 

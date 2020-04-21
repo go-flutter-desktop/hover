@@ -4,13 +4,14 @@ package packaging
 var LinuxSnapTask = &packagingTask{
 	packagingFormatName: "linux-snap",
 	templateFiles: map[string]string{
-		"linux-snap/snapcraft.yaml.tmpl.tmpl": "snap/snapcraft.yaml.tmpl",
-		"linux/app.desktop.tmpl":              "snap/local/{{.projectName}}.desktop",
+		"linux-snap/snapcraft.yaml.tmpl": "snap/snapcraft.yaml.tmpl",
+		"linux/app.desktop.tmpl":         "snap/local/{{.executableName}}.desktop.tmpl",
 	},
-	linuxDesktopFileExecutablePath: "/{{.projectName}}",
+	linuxDesktopFileExecutablePath: "/{{.executableName}}",
 	linuxDesktopFileIconPath:       "/icon.png",
 	buildOutputDirectory:           "build",
-	packagingScriptTemplate:        "snapcraft && mv {{.strippedProjectName}}_{{.version}}_{{.arch}}.snap {{.projectName}}-{{.version}}.snap",
+	packagingScriptTemplate:        "snapcraft && mv -n {{.packageName}}_{{.version}}_{{.arch}}.snap {{.packageName}}-{{.version}}.snap",
 	outputFileExtension:            "snap",
 	outputFileContainsVersion:      true,
+	outputFileUsesApplicationName:  false,
 }
