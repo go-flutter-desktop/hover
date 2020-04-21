@@ -2,6 +2,7 @@ package cmd
 
 import (
 	"fmt"
+	"github.com/go-flutter-desktop/hover/internal/enginecache"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -16,7 +17,6 @@ import (
 	"github.com/go-flutter-desktop/hover/internal/androidmanifest"
 	"github.com/go-flutter-desktop/hover/internal/build"
 	"github.com/go-flutter-desktop/hover/internal/config"
-	"github.com/go-flutter-desktop/hover/internal/enginecache"
 	"github.com/go-flutter-desktop/hover/internal/fileutils"
 	"github.com/go-flutter-desktop/hover/internal/log"
 	"github.com/go-flutter-desktop/hover/internal/pubspec"
@@ -178,6 +178,29 @@ func subcommandBuild(targetOS string, packagingTask packaging.Task) {
 	assertHoverInitialized()
 	packagingTask.AssertInitialized()
 
+	if !buildSkipFlutterBuildBundle {
+		cleanBuildOutputsDir(targetOS)
+		buildFlutterBundle(targetOS)
+	}
+	if buildDocker {
+		var buildFlags []string
+		buildFlags = append(buildFlags, commonFlags()...)
+		buildFlags = append(buildFlags, "--skip-flutter-build-bundle")
+		buildFlags = append(buildFlags, "--skip-engine-download")
+		if buildVersionNumber != "" {
+			buildFlags = append(buildFlags, "--version-number", buildVersionNumber)
+		}
+		if buildDebug {
+			buildFlags = append(buildFlags, "--debug")
+		}
+		dockerHoverBuild(targetOS, packagingTask, buildFlags, nil)
+	} else {
+		buildGoBinary(targetOS, nil)
+		packagingTask.Pack(buildVersionNumber)
+	}
+}
+
+func setBuildParameters(targetOS string) {
 	if buildGoFlutterBranch == config.BuildBranchDefault && config.GetConfig().Branch != "" {
 		buildGoFlutterBranch = config.GetConfig().Branch
 	}
@@ -202,27 +225,6 @@ func subcommandBuild(targetOS string, packagingTask packaging.Task) {
 		engineCachePath = enginecache.EngineCachePath(targetOS, buildCachePath)
 	} else {
 		engineCachePath = enginecache.ValidateOrUpdateEngine(targetOS, buildEngineVersion)
-	}
-
-	if !buildSkipFlutterBuildBundle {
-		cleanBuildOutputsDir(targetOS)
-		buildFlutterBundle(targetOS)
-	}
-	if buildDocker {
-		var buildFlags []string
-		buildFlags = append(buildFlags, commonFlags()...)
-		buildFlags = append(buildFlags, "--skip-flutter-build-bundle")
-		buildFlags = append(buildFlags, "--skip-engine-download")
-		if buildVersionNumber != "" {
-			buildFlags = append(buildFlags, "--version-number", buildVersionNumber)
-		}
-		if buildDebug {
-			buildFlags = append(buildFlags, "--debug")
-		}
-		dockerHoverBuild(targetOS, packagingTask, buildFlags, nil)
-	} else {
-		buildGoBinary(targetOS, nil)
-		packagingTask.Pack(buildVersionNumber)
 	}
 }
 
@@ -323,6 +325,7 @@ func buildGoBinary(targetOS string, vmArguments []string) {
 	if vmArgsFromEnv := os.Getenv("HOVER_IN_DOCKER_BUILD_VMARGS"); len(vmArgsFromEnv) > 0 {
 		vmArguments = append(vmArguments, strings.Split(vmArgsFromEnv, ",")...)
 	}
+	setBuildParameters(targetOS)
 
 	fileutils.CopyDir(build.IntermediatesDirectoryPath(targetOS), build.OutputDirectoryPath(targetOS))
 
