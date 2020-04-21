@@ -4,18 +4,19 @@ package packaging
 var LinuxDebTask = &packagingTask{
 	packagingFormatName: "linux-deb",
 	templateFiles: map[string]string{
-		"linux-deb/control.tmpl.tmpl": "DEBIAN/control.tmpl",
-		"linux/bin.tmpl":              "usr/bin/{{.projectName}}",
-		"linux/app.desktop.tmpl":      "usr/share/applications/{{.projectName}}.desktop",
+		"linux-deb/control.tmpl": "DEBIAN/control.tmpl",
+		"linux/bin.tmpl":         "usr/bin/{{.executableName}}.tmpl",
+		"linux/app.desktop.tmpl": "usr/share/applications/{{.executableName}}.desktop.tmpl",
 	},
 	executableFiles: []string{
-		"usr/bin/{{.projectName}}",
-		"usr/share/applications/{{.projectName}}.desktop",
+		"usr/bin/{{.executableName}}",
+		"usr/share/applications/{{.executableName}}.desktop",
 	},
-	linuxDesktopFileExecutablePath: "/usr/lib/{{.projectName}}/{{.projectName}}",
-	linuxDesktopFileIconPath:       "/usr/lib/{{.projectName}}/assets/icon.png",
-	buildOutputDirectory:           "usr/lib/{{.projectName}}",
-	packagingScriptTemplate:        "dpkg-deb --build . {{.projectName}}-{{.version}}.deb",
+	linuxDesktopFileExecutablePath: "/usr/lib/{{.packageName}}/{{.executableName}}",
+	linuxDesktopFileIconPath:       "/usr/lib/{{.packageName}}/assets/icon.png",
+	buildOutputDirectory:           "usr/lib/{{.packageName}}",
+	packagingScriptTemplate:        "dpkg-deb --build . {{.packageName}}-{{.version}}.deb",
 	outputFileExtension:            "deb",
 	outputFileContainsVersion:      true,
+	outputFileUsesApplicationName:  false,
 }

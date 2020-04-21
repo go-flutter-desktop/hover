@@ -1,11 +1,11 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
-    <Product Id="*" UpgradeCode="*" Version="{{`{{.version}}`}}" Language="1033" Name="{{.projectName}}" Manufacturer="{{.author}}">
+    <Product Id="*" UpgradeCode="*" Version="{{.version}}" Language="1033" Name="{{.applicationName}}" Manufacturer="{{.author}}">
         <Package InstallerVersion="300" Compressed="yes"/>
-        <Media Id="1" Cabinet="{{.projectName}}.cab" EmbedCab="yes" />
+        <Media Id="1" Cabinet="{{.packageName}}.cab" EmbedCab="yes" />
         <Directory Id="TARGETDIR" Name="SourceDir">
             <Directory Id="ProgramFilesFolder">
-                <Directory Id="APPLICATIONROOTDIRECTORY" Name="{{.projectName}}">
+                <Directory Id="APPLICATIONROOTDIRECTORY" Name="{{.applicationName}}">
                     <Directory Id="ASSETSDIRECTORY" Name="assets"/>
                     <Directory Id="FLUTTERASSETSDIRECTORY" Name="flutter_assets">
                         <?include directories.wxi ?>
@@ -13,13 +13,13 @@
                 </Directory>
             </Directory>
             <Directory Id="ProgramMenuFolder">
-                <Directory Id="ApplicationProgramsFolder" Name="{{.projectName}}"/>
+                <Directory Id="ApplicationProgramsFolder" Name="{{.applicationName}}"/>
             </Directory>
         </Directory>
         <Icon Id="ShortcutIcon" SourceFile="build/assets/icon.ico"/>
         <DirectoryRef Id="APPLICATIONROOTDIRECTORY">
-            <Component Id="{{.projectName}}.exe" Guid="*">
-                <File Id="{{.projectName}}.exe" Source="build/{{.projectName}}.exe" KeyPath="yes"/>
+            <Component Id="{{.executableName}}.exe" Guid="*">
+                <File Id="{{.executableName}}.exe" Source="build/{{.executableName}}.exe" KeyPath="yes"/>
             </Component>
             <Component Id="flutter_engine.dll" Guid="*">
                 <File Id="flutter_engine.dll" Source="build/flutter_engine.dll" KeyPath="yes"/>
@@ -37,17 +37,17 @@
         <DirectoryRef Id="ApplicationProgramsFolder">
             <Component Id="ApplicationShortcut" Guid="*">
                 <Shortcut Id="ApplicationStartMenuShortcut"
-                          Name="{{.projectName}}"
+                          Name="{{.applicationName}}"
                           Description="{{.description}}"
-                          Target="[#{{.projectName}}.exe]"
+                          Target="[#{{.executableName}}.exe]"
                           WorkingDirectory="APPLICATIONROOTDIRECTORY"
                           Icon="ShortcutIcon"/>
                 <RemoveFolder Id="CleanUpShortCut" On="uninstall"/>
-                <RegistryValue Root="HKCU" Key="Software\{{.author}}\{{.projectName}}" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
+                <RegistryValue Root="HKCU" Key="Software\{{.author}}\{{.packageName}}" Name="installed" Type="integer" Value="1" KeyPath="yes"/>
             </Component>
         </DirectoryRef>
-        <Feature Id="MainApplication" Title="{{.projectName}}" Level="1">
-            <ComponentRef Id="{{.projectName}}.exe"/>
+        <Feature Id="MainApplication" Title="{{.applicationName}}" Level="1">
+            <ComponentRef Id="{{.executableName}}.exe"/>
             <ComponentRef Id="flutter_engine.dll"/>
             <ComponentRef Id="icudtl.dat"/>
             <ComponentRef Id="icon.png"/>

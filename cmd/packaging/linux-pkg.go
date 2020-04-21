@@ -4,18 +4,19 @@ package packaging
 var LinuxPkgTask = &packagingTask{
 	packagingFormatName: "linux-pkg",
 	templateFiles: map[string]string{
-		"linux-pkg/PKGBUILD.tmpl.tmpl": "PKGBUILD.tmpl",
-		"linux/bin.tmpl":               "src/usr/bin/{{.projectName}}",
-		"linux/app.desktop.tmpl":       "src/usr/share/applications/{{.projectName}}.desktop",
+		"linux-pkg/PKGBUILD.tmpl": "PKGBUILD.tmpl",
+		"linux/bin.tmpl":          "src/usr/bin/{{.executableName}}.tmpl",
+		"linux/app.desktop.tmpl":  "src/usr/share/applications/{{.executableName}}.desktop.tmpl",
 	},
 	executableFiles: []string{
-		"src/usr/bin/{{.projectName}}",
-		"src/usr/share/applications/{{.projectName}}.desktop",
+		"src/usr/bin/{{.executableName}}",
+		"src/usr/share/applications/{{.executableName}}.desktop",
 	},
-	linuxDesktopFileExecutablePath: "/usr/lib/{{.projectName}}/{{.projectName}}",
-	linuxDesktopFileIconPath:       "/usr/lib/{{.projectName}}/assets/icon.png",
-	buildOutputDirectory:           "src/usr/lib/{{.projectName}}",
-	packagingScriptTemplate:        "makepkg && mv {{.projectName}}-{{.version}}-{{.release}}-x86_64.pkg.tar.xz {{.projectName}}-{{.version}}.pkg.tar.xz",
+	linuxDesktopFileExecutablePath: "/usr/lib/{{.packageName}}/{{.executableName}}",
+	linuxDesktopFileIconPath:       "/usr/lib/{{.packageName}}/assets/icon.png",
+	buildOutputDirectory:           "src/usr/lib/{{.packageName}}",
+	packagingScriptTemplate:        "makepkg && mv {{.packageName}}-{{.version}}-{{.release}}-x86_64.pkg.tar.xz {{.packageName}}-{{.version}}.pkg.tar.xz",
 	outputFileExtension:            "pkg.tar.xz",
 	outputFileContainsVersion:      true,
+	outputFileUsesApplicationName:  false,
 }

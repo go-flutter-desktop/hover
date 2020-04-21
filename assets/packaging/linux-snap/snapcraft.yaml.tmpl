@@ -1,15 +1,15 @@
-name: {{.strippedProjectName}}
+name: {{.packageName}}
 base: core18
-version: '{{`{{.version}}`}}'
+version: '{{.version}}'
 summary: {{.description}}
 description: |
   {{.description}}
 confinement: devmode
 grade: devel
 apps:
-  {{.strippedProjectName}}:
-    command: {{.projectName}}
-    desktop: local/{{.projectName}}.desktop
+  {{.packageName}}:
+    command: {{.executableName}}
+    desktop: local/{{.executableName}}.desktop
 parts:
   desktop:
     plugin: dump

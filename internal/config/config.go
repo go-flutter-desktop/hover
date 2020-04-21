@@ -24,12 +24,17 @@ const BuildOpenGlVersionDefault = "3.3"
 
 // Config contains the parsed contents of hover.yaml
 type Config struct {
-	loaded    bool
-	Target    string
-	Branch    string
-	CachePath string `yaml:"cache-path"`
-	OpenGL    string
-	Engine    string `yaml:"engine-version"`
+	loaded          bool
+	Author          string
+	ApplicationName string `yaml:"application-name"`
+	ExecutableName  string `yaml:"executable-name"`
+	PackageName     string `yaml:"package-name"`
+	License         string
+	Target          string
+	Branch          string
+	CachePath       string `yaml:"cache-path"`
+	OpenGL          string
+	Engine          string `yaml:"engine-version"`
 }
 
 var config = Config{}
