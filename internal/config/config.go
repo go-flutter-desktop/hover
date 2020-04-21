@@ -65,8 +65,8 @@ func (c Config) License() string {
 	if c.license == "" {
 		log.Warnf("Missing/Empty `license` field in go/hover.yaml.")
 		log.Warnf("Please add it otherwise you may publish your app with a wrong license.")
-		log.Warnf("Continuing with `FIXME` as a placeholder license.")
-		return "FIXME"
+		log.Warnf("Continuing with `NOASSERTION` as a placeholder license.")
+		return "NOASSERTION"
 	}
 	return c.license
 }
