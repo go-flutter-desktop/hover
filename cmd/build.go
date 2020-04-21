@@ -8,16 +8,16 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/go-flutter-desktop/hover/internal/androidmanifest"
+	"github.com/go-flutter-desktop/hover/internal/enginecache"
 
 	"github.com/hashicorp/go-version"
 	"github.com/otiai10/copy"
 	"github.com/spf13/cobra"
 
 	"github.com/go-flutter-desktop/hover/cmd/packaging"
+	"github.com/go-flutter-desktop/hover/internal/androidmanifest"
 	"github.com/go-flutter-desktop/hover/internal/build"
 	"github.com/go-flutter-desktop/hover/internal/config"
-	"github.com/go-flutter-desktop/hover/internal/enginecache"
 	"github.com/go-flutter-desktop/hover/internal/fileutils"
 	"github.com/go-flutter-desktop/hover/internal/log"
 	"github.com/go-flutter-desktop/hover/internal/pubspec"
@@ -201,6 +201,38 @@ func subcommandBuild(targetOS string, packagingTask packaging.Task) {
 	}
 }
 
+func initBuildParameters(targetOS string) {
+	if buildGoFlutterBranch == config.BuildBranchDefault && config.GetConfig().Branch != "" {
+		buildGoFlutterBranch = config.GetConfig().Branch
+	}
+
+	if buildCachePath == "" && config.GetConfig().CachePath != "" {
+		buildCachePath = config.GetConfig().CachePath
+	}
+	if buildCachePath == "" {
+		buildCachePath = enginecache.DefaultCachePath()
+	}
+
+	if buildEngineVersion == config.BuildEngineDefault && config.GetConfig().Engine != "" {
+		log.Warnf("changing the engine version can lead to undesirable behavior")
+		buildEngineVersion = config.GetConfig().Engine
+	}
+
+	if buildOpenGlVersion == config.BuildOpenGlVersionDefault && config.GetConfig().OpenGL != "" {
+		buildOpenGlVersion = config.GetConfig().OpenGL
+	}
+
+	if buildVersionNumber == "" {
+		buildVersionNumber = pubspec.GetPubSpec().Version
+	}
+
+	if buildSkipEngineDownload {
+		engineCachePath = enginecache.EngineCachePath(targetOS, buildCachePath)
+	} else {
+		engineCachePath = enginecache.ValidateOrUpdateEngine(targetOS, buildEngineVersion)
+	}
+}
+
 func commonFlags() []string {
 	f := []string{}
 	if buildTarget != config.BuildTargetDefault {
@@ -298,31 +330,7 @@ func buildGoBinary(targetOS string, vmArguments []string) {
 	if vmArgsFromEnv := os.Getenv("HOVER_IN_DOCKER_BUILD_VMARGS"); len(vmArgsFromEnv) > 0 {
 		vmArguments = append(vmArguments, strings.Split(vmArgsFromEnv, ",")...)
 	}
-	if buildGoFlutterBranch == config.BuildBranchDefault && config.GetConfig().Branch != "" {
-		buildGoFlutterBranch = config.GetConfig().Branch
-	}
-	if buildCachePath == "" && config.GetConfig().CachePath != "" {
-		buildCachePath = config.GetConfig().CachePath
-	}
-	if buildEngineVersion == config.BuildEngineDefault && config.GetConfig().Engine != "" {
-		log.Warnf("changing the engine version can lead to undesirable behavior")
-		buildEngineVersion = config.GetConfig().Engine
-	}
-	if buildOpenGlVersion == config.BuildOpenGlVersionDefault && config.GetConfig().OpenGL != "" {
-		buildOpenGlVersion = config.GetConfig().OpenGL
-	}
-	if buildVersionNumber == "" {
-		buildVersionNumber = pubspec.GetPubSpec().Version
-	}
-
-	if buildCachePath == "" {
-		buildCachePath = enginecache.DefaultCachePath()
-	}
-	if buildSkipEngineDownload {
-		engineCachePath = enginecache.EngineCachePath(targetOS, buildCachePath)
-	} else {
-		engineCachePath = enginecache.ValidateOrUpdateEngine(targetOS, buildEngineVersion)
-	}
+	initBuildParameters(targetOS)
 
 	fileutils.CopyDir(build.IntermediatesDirectoryPath(targetOS), build.OutputDirectoryPath(targetOS))
 
@@ -406,7 +414,7 @@ func buildGoBinary(targetOS string, vmArguments []string) {
 		}
 	}
 
-	buildCommandString := buildCommand(targetOS, vmArguments, build.OutputBinaryPath(pubspec.GetPubSpec().Name, targetOS))
+	buildCommandString := buildCommand(targetOS, vmArguments, build.OutputBinaryPath(config.GetConfig().ExecutableName(pubspec.GetPubSpec().Name), targetOS))
 	cmdGoBuild := exec.Command(buildCommandString[0], buildCommandString[1:]...)
 	cmdGoBuild.Dir = filepath.Join(wd, build.BuildPath)
 	cmdGoBuild.Env = append(os.Environ(),

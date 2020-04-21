@@ -1,9 +1,9 @@
-pkgname={{.projectName}}
-pkgver={{`{{.version}}`}}
-pkgrel={{`{{.release}}`}}
+pkgname={{.packageName}}
+pkgver={{.version}}
+pkgrel={{.release}}
 pkgdesc="{{.description}}"
 arch=("x86_64")
-license=('FIXME')
+license=('{{.license}}')
 
 package() {
     mkdir -p $pkgdir/
