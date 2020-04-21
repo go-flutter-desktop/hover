@@ -406,7 +406,7 @@ func buildGoBinary(targetOS string, vmArguments []string) {
 		}
 	}
 
-	buildCommandString := buildCommand(targetOS, vmArguments, build.OutputBinaryPath(config.GetConfig().ExecutableName, targetOS))
+	buildCommandString := buildCommand(targetOS, vmArguments, build.OutputBinaryPath(config.GetConfig().ExecutableName(pubspec.GetPubSpec().Name), targetOS))
 	cmdGoBuild := exec.Command(buildCommandString[0], buildCommandString[1:]...)
 	cmdGoBuild.Dir = filepath.Join(wd, build.BuildPath)
 	cmdGoBuild.Env = append(os.Environ(),

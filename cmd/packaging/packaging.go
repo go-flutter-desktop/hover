@@ -77,22 +77,18 @@ var once sync.Once
 
 func (t *packagingTask) getTemplateData(projectName, buildVersion string) map[string]string {
 	once.Do(func() {
-		license := config.GetConfig().License
-		if license == "" {
-			license = "FIXME"
-		}
 		templateData = map[string]string{
 			"projectName":      projectName,
-			"author":           config.GetConfig().Author,
 			"version":          buildVersion,
 			"release":          strings.Split(buildVersion, ".")[0],
+			"arch":             runtime.GOARCH,
 			"description":      pubspec.GetPubSpec().Description,
 			"organizationName": androidmanifest.AndroidOrganizationName(),
-			"arch":             runtime.GOARCH,
-			"applicationName":  config.GetConfig().ApplicationName,
-			"executableName":   config.GetConfig().ExecutableName,
-			"packageName":      config.GetConfig().PackageName,
-			"license":          license,
+			"author":           config.GetConfig().Author(),
+			"applicationName":  config.GetConfig().ApplicationName(projectName),
+			"executableName":   config.GetConfig().ExecutableName(projectName),
+			"packageName":      config.GetConfig().PackageName(projectName),
+			"license":          config.GetConfig().License(),
 		}
 		templateData["iconPath"] = executeStringTemplate(t.linuxDesktopFileIconPath, templateData)
 		templateData["executablePath"] = executeStringTemplate(t.linuxDesktopFileExecutablePath, templateData)
@@ -180,7 +176,7 @@ func (t *packagingTask) Pack(buildVersion string) {
 	fileutils.CopyTemplateDir(packagingFormatPath(t.packagingFormatName), filepath.Join(tmpPath), t.getTemplateData(projectName, buildVersion))
 	if t.generateBuildFiles != nil {
 		log.Infof("Generating dynamic build files")
-		t.generateBuildFiles(config.GetConfig().PackageName, tmpPath)
+		t.generateBuildFiles(config.GetConfig().PackageName(projectName), tmpPath)
 	}
 
 	for _, file := range t.executableFiles {
@@ -202,9 +198,9 @@ func (t *packagingTask) Pack(buildVersion string) {
 	runPackaging(tmpPath, packagingScript)
 	var outputFileName string
 	if t.outputFileUsesApplicationName {
-		outputFileName += config.GetConfig().ApplicationName
+		outputFileName += config.GetConfig().ApplicationName(projectName)
 	} else {
-		outputFileName += config.GetConfig().PackageName
+		outputFileName += config.GetConfig().PackageName(projectName)
 	}
 	if t.outputFileContainsVersion {
 		if t.outputFileUsesApplicationName {

@@ -3,13 +3,12 @@ package cmd
 import (
 	"errors"
 	"os"
-	"os/user"
 	"path/filepath"
-	"strings"
 
 	"github.com/spf13/cobra"
 
 	"github.com/go-flutter-desktop/hover/internal/build"
+	"github.com/go-flutter-desktop/hover/internal/config"
 	"github.com/go-flutter-desktop/hover/internal/fileutils"
 	"github.com/go-flutter-desktop/hover/internal/log"
 	"github.com/go-flutter-desktop/hover/internal/pubspec"
@@ -31,9 +30,11 @@ var initCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		assertInFlutterProject()
 
+		projectName := pubspec.GetPubSpec().Name
+
 		var projectPath string
 		if len(args) == 0 || args[0] == "." {
-			projectPath = pubspec.GetPubSpec().Name
+			projectPath = projectName
 		} else {
 			projectPath = args[0]
 		}
@@ -62,26 +63,16 @@ var initCmd = &cobra.Command{
 			os.Exit(1)
 		}
 
-		author := pubspec.GetPubSpec().Author
-		if author == "" {
-			log.Warnf("Missing author field in pubspec.yaml")
-			u, err := user.Current()
-			if err != nil {
-				log.Errorf("Couldn't get current user: %v", err)
-				os.Exit(1)
-			}
-			author = u.Username
-			log.Printf("Using this username from system instead: %s", author)
-		}
+		emptyConfig := config.Config{}
 
 		fileutils.CopyAsset("app/main.go", filepath.Join(desktopCmdPath, "main.go"), fileutils.AssetsBox())
 		fileutils.CopyAsset("app/options.go", filepath.Join(desktopCmdPath, "options.go"), fileutils.AssetsBox())
 		fileutils.CopyAsset("app/icon.png", filepath.Join(desktopAssetsPath, "icon.png"), fileutils.AssetsBox())
 		fileutils.CopyAsset("app/gitignore", filepath.Join(build.BuildPath, ".gitignore"), fileutils.AssetsBox())
 		fileutils.ExecuteTemplateFromAssetsBox("app/hover.yaml.tmpl", filepath.Join(build.BuildPath, "hover.yaml"), fileutils.AssetsBox(), map[string]string{
-			"author":              author,
-			"projectName":         pubspec.GetPubSpec().Name,
-			"strippedProjectName": strings.ReplaceAll(pubspec.GetPubSpec().Name, "_", ""),
+			"applicationName": emptyConfig.ApplicationName(projectName),
+			"executableName":  emptyConfig.ExecutableName(projectName),
+			"packageName":     emptyConfig.PackageName(projectName),
 		})
 
 		initializeGoModule(projectPath)
