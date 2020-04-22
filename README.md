@@ -79,7 +79,9 @@ By default, hover uses the file `lib/main_desktop.dart` as entrypoint. You may s
 
 ##### VSCode
 
-If you want to integrate go-flutter with VSCode, read this [issue](https://github.com/go-flutter-desktop/go-flutter/issues/129#issuecomment-513590141).
+Please try the [experimental Hover extension for VSCode](https://marketplace.visualstudio.com/items?itemName=go-flutter.hover).
+
+If you want to manually integrate with VSCode, read this [issue](https://github.com/go-flutter-desktop/go-flutter/issues/129#issuecomment-513590141).
 
 ##### Emacs
 
