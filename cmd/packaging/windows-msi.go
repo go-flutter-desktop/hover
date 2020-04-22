@@ -20,9 +20,9 @@ var WindowsMsiTask = &packagingTask{
 		"windows-msi/app.wxs.tmpl": "{{.packageName}}.wxs.tmpl",
 	},
 	buildOutputDirectory:          "build",
-	packagingScriptTemplate:       "convert -resize x16 build/assets/icon.png build/assets/icon.ico && wixl -v {{.packageName}}.wxs && mv -n {{.packageName}}.msi \"{{.applicationName}}.msi\"",
+	packagingScriptTemplate:       "convert -resize x16 build/assets/icon.png build/assets/icon.ico && wixl -v {{.packageName}}.wxs && mv -n {{.packageName}}.msi \"{{.applicationName}} {{.version}}.msi\"",
 	outputFileExtension:           "msi",
-	outputFileContainsVersion:     false,
+	outputFileContainsVersion:     true,
 	outputFileUsesApplicationName: true,
 	generateBuildFiles: func(packageName, tmpPath string) {
 		directoriesFilePath, err := filepath.Abs(filepath.Join(tmpPath, "directories.wxi"))

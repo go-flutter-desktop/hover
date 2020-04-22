@@ -107,9 +107,15 @@ type packagingTask struct {
 	buildOutputDirectory           string                         // Path to copy the build output of the app to. Operates in the temporary directory
 	packagingScriptTemplate        string                         // Template for the command that actually packages the app
 	outputFileExtension            string                         // File extension of the packaged app
-	outputFileContainsVersion      bool                           // Whether the output file name contains the version
-	outputFileUsesApplicationName  bool                           // Uses the application name instead of the package name
-	skipAssertInitialized          bool                           // Set to true when a task doesn't need to be initialized.
+	// NOTE: outputFileContainsVersion is currently always true, we could
+	// consider adding a flag for it to let users disable it.
+	outputFileContainsVersion bool // Whether the output file name contains the version
+	// NOTE: outputFileUsesApplicationName is always true for darwin-* and
+	// windows-*, and always false for linux-*. We could consider adding a flag
+	// for it to enable and disable at will (defaulting to how it's currently
+	// configured).
+	outputFileUsesApplicationName bool // Uses the application name instead of the package name
+	skipAssertInitialized         bool // Set to true when a task doesn't need to be initialized.
 }
 
 func (t *packagingTask) Name() string {
