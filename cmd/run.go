@@ -116,7 +116,7 @@ func runAndAttach(projectName string, targetOS string) {
 			text := scanner.Text()
 			fmt.Println(text)
 			match := regexObservatory.FindStringSubmatch(text)
-			if len(match) == 1 {
+			if len(match) == 2 {
 				log.Infof("Connecting hover to '%s' for hot reload", projectName)
 				startHotReloadProcess(cmdFlutterAttach, buildTarget, match[1])
 				break
