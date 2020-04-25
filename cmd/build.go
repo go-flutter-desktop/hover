@@ -452,6 +452,8 @@ func buildEnv(targetOS string, engineCachePath string) []string {
 	}
 	env := []string{
 		"GO111MODULE=on",
+		"GOPROXY=" + os.Getenv("GOPROXY"),
+		"GOPRIVATE=" + os.Getenv("GOPRIVATE"),
 		"CGO_LDFLAGS=" + cgoLdflags,
 		"GOOS=" + targetOS,
 		"GOARCH=amd64",

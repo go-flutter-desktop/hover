@@ -127,6 +127,8 @@ func initializeGoModule(projectPath string) {
 	cmdGoModInit.Dir = filepath.Join(wd, build.BuildPath)
 	cmdGoModInit.Env = append(os.Environ(),
 		"GO111MODULE=on",
+		"GOPROXY="+os.Getenv("GOPROXY"),
+		"GOPRIVATE="+os.Getenv("GOPRIVATE"),
 	)
 	cmdGoModInit.Stderr = os.Stderr
 	cmdGoModInit.Stdout = os.Stdout
@@ -141,6 +143,8 @@ func initializeGoModule(projectPath string) {
 	log.Infof("You can add the '%s' directory to git.", cmdGoModTidy.Dir)
 	cmdGoModTidy.Env = append(os.Environ(),
 		"GO111MODULE=on",
+		"GOPROXY="+os.Getenv("GOPROXY"),
+		"GOPRIVATE="+os.Getenv("GOPRIVATE"),
 	)
 	cmdGoModTidy.Stderr = os.Stderr
 	cmdGoModTidy.Stdout = os.Stdout

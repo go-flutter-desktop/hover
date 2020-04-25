@@ -74,8 +74,9 @@ func upgradeGoFlutter(targetOS string, engineCachePath string) (err error) {
 	cmdGoGetU := exec.Command(build.GoBin(), "get", "-u", "github.com/go-flutter-desktop/go-flutter"+buildGoFlutterBranch)
 	cmdGoGetU.Dir = filepath.Join(wd, build.BuildPath)
 	cmdGoGetU.Env = append(os.Environ(),
-		"GOPROXY=direct", // github.com/golang/go/issues/32955 (allows '/' in branch name)
 		"GO111MODULE=on",
+		"GOPROXY=direct", // github.com/golang/go/issues/32955 (allows '/' in branch name)
+		"GOPRIVATE="+os.Getenv("GOPRIVATE"),
 		"CGO_LDFLAGS="+cgoLdflags,
 	)
 	cmdGoGetU.Stderr = os.Stderr
@@ -92,6 +93,8 @@ func upgradeGoFlutter(targetOS string, engineCachePath string) (err error) {
 	cmdGoModDownload.Dir = filepath.Join(wd, build.BuildPath)
 	cmdGoModDownload.Env = append(os.Environ(),
 		"GO111MODULE=on",
+		"GOPROXY="+os.Getenv("GOPROXY"),
+		"GOPRIVATE="+os.Getenv("GOPRIVATE"),
 	)
 	cmdGoModDownload.Stderr = os.Stderr
 	cmdGoModDownload.Stdout = os.Stdout

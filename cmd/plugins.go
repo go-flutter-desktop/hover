@@ -564,8 +564,9 @@ func goGetModuleSuccess(pluginImportStr, version string) bool {
 	cmdGoGetU := exec.Command(build.GoBin(), "get", "-u", pluginImportStr+"@v"+version)
 	cmdGoGetU.Dir = filepath.Join(build.BuildPath)
 	cmdGoGetU.Env = append(os.Environ(),
-		"GOPROXY=direct", // github.com/golang/go/issues/32955 (allows '/' in branch name)
 		"GO111MODULE=on",
+		"GOPROXY=direct", // github.com/golang/go/issues/32955 (allows '/' in branch name)
+		"GOPRIVATE="+os.Getenv("GOPRIVATE"),
 	)
 	cmdGoGetU.Stderr = os.Stderr
 	cmdGoGetU.Stdout = os.Stdout
