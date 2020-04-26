@@ -1,6 +1,14 @@
 FROM snapcore/snapcraft AS snapcraft
 # Using multi-stage dockerfile to obtain snapcraft binary
 
+FROM ubuntu:bionic AS flutterbuilder
+RUN apt-get update \
+    && apt-get install -y \
+        git curl unzip
+# Install Flutter from the beta channel
+RUN git clone --single-branch --depth=1 --branch beta https://github.com/flutter/flutter /opt/flutter 2>&1 \
+    && /opt/flutter/bin/flutter doctor -v
+
 FROM ubuntu:bionic AS xarbuilder
 RUN apt-get update \
 	&& apt-get install -y \
@@ -73,10 +81,8 @@ ENV PATH=/opt/appimagetool/usr/bin:$PATH
 
 # TODO: Add pacman pkg packaging
 
-# Install Flutter from the beta channel
-RUN git clone --single-branch --depth=1 --branch beta https://github.com/flutter/flutter /opt/flutter 2>&1 \
-	&& ln -sf /opt/flutter/bin/flutter /usr/bin/flutter \
-	&& flutter doctor -v
+COPY --from=flutterbuilder /opt/flutter /opt/flutter
+RUN ln -sf /opt/flutter/bin/flutter /usr/bin/flutter
 
 # Build hover
 WORKDIR /go/src/app
