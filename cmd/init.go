@@ -70,9 +70,9 @@ var initCmd = &cobra.Command{
 		fileutils.CopyAsset("app/icon.png", filepath.Join(desktopAssetsPath, "icon.png"), fileutils.AssetsBox())
 		fileutils.CopyAsset("app/gitignore", filepath.Join(build.BuildPath, ".gitignore"), fileutils.AssetsBox())
 		fileutils.ExecuteTemplateFromAssetsBox("app/hover.yaml.tmpl", filepath.Join(build.BuildPath, "hover.yaml"), fileutils.AssetsBox(), map[string]string{
-			"applicationName": emptyConfig.ApplicationName(projectName),
-			"executableName":  emptyConfig.ExecutableName(projectName),
-			"packageName":     emptyConfig.PackageName(projectName),
+			"applicationName": emptyConfig.GetApplicationName(projectName),
+			"executableName":  emptyConfig.GetExecutableName(projectName),
+			"packageName":     emptyConfig.GetPackageName(projectName),
 		})
 
 		initializeGoModule(projectPath)

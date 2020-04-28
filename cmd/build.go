@@ -223,7 +223,7 @@ func initBuildParameters(targetOS string) {
 	}
 
 	if buildVersionNumber == "" {
-		buildVersionNumber = pubspec.GetPubSpec().Version
+		buildVersionNumber = pubspec.GetPubSpec().GetVersion()
 	}
 
 	if buildSkipEngineDownload {
@@ -414,7 +414,7 @@ func buildGoBinary(targetOS string, vmArguments []string) {
 		}
 	}
 
-	buildCommandString := buildCommand(targetOS, vmArguments, build.OutputBinaryPath(config.GetConfig().ExecutableName(pubspec.GetPubSpec().Name), targetOS))
+	buildCommandString := buildCommand(targetOS, vmArguments, build.OutputBinaryPath(config.GetConfig().GetExecutableName(pubspec.GetPubSpec().Name), targetOS))
 	cmdGoBuild := exec.Command(buildCommandString[0], buildCommandString[1:]...)
 	cmdGoBuild.Dir = filepath.Join(wd, build.BuildPath)
 	cmdGoBuild.Env = append(os.Environ(),
