@@ -13,8 +13,7 @@ FROM ubuntu:bionic AS xarbuilder
 RUN apt-get update \
 	&& apt-get install -y \
 		git libssl1.0-dev libxml2-dev make g++ autoconf
-RUN cd /tmp \
-    && git clone https://github.com/mackyle/xar 2>&1 \
+RUN git clone --single-branch --depth=1 --branch xar-1.6.1 https://github.com/mackyle/xar 2>&1 \
 	&& cd xar/xar \
 	&& ./autogen.sh --noconfigure \
 	&& ./configure 2>&1 \
@@ -25,8 +24,7 @@ FROM ubuntu:bionic AS bomutilsbuilder
 RUN apt-get update \
 	&& apt-get install -y \
 	    git make g++
-RUN cd /tmp \
-	&& git clone https://github.com/hogliux/bomutils 2>&1 \
+RUN git clone --single-branch --depth=1 --branch 0.2 https://github.com/hogliux/bomutils 2>&1 \
 	&& cd bomutils \
 	&& make 2>&1 \
 	&& make install 2>&1
@@ -48,8 +46,6 @@ FROM dockercore/golang-cross:1.13.10 AS hover
 # Install dependencies via apt
 RUN apt-get update \
 	&& apt-get install -y \
-	    # dependencies for flutter
-	    unzip \
 	    # dependencies for compiling linux
 		libgl1-mesa-dev xorg-dev \
 		# dependencies for darwin-bundle
