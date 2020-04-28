@@ -100,9 +100,9 @@ import (
 			match = []string{"", "origin"}
 		}
 
-		tag := "go/v" + pubspec.GetPubSpec().Version
+		tag := "go/v" + pubspec.GetPubSpec().GetVersion()
 
-		log.Infof("Your plugin at version '%s' is ready to be publish as a golang module.", pubspec.GetPubSpec().Version)
+		log.Infof("Your plugin at version '%s' is ready to be publish as a golang module.", pubspec.GetPubSpec().GetVersion())
 		log.Infof("Please run: `%s`", log.Au().Magenta("git tag "+tag))
 		log.Infof("            `%s`", log.Au().Magenta("git push "+match[1]+" "+tag))
 
