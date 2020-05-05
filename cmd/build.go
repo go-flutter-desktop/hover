@@ -402,6 +402,8 @@ func buildGoBinary(targetOS string, vmArguments []string) {
 		}
 	}
 
+	versioncheck.CheckForHoverUpdate(hoverVersion())
+
 	if buildOpenGlVersion == "none" {
 		log.Warnf("The '--opengl=none' flag makes go-flutter incompatible with texture plugins!")
 	}
