@@ -60,11 +60,19 @@ func dockerHoverBuild(targetOS string, packagingTask packaging.Task, buildFlags 
 		dockerArgs = append(dockerArgs, "--env", "HOVER_SAFE_CHOWN_UID="+currentUser.Uid)
 		dockerArgs = append(dockerArgs, "--env", "HOVER_SAFE_CHOWN_GID="+currentUser.Gid)
 	}
-	if goproxy := os.Getenv("GOPROXY"); goproxy != "" {
-		dockerArgs = append(dockerArgs, "--env", "GOPROXY="+goproxy)
+	goproxy, err := exec.Command("go", "env", "GOPROXY").Output()
+	if err != nil {
+		log.Errorf("Failed to get GOPROXY: %v", err)
 	}
-	if goprivate := os.Getenv("GOPRIVATE"); goprivate != "" {
-		dockerArgs = append(dockerArgs, "--env", "GOPRIVATE="+goprivate)
+	if string(goproxy) != "" {
+		dockerArgs = append(dockerArgs, "--env", "GOPROXY="+string(goproxy))
+	}
+	goprivate, err := exec.Command("go", "env", "GOPRIVATE").Output()
+	if err != nil {
+		log.Errorf("Failed to get GOPRIVATE: %v", err)
+	}
+	if string(goprivate) != "" {
+		dockerArgs = append(dockerArgs, "--env", "GOPRIVATE="+string(goprivate))
 	}
 	if len(vmArguments) > 0 {
 		// I (GeertJohan) am not too happy with this, it make the hover inside
