@@ -61,6 +61,7 @@ func runPackaging(path string, command string) {
 	bashCmd.Dir = path
 	err := bashCmd.Run()
 	if err != nil {
+		log.Errorf("%v", err)
 		log.Warnf("Packaging is very experimental and has only been tested on Linux.")
 		log.Infof("To help us debuging this error, please zip the content of:\n       \"%s\"\n       %s",
 			log.Au().Blue(path),
@@ -78,17 +79,18 @@ var once sync.Once
 func (t *packagingTask) getTemplateData(projectName, buildVersion string) map[string]string {
 	once.Do(func() {
 		templateData = map[string]string{
-			"projectName":      projectName,
-			"version":          buildVersion,
-			"release":          strings.Split(buildVersion, ".")[0],
-			"arch":             runtime.GOARCH,
-			"description":      pubspec.GetPubSpec().GetDescription(),
-			"organizationName": androidmanifest.AndroidOrganizationName(),
-			"author":           pubspec.GetPubSpec().GetAuthor(),
-			"applicationName":  config.GetConfig().GetApplicationName(projectName),
-			"executableName":   config.GetConfig().GetExecutableName(projectName),
-			"packageName":      config.GetConfig().GetPackageName(projectName),
-			"license":          config.GetConfig().GetLicense(),
+			"projectName":             projectName,
+			"version":                 buildVersion,
+			"release":                 strings.Split(buildVersion, ".")[0],
+			"arch":                    runtime.GOARCH,
+			"description":             pubspec.GetPubSpec().GetDescription(),
+			"organizationName":        androidmanifest.AndroidOrganizationName(),
+			"author":                  pubspec.GetPubSpec().GetAuthor(),
+			"applicationName":         config.GetConfig().GetApplicationName(projectName),
+			"strippedApplicationName": strings.ReplaceAll(config.GetConfig().GetApplicationName(projectName), " ", "_"), // Only for linux-appimage
+			"executableName":          config.GetConfig().GetExecutableName(projectName),
+			"packageName":             config.GetConfig().GetPackageName(projectName),
+			"license":                 config.GetConfig().GetLicense(),
 		}
 		templateData["iconPath"] = executeStringTemplate(t.linuxDesktopFileIconPath, templateData)
 		templateData["executablePath"] = executeStringTemplate(t.linuxDesktopFileExecutablePath, templateData)
