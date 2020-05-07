@@ -29,9 +29,9 @@ func init() {
 	}
 	file6 := &embedded.EmbeddedFile{
 		Filename:    "app/hover.yaml.tmpl",
-		FileModTime: time.Unix(1587497089, 0),
+		FileModTime: time.Unix(1589114480, 0),
 
-		Content: string("#application-name: \"{{.applicationName}}\" # Uncomment to modify this value.\n#executable-name: \"{{.executableName}}\" # Uncomment to modify this value. Only lowercase a-z, numbers, underscores and no spaces\n#package-name: \"{{.packageName}}\" # Uncomment to modify this value. Only lowercase a-z, numbers and no underscores or spaces\nlicense: \"\" # MANDATORY: Fill in your SPDX license name: https://spdx.org/licenses\ntarget: lib/main_desktop.dart\nbranch: \"\" # Change to \"@latest\" to download the latest go-flutter version on every build\n# cache-path: \"/home/YOURUSERNAME/.cache/\" #  https://github.com/go-flutter-desktop/go-flutter/issues/184\n# opengl: \"none\" # Uncomment this line if you have trouble with your OpenGL driver (https://github.com/go-flutter-desktop/go-flutter/issues/272)\ndocker: false\nengine-version: \"\" # change to a engine version commit\n"),
+		Content: string("#application-name: \"{{.applicationName}}\" # Uncomment to modify this value.\n#executable-name: \"{{.executableName}}\" # Uncomment to modify this value. Only lowercase a-z, numbers, underscores and no spaces\n#package-name: \"{{.packageName}}\" # Uncomment to modify this value. Only lowercase a-z, numbers and no underscores or spaces\nlicense: \"\" # MANDATORY: Fill in your SPDX license name: https://spdx.org/licenses\ntarget: lib/main_desktop.dart\nbranch: \"\" # Change to \"@latest\" to download the latest go-flutter version on every build\n# opengl: \"none\" # Uncomment this line if you have trouble with your OpenGL driver (https://github.com/go-flutter-desktop/go-flutter/issues/272)\ndocker: false\nengine-version: \"\" # change to a engine version commit\n"),
 	}
 	file7 := &embedded.EmbeddedFile{
 		Filename:    "app/icon.png",
@@ -59,75 +59,75 @@ func init() {
 	}
 	filec := &embedded.EmbeddedFile{
 		Filename:    "packaging/README.md",
-		FileModTime: time.Unix(1587470036, 0),
+		FileModTime: time.Unix(1587636830, 0),
 
 		Content: string("# packaging\nThe template files in the subdirectories are only copied on init and then executed on build.\n"),
 	}
 	filee := &embedded.EmbeddedFile{
 		Filename:    "packaging/darwin-bundle/Info.plist.tmpl",
-		FileModTime: time.Unix(1587472853, 0),
+		FileModTime: time.Unix(1587636830, 0),
 
-		Content: string("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!DOCTYPE plist PUBLIC \"-//Apple Computer//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n<plist version=\"1.0\">\n    <dict>\n        <key>CFBundleDevelopmentRegion</key>\n        <string>English</string>\n        <key>CFBundleExecutable</key>\n        <string>{{.executableName}}</string>\n        <key>CFBundleGetInfoString</key>\n        <string>{{.description}}</string>\n        <key>CFBundleIconFile</key>\n        <string>icon.icns</string>\n        <key>CFBundleIdentifier</key>\n        <string>{{.organizationName}}</string>\n        <key>CFBundleInfoDictionaryVersion</key>\n        <string>6.0</string>\n        <key>CFBundleLongVersionString</key>\n        <string>{{.version}}</string>\n        <key>CFBundleName</key>\n        <string>{{.applicationName}}</string>\n        <key>CFBundlePackageType</key>\n        <string>APPL</string>\n        <key>CFBundleShortVersionString</key>\n        <string>{{.version}}</string>\n        <key>CFBundleSignature</key>\n        <string>{{.organizationName}}.{{.packageName}}</string>\n        <key>CFBundleVersion</key>\n        <string>{{.version}}</string>\n        <key>CSResourcesFileMapped</key>\n        <true/>\n        <key>NSHumanReadableCopyright</key>\n        <string></string>\n    </dict>\n</plist>"),
+		Content: string("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!DOCTYPE plist PUBLIC \"-//Apple Computer//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n<plist version=\"1.0\">\n    <dict>\n        <key>CFBundleDevelopmentRegion</key>\n        <string>English</string>\n        <key>CFBundleExecutable</key>\n        <string>{{.executableName}}</string>\n        <key>CFBundleGetInfoString</key>\n        <string>{{.description}}</string>\n        <key>CFBundleIconFile</key>\n        <string>icon.icns</string>\n        <key>CFBundleIdentifier</key>\n        <string>{{.organizationName}}</string>\n        <key>CFBundleInfoDictionaryVersion</key>\n        <string>6.0</string>\n        <key>CFBundleLongVersionString</key>\n        <string>{{.version}}</string>\n        <key>CFBundleName</key>\n        <string>{{.applicationName}}</string>\n        <key>CFBundlePackageType</key>\n        <string>APPL</string>\n        <key>CFBundleShortVersionString</key>\n        <string>{{.version}}</string>\n        <key>CFBundleSignature</key>\n        <string>{{.organizationName}}.{{.packageName}}</string>\n        <key>CFBundleVersion</key>\n        <string>{{.version}}</string>\n        <key>CSResourcesFileMapped</key>\n        <true/>\n        <key>NSHumanReadableCopyright</key>\n        <string></string>\n    </dict>\n</plist>\n"),
 	}
 	fileg := &embedded.EmbeddedFile{
 		Filename:    "packaging/darwin-pkg/Distribution.tmpl",
-		FileModTime: time.Unix(1587472689, 0),
+		FileModTime: time.Unix(1587636830, 0),
 
 		Content: string("<?xml version=\"1.0\" encoding=\"utf-8\"?>\n<installer-gui-script minSpecVersion=\"1\">\n\t<title>{{.applicationName}}</title>\n\t<background alignment=\"topleft\" file=\"root/Applications/{{.applicationName}} {{.version}}.app/Contents/MacOS/assets/icon.png\"/>\n\t<choices-outline>\n\t    <line choice=\"choiceBase\"/>\n    </choices-outline>\n    <choice id=\"choiceBase\" title=\"base\">\n        <pkg-ref id=\"{{.organizationName}}.base.pkg\"/>\n    </choice>\n    <pkg-ref id=\"{{.organizationName}}.base.pkg\" version=\"{{.version}}\" auth=\"Root\">#base.pkg</pkg-ref>\n</installer-gui-script>\n"),
 	}
 	fileh := &embedded.EmbeddedFile{
 		Filename:    "packaging/darwin-pkg/PackageInfo.tmpl",
-		FileModTime: time.Unix(1587473491, 0),
+		FileModTime: time.Unix(1587636830, 0),
 
-		Content: string("<pkg-info format-version=\"2\" identifier=\"{{.organizationName}}.base.pkg\" version=\"{{.version}}\" install-location=\"/\" auth=\"root\">\n\t<bundle-version>\n\t\t<bundle id=\"{{.organizationName}}\" CFBundleIdentifier=\"{{.organizationName}}.{{.packageName}}\" path=\"./Applications/{{.applicationName}} {{.version}}.app\" CFBundleVersion=\"{{.version}}\"/>\n    </bundle-version>\n</pkg-info>"),
+		Content: string("<pkg-info format-version=\"2\" identifier=\"{{.organizationName}}.base.pkg\" version=\"{{.version}}\" install-location=\"/\" auth=\"root\">\n\t<bundle-version>\n\t\t<bundle id=\"{{.organizationName}}\" CFBundleIdentifier=\"{{.organizationName}}.{{.packageName}}\" path=\"./Applications/{{.applicationName}} {{.version}}.app\" CFBundleVersion=\"{{.version}}\"/>\n    </bundle-version>\n</pkg-info>\n"),
 	}
 	filej := &embedded.EmbeddedFile{
 		Filename:    "packaging/linux/app.desktop.tmpl",
-		FileModTime: time.Unix(1587470111, 0),
+		FileModTime: time.Unix(1587636830, 0),
 
-		Content: string("[Desktop Entry]\nVersion=1.0\nType=Application\nTerminal=false\nCategories=\nName={{.applicationName}}\nIcon={{.iconPath}}\nExec={{.executablePath}}"),
+		Content: string("[Desktop Entry]\nVersion=1.0\nType=Application\nTerminal=false\nCategories=\nName={{.applicationName}}\nIcon={{.iconPath}}\nExec={{.executablePath}}\n"),
 	}
 	filek := &embedded.EmbeddedFile{
 		Filename:    "packaging/linux/bin.tmpl",
-		FileModTime: time.Unix(1587423157, 0),
+		FileModTime: time.Unix(1587636830, 0),
 
-		Content: string("#!/bin/sh\n/usr/lib/{{.packageName}}/{{.executableName}}"),
+		Content: string("#!/bin/sh\n/usr/lib/{{.packageName}}/{{.executableName}}\n"),
 	}
 	filem := &embedded.EmbeddedFile{
 		Filename:    "packaging/linux-appimage/AppRun.tmpl",
-		FileModTime: time.Unix(1587423157, 0),
+		FileModTime: time.Unix(1587672726, 0),
 
-		Content: string("#!/bin/sh\ncd \"$(dirname \"$0\")\"\nexec ./build/{{.executableName}}"),
+		Content: string("#!/bin/sh\ncd \"$(dirname \"$0\")\"\nexec ./build/{{.executableName}}\n"),
 	}
 	fileo := &embedded.EmbeddedFile{
 		Filename:    "packaging/linux-deb/control.tmpl",
-		FileModTime: time.Unix(1587423157, 0),
+		FileModTime: time.Unix(1587636830, 0),
 
 		Content: string("Package: {{.packageName}}\nArchitecture: amd64\nMaintainer: @{{.author}}\nPriority: optional\nVersion: {{.version}}\nDescription: {{.description}}\n"),
 	}
 	fileq := &embedded.EmbeddedFile{
 		Filename:    "packaging/linux-pkg/PKGBUILD.tmpl",
-		FileModTime: time.Unix(1587471688, 0),
+		FileModTime: time.Unix(1587636830, 0),
 
 		Content: string("pkgname={{.packageName}}\npkgver={{.version}}\npkgrel={{.release}}\npkgdesc=\"{{.description}}\"\narch=(\"x86_64\")\nlicense=('{{.license}}')\n\npackage() {\n    mkdir -p $pkgdir/\n    cp * $pkgdir/ -r\n}\n"),
 	}
 	files := &embedded.EmbeddedFile{
 		Filename:    "packaging/linux-rpm/app.spec.tmpl",
-		FileModTime: time.Unix(1587471688, 0),
+		FileModTime: time.Unix(1587636830, 0),
 
-		Content: string("Name: {{.packageName}}\nVersion: {{.version}}\nRelease: {{.release}}\nSummary: {{.description}}\nLicense: {{.license}}\n\n%description\n{{.description}}\n\n%install\nmkdir -p $RPM_BUILD_ROOT%{_bindir}\nmkdir -p $RPM_BUILD_ROOT/usr/lib/{{.packageName}}\nmkdir -p $RPM_BUILD_ROOT%{_datadir}/applications\ncp -R $RPM_BUILD_DIR/{{.packageName}}-{{.version}}-{{.release}}.x86_64/* $RPM_BUILD_ROOT\nchmod 0755 $RPM_BUILD_ROOT%{_bindir}/{{.executableName}}\nchmod 0755 $RPM_BUILD_ROOT%{_datadir}/applications/{{.executableName}}.desktop\n\n%files\n%{_bindir}/{{.executableName}}\n/usr/lib/{{.packageName}}/\n%{_datadir}/applications/{{.executableName}}.desktop"),
+		Content: string("Name: {{.packageName}}\nVersion: {{.version}}\nRelease: {{.release}}\nSummary: {{.description}}\nLicense: {{.license}}\n\n%description\n{{.description}}\n\n%install\nmkdir -p $RPM_BUILD_ROOT%{_bindir}\nmkdir -p $RPM_BUILD_ROOT/usr/lib/{{.packageName}}\nmkdir -p $RPM_BUILD_ROOT%{_datadir}/applications\ncp -R $RPM_BUILD_DIR/{{.packageName}}-{{.version}}-{{.release}}.x86_64/* $RPM_BUILD_ROOT\nchmod 0755 $RPM_BUILD_ROOT%{_bindir}/{{.executableName}}\nchmod 0755 $RPM_BUILD_ROOT%{_datadir}/applications/{{.executableName}}.desktop\n\n%files\n%{_bindir}/{{.executableName}}\n/usr/lib/{{.packageName}}/\n%{_datadir}/applications/{{.executableName}}.desktop\n"),
 	}
 	fileu := &embedded.EmbeddedFile{
 		Filename:    "packaging/linux-snap/snapcraft.yaml.tmpl",
-		FileModTime: time.Unix(1587423157, 0),
+		FileModTime: time.Unix(1587662031, 0),
 
 		Content: string("name: {{.packageName}}\nbase: core18\nversion: '{{.version}}'\nsummary: {{.description}}\ndescription: |\n  {{.description}}\nconfinement: devmode\ngrade: devel\napps:\n  {{.packageName}}:\n    command: {{.executableName}}\n    desktop: local/{{.executableName}}.desktop\nparts:\n  desktop:\n    plugin: dump\n    source: snap\n  assets:\n    plugin: dump\n    source: build/assets\n  app:\n    plugin: dump\n    source: build\n    stage-packages:\n      - libx11-6\n      - libxrandr2\n      - libxcursor1\n      - libxinerama1\n"),
 	}
 	filew := &embedded.EmbeddedFile{
 		Filename:    "packaging/windows-msi/app.wxs.tmpl",
-		FileModTime: time.Unix(1587428338, 0),
+		FileModTime: time.Unix(1589217232, 0),
 
-		Content: string("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Wix xmlns=\"http://schemas.microsoft.com/wix/2006/wi\">\n    <Product Id=\"*\" UpgradeCode=\"*\" Version=\"{{.version}}\" Language=\"1033\" Name=\"{{.applicationName}}\" Manufacturer=\"{{.author}}\">\n        <Package InstallerVersion=\"300\" Compressed=\"yes\"/>\n        <Media Id=\"1\" Cabinet=\"{{.packageName}}.cab\" EmbedCab=\"yes\" />\n        <Directory Id=\"TARGETDIR\" Name=\"SourceDir\">\n            <Directory Id=\"ProgramFilesFolder\">\n                <Directory Id=\"APPLICATIONROOTDIRECTORY\" Name=\"{{.applicationName}}\">\n                    <Directory Id=\"ASSETSDIRECTORY\" Name=\"assets\"/>\n                    <Directory Id=\"FLUTTERASSETSDIRECTORY\" Name=\"flutter_assets\">\n                        <?include directories.wxi ?>\n                    </Directory>\n                </Directory>\n            </Directory>\n            <Directory Id=\"ProgramMenuFolder\">\n                <Directory Id=\"ApplicationProgramsFolder\" Name=\"{{.applicationName}}\"/>\n            </Directory>\n        </Directory>\n        <Icon Id=\"ShortcutIcon\" SourceFile=\"build/assets/icon.ico\"/>\n        <DirectoryRef Id=\"APPLICATIONROOTDIRECTORY\">\n            <Component Id=\"{{.executableName}}.exe\" Guid=\"*\">\n                <File Id=\"{{.executableName}}.exe\" Source=\"build/{{.executableName}}.exe\" KeyPath=\"yes\"/>\n            </Component>\n            <Component Id=\"flutter_engine.dll\" Guid=\"*\">\n                <File Id=\"flutter_engine.dll\" Source=\"build/flutter_engine.dll\" KeyPath=\"yes\"/>\n            </Component>\n            <Component Id=\"icudtl.dat\" Guid=\"*\">\n                <File Id=\"icudtl.dat\" Source=\"build/icudtl.dat\" KeyPath=\"yes\"/>\n            </Component>\n        </DirectoryRef>\n        <DirectoryRef Id=\"ASSETSDIRECTORY\">\n            <Component Id=\"icon.png\" Guid=\"*\">\n                <File Id=\"icon.png\" Source=\"build/assets/icon.png\" KeyPath=\"yes\"/>\n            </Component>\n        </DirectoryRef>\n        <?include directory_refs.wxi ?>\n        <DirectoryRef Id=\"ApplicationProgramsFolder\">\n            <Component Id=\"ApplicationShortcut\" Guid=\"*\">\n                <Shortcut Id=\"ApplicationStartMenuShortcut\"\n                          Name=\"{{.applicationName}}\"\n                          Description=\"{{.description}}\"\n                          Target=\"[#{{.executableName}}.exe]\"\n                          WorkingDirectory=\"APPLICATIONROOTDIRECTORY\"\n                          Icon=\"ShortcutIcon\"/>\n                <RemoveFolder Id=\"CleanUpShortCut\" On=\"uninstall\"/>\n                <RegistryValue Root=\"HKCU\" Key=\"Software\\{{.author}}\\{{.packageName}}\" Name=\"installed\" Type=\"integer\" Value=\"1\" KeyPath=\"yes\"/>\n            </Component>\n        </DirectoryRef>\n        <Feature Id=\"MainApplication\" Title=\"{{.applicationName}}\" Level=\"1\">\n            <ComponentRef Id=\"{{.executableName}}.exe\"/>\n            <ComponentRef Id=\"flutter_engine.dll\"/>\n            <ComponentRef Id=\"icudtl.dat\"/>\n            <ComponentRef Id=\"icon.png\"/>\n            <ComponentRef Id=\"ApplicationShortcut\"/>\n            <?include component_refs.wxi ?>\n        </Feature>\n    </Product>\n</Wix>"),
+		Content: string("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Wix xmlns=\"http://schemas.microsoft.com/wix/2006/wi\">\n    <Product Id=\"*\" UpgradeCode=\"{{.upgradeCode}}\" Version=\"{{.version}}\" Language=\"1033\" Name=\"{{.applicationName}}\" Manufacturer=\"{{.author}}\">\n        <Package InstallerVersion=\"300\" Compressed=\"yes\"/>\n        <Media Id=\"1\" Cabinet=\"{{.packageName}}.cab\" EmbedCab=\"yes\" />\n        <Directory Id=\"TARGETDIR\" Name=\"SourceDir\">\n            <Directory Id=\"ProgramFilesFolder\">\n                <Directory Id=\"APPLICATIONROOTDIRECTORY\" Name=\"{{.applicationName}}\">\n                    <Directory Id=\"ASSETSDIRECTORY\" Name=\"assets\"/>\n                    <Directory Id=\"FLUTTERASSETSDIRECTORY\" Name=\"flutter_assets\">\n                        <?include directories.wxi ?>\n                    </Directory>\n                </Directory>\n            </Directory>\n            <Directory Id=\"ProgramMenuFolder\">\n                <Directory Id=\"ApplicationProgramsFolder\" Name=\"{{.applicationName}}\"/>\n            </Directory>\n        </Directory>\n        <Icon Id=\"ShortcutIcon\" SourceFile=\"build{{.pathSeparator}}assets{{.pathSeparator}}icon.ico\"/>\n        <Property Id=\"ARPPRODUCTICON\" Value=\"ShortcutIcon\"/>\n        <DirectoryRef Id=\"APPLICATIONROOTDIRECTORY\">\n            <Component Id=\"{{.executableName}}.exe\" Guid=\"*\">\n                <File Id=\"{{.executableName}}.exe\" Source=\"build{{.pathSeparator}}{{.executableName}}.exe\" KeyPath=\"yes\"/>\n            </Component>\n            <Component Id=\"flutter_engine.dll\" Guid=\"*\">\n                <File Id=\"flutter_engine.dll\" Source=\"build{{.pathSeparator}}flutter_engine.dll\" KeyPath=\"yes\"/>\n            </Component>\n            <Component Id=\"icudtl.dat\" Guid=\"*\">\n                <File Id=\"icudtl.dat\" Source=\"build{{.pathSeparator}}icudtl.dat\" KeyPath=\"yes\"/>\n            </Component>\n        </DirectoryRef>\n        <DirectoryRef Id=\"ASSETSDIRECTORY\">\n            <Component Id=\"icon.png\" Guid=\"*\">\n                <File Id=\"icon.png\" Source=\"build{{.pathSeparator}}assets{{.pathSeparator}}icon.png\" KeyPath=\"yes\"/>\n            </Component>\n            <Component Id=\"icon.ico\" Guid=\"*\">\n                <File Id=\"icon.ico\" Source=\"build{{.pathSeparator}}assets{{.pathSeparator}}icon.ico\" KeyPath=\"yes\"/>\n            </Component>\n        </DirectoryRef>\n        <?include directory_refs.wxi ?>\n        <DirectoryRef Id=\"ApplicationProgramsFolder\">\n            <Component Id=\"ApplicationShortcut\" Guid=\"*\">\n                <Shortcut Id=\"ApplicationStartMenuShortcut\"\n                          Name=\"{{.applicationName}}\"\n                          Description=\"{{.description}}\"\n                          Target=\"[#{{.executableName}}.exe]\"\n                          WorkingDirectory=\"APPLICATIONROOTDIRECTORY\"\n                          Icon=\"ShortcutIcon\"/>\n                <RemoveFolder Id=\"CleanUpShortCut\" On=\"uninstall\"/>\n                <RegistryValue Root=\"HKCU\" Key=\"Software\\{{.author}}\\{{.packageName}}\" Name=\"installed\" Type=\"integer\" Value=\"1\" KeyPath=\"yes\"/>\n            </Component>\n        </DirectoryRef>\n        <Feature Id=\"MainApplication\" Title=\"{{.applicationName}}\" Level=\"1\">\n            <ComponentRef Id=\"{{.executableName}}.exe\"/>\n            <ComponentRef Id=\"flutter_engine.dll\"/>\n            <ComponentRef Id=\"icudtl.dat\"/>\n            <ComponentRef Id=\"icon.png\"/>\n            <ComponentRef Id=\"ApplicationShortcut\"/>\n            <?include component_refs.wxi ?>\n        </Feature>\n    </Product>\n</Wix>\n"),
 	}
 	filey := &embedded.EmbeddedFile{
 		Filename:    "plugin/README.md.dlib.tmpl",
@@ -165,7 +165,7 @@ func init() {
 	}
 	dir3 := &embedded.EmbeddedDir{
 		Filename:   "app",
-		DirModTime: time.Unix(1587497089, 0),
+		DirModTime: time.Unix(1589114480, 0),
 		ChildFiles: []*embedded.EmbeddedFile{
 			file4, // "app/gitignore"
 			file5, // "app/go.mod"
@@ -179,7 +179,7 @@ func init() {
 	}
 	dirb := &embedded.EmbeddedDir{
 		Filename:   "packaging",
-		DirModTime: time.Unix(1587470036, 0),
+		DirModTime: time.Unix(1587636830, 0),
 		ChildFiles: []*embedded.EmbeddedFile{
 			filec, // "packaging/README.md"
 
@@ -187,7 +187,7 @@ func init() {
 	}
 	dird := &embedded.EmbeddedDir{
 		Filename:   "packaging/darwin-bundle",
-		DirModTime: time.Unix(1587472853, 0),
+		DirModTime: time.Unix(1587636830, 0),
 		ChildFiles: []*embedded.EmbeddedFile{
 			filee, // "packaging/darwin-bundle/Info.plist.tmpl"
 
@@ -195,7 +195,7 @@ func init() {
 	}
 	dirf := &embedded.EmbeddedDir{
 		Filename:   "packaging/darwin-pkg",
-		DirModTime: time.Unix(1587473491, 0),
+		DirModTime: time.Unix(1587636830, 0),
 		ChildFiles: []*embedded.EmbeddedFile{
 			fileg, // "packaging/darwin-pkg/Distribution.tmpl"
 			fileh, // "packaging/darwin-pkg/PackageInfo.tmpl"
@@ -204,7 +204,7 @@ func init() {
 	}
 	diri := &embedded.EmbeddedDir{
 		Filename:   "packaging/linux",
-		DirModTime: time.Unix(1587470111, 0),
+		DirModTime: time.Unix(1587636830, 0),
 		ChildFiles: []*embedded.EmbeddedFile{
 			filej, // "packaging/linux/app.desktop.tmpl"
 			filek, // "packaging/linux/bin.tmpl"
@@ -213,7 +213,7 @@ func init() {
 	}
 	dirl := &embedded.EmbeddedDir{
 		Filename:   "packaging/linux-appimage",
-		DirModTime: time.Unix(1587423157, 0),
+		DirModTime: time.Unix(1587672726, 0),
 		ChildFiles: []*embedded.EmbeddedFile{
 			filem, // "packaging/linux-appimage/AppRun.tmpl"
 
@@ -221,7 +221,7 @@ func init() {
 	}
 	dirn := &embedded.EmbeddedDir{
 		Filename:   "packaging/linux-deb",
-		DirModTime: time.Unix(1587423157, 0),
+		DirModTime: time.Unix(1587636830, 0),
 		ChildFiles: []*embedded.EmbeddedFile{
 			fileo, // "packaging/linux-deb/control.tmpl"
 
@@ -229,7 +229,7 @@ func init() {
 	}
 	dirp := &embedded.EmbeddedDir{
 		Filename:   "packaging/linux-pkg",
-		DirModTime: time.Unix(1587471688, 0),
+		DirModTime: time.Unix(1587636830, 0),
 		ChildFiles: []*embedded.EmbeddedFile{
 			fileq, // "packaging/linux-pkg/PKGBUILD.tmpl"
 
@@ -237,7 +237,7 @@ func init() {
 	}
 	dirr := &embedded.EmbeddedDir{
 		Filename:   "packaging/linux-rpm",
-		DirModTime: time.Unix(1587471688, 0),
+		DirModTime: time.Unix(1587636830, 0),
 		ChildFiles: []*embedded.EmbeddedFile{
 			files, // "packaging/linux-rpm/app.spec.tmpl"
 
@@ -245,7 +245,7 @@ func init() {
 	}
 	dirt := &embedded.EmbeddedDir{
 		Filename:   "packaging/linux-snap",
-		DirModTime: time.Unix(1587423157, 0),
+		DirModTime: time.Unix(1587662031, 0),
 		ChildFiles: []*embedded.EmbeddedFile{
 			fileu, // "packaging/linux-snap/snapcraft.yaml.tmpl"
 
@@ -253,7 +253,7 @@ func init() {
 	}
 	dirv := &embedded.EmbeddedDir{
 		Filename:   "packaging/windows-msi",
-		DirModTime: time.Unix(1587428338, 0),
+		DirModTime: time.Unix(1589217232, 0),
 		ChildFiles: []*embedded.EmbeddedFile{
 			filew, // "packaging/windows-msi/app.wxs.tmpl"
 
