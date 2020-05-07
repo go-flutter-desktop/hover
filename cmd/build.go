@@ -51,7 +51,7 @@ func init() {
 	buildCmd.PersistentFlags().StringVarP(&buildTarget, "target", "t", config.BuildTargetDefault, "The main entry-point file of the application.")
 	buildCmd.PersistentFlags().StringVarP(&buildGoFlutterBranch, "branch", "b", config.BuildBranchDefault, "The 'go-flutter' version to use. (@master or @v0.20.0 for example)")
 	buildCmd.PersistentFlags().StringVar(&buildEngineVersion, "engine-version", config.BuildEngineDefault, "The flutter engine version to use.")
-	buildCmd.PersistentFlags().StringVar(&buildCachePath, "cache-path", "", "The path that hover uses to cache dependencies such as the Flutter engine .so/.dll (defaults to the standard user cache directory)")
+	buildCmd.PersistentFlags().StringVar(&buildCachePath, "cache-path", enginecache.DefaultCachePath(), "The path that hover uses to cache dependencies such as the Flutter engine .so/.dll (defaults to the standard user cache directory)")
 	buildCmd.PersistentFlags().StringVar(&buildOpenGlVersion, "opengl", config.BuildOpenGlVersionDefault, "The OpenGL version specified here is only relevant for external texture plugin (i.e. video_plugin).\nIf 'none' is provided, texture won't be supported. Note: the Flutter Engine still needs a OpenGL compatible context.")
 	buildCmd.PersistentFlags().StringVar(&buildVersionNumber, "version-number", "", "Override the version number used in build and packaging. You may use it with $(git describe --tags)")
 	buildCmd.PersistentFlags().BoolVar(&buildDebug, "debug", false, "Build a debug version of the app.")
@@ -229,7 +229,7 @@ func initBuildParameters(targetOS string) {
 	if buildSkipEngineDownload {
 		engineCachePath = enginecache.EngineCachePath(targetOS, buildCachePath)
 	} else {
-		engineCachePath = enginecache.ValidateOrUpdateEngine(targetOS, buildEngineVersion)
+		engineCachePath = enginecache.ValidateOrUpdateEngineAtPath(targetOS, buildCachePath, buildEngineVersion)
 	}
 }
 
