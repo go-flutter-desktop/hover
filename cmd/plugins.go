@@ -19,7 +19,7 @@ import (
 
 	"github.com/go-flutter-desktop/hover/internal/build"
 	"github.com/go-flutter-desktop/hover/internal/fileutils"
-	"github.com/go-flutter-desktop/hover/internal/log"
+	"github.com/go-flutter-desktop/hover/internal/logx"
 	"github.com/go-flutter-desktop/hover/internal/pubspec"
 )
 
@@ -114,7 +114,7 @@ var pluginListCmd = &cobra.Command{
 		assertInFlutterProject()
 		dependencyList, err := listPlatformPlugin()
 		if err != nil {
-			log.Errorf("%v", err)
+			logx.Errorf("%v", err)
 			os.Exit(1)
 		}
 
@@ -130,30 +130,30 @@ var pluginListCmd = &cobra.Command{
 			}
 			hasPlugins = true
 
-			log.Infof("     - %s", dep.name)
-			log.Infof("         version:   %s", dep.Version)
-			log.Infof("         platforms: [%s]", strings.Join(dep.platforms(), ", "))
+			logx.Infof("     - %s", dep.name)
+			logx.Infof("         version:   %s", dep.Version)
+			logx.Infof("         platforms: [%s]", strings.Join(dep.platforms(), ", "))
 			if dep.desktop {
 				if dep.standaloneImpl {
-					log.Infof("         source:    This go plugin isn't maintained by the official plugin creator.")
+					logx.Infof("         source:    This go plugin isn't maintained by the official plugin creator.")
 				}
 				if dep.imported() {
-					log.Infof("         import:    [OK] The plugin is already imported in the project.")
+					logx.Infof("         import:    [OK] The plugin is already imported in the project.")
 					continue
 				}
 				if dep.autoImport || dep.standaloneImpl {
 					hasNewPlugin = true
-					log.Infof("         import:    [Missing] The plugin can be imported by hover.")
+					logx.Infof("         import:    [Missing] The plugin can be imported by hover.")
 				} else {
-					log.Infof("         import:    [Manual import] The plugin is missing the import.go.tmpl file required for hover import.")
+					logx.Infof("         import:    [Manual import] The plugin is missing the import.go.tmpl file required for hover import.")
 				}
 				if dep.path != "" {
-					log.Infof("         dev:       Plugin replaced in go.mod to path: '%s'", dep.path)
+					logx.Infof("         dev:       Plugin replaced in go.mod to path: '%s'", dep.path)
 				}
 			}
 		}
 		if hasNewPlugin {
-			log.Infof(fmt.Sprintf("run `%s` to import the missing plugins!", log.Au().Magenta("hover plugins get")))
+			logx.Infof(fmt.Sprintf("run `%s` to import the missing plugins!", logx.Au().Magenta("hover plugins get")))
 		}
 	},
 }
@@ -174,13 +174,13 @@ var pluginTidyCmd = &cobra.Command{
 		desktopCmdPath := filepath.Join(build.BuildPath, "cmd")
 		dependencyList, err := listPlatformPlugin()
 		if err != nil {
-			log.Errorf("%v", err)
+			logx.Errorf("%v", err)
 			os.Exit(1)
 		}
 
 		importedPlugins, err := ioutil.ReadDir(desktopCmdPath)
 		if err != nil {
-			log.Errorf("Failed to search for plugins: %v", err)
+			logx.Errorf("Failed to search for plugins: %v", err)
 			os.Exit(1)
 		}
 
@@ -203,7 +203,7 @@ var pluginTidyCmd = &cobra.Command{
 
 				if !pluginInUse || tidyPurge {
 					if dryRun {
-						log.Infof("       plugin: [%s] can be removed", pluginName)
+						logx.Infof("       plugin: [%s] can be removed", pluginName)
 						continue
 					}
 					pluginImportPath := filepath.Join(desktopCmdPath, f.Name())
@@ -215,7 +215,7 @@ var pluginTidyCmd = &cobra.Command{
 					// the go.mod file, the project still works and the plugin is
 					// successfully removed from the flutter.Application.
 					if err != nil || pluginImportStr == "" {
-						log.Warnf("Couldn't clean the '%s' plugin from the 'go.mod' file. Error: %v", pluginName, err)
+						logx.Warnf("Couldn't clean the '%s' plugin from the 'go.mod' file. Error: %v", pluginName, err)
 					} else {
 						fileutils.RemoveLinesFromFile(filepath.Join(build.BuildPath, "go.mod"), pluginImportStr)
 					}
@@ -223,17 +223,17 @@ var pluginTidyCmd = &cobra.Command{
 					// remove import file
 					err = os.Remove(pluginImportPath)
 					if err != nil {
-						log.Warnf("Couldn't remove plugin %s: %v", pluginName, err)
+						logx.Warnf("Couldn't remove plugin %s: %v", pluginName, err)
 						continue
 					}
-					log.Infof("       plugin: [%s] removed", pluginName)
+					logx.Infof("       plugin: [%s] removed", pluginName)
 				}
 			}
 		}
 		if tidyPurge {
 			intermediatesDirectoryPath, err := filepath.Abs(filepath.Join(build.BuildPath, "build", "intermediates"))
 			if err != nil {
-				log.Errorf("Failed to resolve absolute path for intermediates directory: %v", err)
+				logx.Errorf("Failed to resolve absolute path for intermediates directory: %v", err)
 				os.Exit(1)
 			}
 			if fileutils.IsDirectory(intermediatesDirectoryPath) {
@@ -262,7 +262,7 @@ var pluginGetCmd = &cobra.Command{
 func hoverPluginGet(dryRun bool) bool {
 	dependencyList, err := listPlatformPlugin()
 	if err != nil {
-		log.Errorf("%v", err)
+		logx.Errorf("%v", err)
 		os.Exit(1)
 	}
 
@@ -273,15 +273,15 @@ func hoverPluginGet(dryRun bool) bool {
 		}
 
 		if !dep.autoImport {
-			log.Infof("       plugin: [%s] couldn't be imported, check the plugin's README for manual instructions", dep.name)
+			logx.Infof("       plugin: [%s] couldn't be imported, check the plugin's README for manual instructions", dep.name)
 			continue
 		}
 
 		if dryRun {
 			if dep.imported() {
-				log.Infof("       plugin: [%s] can be updated", dep.name)
+				logx.Infof("       plugin: [%s] can be updated", dep.name)
 			} else {
-				log.Infof("       plugin: [%s] can be imported", dep.name)
+				logx.Infof("       plugin: [%s] can be imported", dep.name)
 			}
 			continue
 		}
@@ -291,18 +291,18 @@ func hoverPluginGet(dryRun bool) bool {
 		if dep.imported() && !reImport {
 			pluginImportStr, err := readPluginGoImport(pluginImportOutPath, dep.name)
 			if err != nil {
-				log.Warnf("Couldn't read the plugin '%s' import URL", dep.name)
-				log.Warnf("Fallback to the latest version installed.")
+				logx.Warnf("Couldn't read the plugin '%s' import URL", dep.name)
+				logx.Warnf("Fallback to the latest version installed.")
 				continue
 			}
 
 			if !goGetModuleSuccess(pluginImportStr, dep.Version) {
-				log.Warnf("Couldn't download version '%s' of plugin '%s'", dep.Version, dep.name)
-				log.Warnf("Fallback to the latest version installed.")
+				logx.Warnf("Couldn't download version '%s' of plugin '%s'", dep.Version, dep.name)
+				logx.Warnf("Fallback to the latest version installed.")
 				continue
 			}
 
-			log.Infof("       plugin: [%s] updated", dep.name)
+			logx.Infof("       plugin: [%s] updated", dep.name)
 			continue
 		}
 
@@ -315,13 +315,13 @@ func hoverPluginGet(dryRun bool) bool {
 			if fileutils.IsDirectory(filepath.Join(dep.pluginGoSource, "dlib")) {
 				dlibPath, err := filepath.Abs(filepath.Join(dep.pluginGoSource, "dlib"))
 				if err != nil {
-					log.Errorf("Failed to resolve absolute path for dlib directory: %v", err)
+					logx.Errorf("Failed to resolve absolute path for dlib directory: %v", err)
 					os.Exit(1)
 				}
 
 				intermediatesDirectoryPath, err := filepath.Abs(filepath.Join(build.BuildPath, "build", "intermediates"))
 				if err != nil {
-					log.Errorf("Failed to resolve absolute path for intermediates directory: %v", err)
+					logx.Errorf("Failed to resolve absolute path for intermediates directory: %v", err)
 					os.Exit(1)
 				}
 
@@ -335,16 +335,16 @@ func hoverPluginGet(dryRun bool) bool {
 
 			pluginImportStr, err := readPluginGoImport(pluginImportOutPath, dep.name)
 			if err != nil {
-				log.Warnf("Couldn't read the plugin '%s' import URL", dep.name)
-				log.Warnf("Fallback to the latest version available on github.")
+				logx.Warnf("Couldn't read the plugin '%s' import URL", dep.name)
+				logx.Warnf("Fallback to the latest version available on github.")
 				continue
 			}
 
 			// if remote plugin, get the correct version
 			if dep.path == "" {
 				if !goGetModuleSuccess(pluginImportStr, dep.Version) {
-					log.Warnf("Couldn't download version '%s' of plugin '%s'", dep.Version, dep.name)
-					log.Warnf("Fallback to the latest version available on github.")
+					logx.Warnf("Couldn't download version '%s' of plugin '%s'", dep.Version, dep.name)
+					logx.Warnf("Fallback to the latest version available on github.")
 				}
 			}
 
@@ -352,13 +352,13 @@ func hoverPluginGet(dryRun bool) bool {
 			if dep.path != "" {
 				path, err := filepath.Abs(filepath.Join(dep.path, build.BuildPath))
 				if err != nil {
-					log.Errorf("Failed to resolve absolute path for plugin '%s': %v", dep.name, err)
+					logx.Errorf("Failed to resolve absolute path for plugin '%s': %v", dep.name, err)
 					os.Exit(1)
 				}
 				fileutils.AddLineToFile(filepath.Join(build.BuildPath, "go.mod"), fmt.Sprintf("replace %s => %s", pluginImportStr, path))
 			}
 
-			log.Infof("       plugin: [%s] imported", dep.name)
+			logx.Infof("       plugin: [%s] imported", dep.name)
 		}
 	}
 
@@ -368,7 +368,7 @@ func hoverPluginGet(dryRun bool) bool {
 func listPlatformPlugin() ([]PubDep, error) {
 	onlineList, err := fetchStandaloneImplementationList()
 	if err != nil {
-		log.Warnf("Warning, couldn't read the online plugin list: %v", err)
+		logx.Warnf("Warning, couldn't read the online plugin list: %v", err)
 	}
 
 	pubcachePath, err := findPubcachePath()
@@ -379,7 +379,7 @@ func listPlatformPlugin() ([]PubDep, error) {
 	var list []PubDep
 	pubLock, err := readPubSpecLock()
 	if err != nil {
-		log.Infof("Run `%s` (or equivalent) first", log.Au().Magenta("flutter build bundle"))
+		logx.Infof("Run `%s` (or equivalent) first", logx.Au().Magenta("flutter build bundle"))
 		return nil, err
 	}
 

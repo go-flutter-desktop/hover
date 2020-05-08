@@ -10,7 +10,7 @@ import (
 	"github.com/go-flutter-desktop/hover/internal/build"
 	"github.com/go-flutter-desktop/hover/internal/config"
 	"github.com/go-flutter-desktop/hover/internal/fileutils"
-	"github.com/go-flutter-desktop/hover/internal/log"
+	"github.com/go-flutter-desktop/hover/internal/logx"
 	"github.com/go-flutter-desktop/hover/internal/pubspec"
 )
 
@@ -42,24 +42,24 @@ var initCmd = &cobra.Command{
 		err := os.Mkdir(build.BuildPath, 0775)
 		if err != nil {
 			if os.IsExist(err) {
-				log.Errorf("A file or directory named '%s' already exists. Cannot continue init.", build.BuildPath)
+				logx.Errorf("A file or directory named '%s' already exists. Cannot continue init.", build.BuildPath)
 				os.Exit(1)
 			}
-			log.Errorf("Failed to create '%s' directory: %v", build.BuildPath, err)
+			logx.Errorf("Failed to create '%s' directory: %v", build.BuildPath, err)
 			os.Exit(1)
 		}
 
 		desktopCmdPath := filepath.Join(build.BuildPath, "cmd")
 		err = os.Mkdir(desktopCmdPath, 0775)
 		if err != nil {
-			log.Errorf("Failed to create '%s': %v", desktopCmdPath, err)
+			logx.Errorf("Failed to create '%s': %v", desktopCmdPath, err)
 			os.Exit(1)
 		}
 
 		desktopAssetsPath := filepath.Join(build.BuildPath, "assets")
 		err = os.Mkdir(desktopAssetsPath, 0775)
 		if err != nil {
-			log.Errorf("Failed to create '%s': %v", desktopAssetsPath, err)
+			logx.Errorf("Failed to create '%s': %v", desktopAssetsPath, err)
 			os.Exit(1)
 		}
 
@@ -76,7 +76,7 @@ var initCmd = &cobra.Command{
 		})
 
 		initializeGoModule(projectPath)
-		log.Printf("Available plugin for this project:")
+		logx.Printf("Available plugin for this project:")
 		pluginListCmd.Run(cmd, []string{})
 	},
 }

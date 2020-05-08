@@ -6,7 +6,7 @@ import (
 	"os"
 	"strings"
 
-	"github.com/go-flutter-desktop/hover/internal/log"
+	"github.com/go-flutter-desktop/hover/internal/logx"
 )
 
 // AndroidManifest is a file that describes the essential information about
@@ -28,21 +28,21 @@ func AndroidOrganizationName() string {
 	// Open AndroidManifest file
 	xmlFile, err := os.Open(androidManifestFile)
 	if err != nil {
-		log.Errorf("Failed to retrieve the organization name: %v", err)
+		logx.Errorf("Failed to retrieve the organization name: %v", err)
 		return "hover.failed.to.retrieve.package.name"
 	}
 	defer xmlFile.Close()
 
 	byteXMLValue, err := ioutil.ReadAll(xmlFile)
 	if err != nil {
-		log.Errorf("Failed to retrieve the organization name: %v", err)
+		logx.Errorf("Failed to retrieve the organization name: %v", err)
 		return "hover.failed.to.retrieve.package.name"
 	}
 
 	var androidManifest AndroidManifest
 	err = xml.Unmarshal(byteXMLValue, &androidManifest)
 	if err != nil {
-		log.Errorf("Failed to retrieve the organization name: %v", err)
+		logx.Errorf("Failed to retrieve the organization name: %v", err)
 		return "hover.failed.to.retrieve.package.name"
 	}
 	javaPackage := strings.Split(androidManifest.Package, ".")

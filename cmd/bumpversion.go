@@ -11,7 +11,7 @@ import (
 
 	"github.com/go-flutter-desktop/hover/internal/build"
 	"github.com/go-flutter-desktop/hover/internal/enginecache"
-	"github.com/go-flutter-desktop/hover/internal/log"
+	"github.com/go-flutter-desktop/hover/internal/logx"
 	"github.com/go-flutter-desktop/hover/internal/versioncheck"
 )
 
@@ -50,7 +50,7 @@ func upgrade(targetOS string) (err error) {
 func upgradeGoFlutter(targetOS string, engineCachePath string) (err error) {
 	wd, err := os.Getwd()
 	if err != nil {
-		log.Errorf("Failed to get working dir: %v", err)
+		logx.Errorf("Failed to get working dir: %v", err)
 		return
 	}
 
@@ -63,7 +63,7 @@ func upgradeGoFlutter(targetOS string, engineCachePath string) (err error) {
 	case "windows":
 		cgoLdflags = fmt.Sprintf("-L%s", engineCachePath)
 	default:
-		log.Errorf("Target platform %s is not supported, cgo_ldflags not implemented.", targetOS)
+		logx.Errorf("Target platform %s is not supported, cgo_ldflags not implemented.", targetOS)
 		return
 	}
 
@@ -84,7 +84,7 @@ func upgradeGoFlutter(targetOS string, engineCachePath string) (err error) {
 	err = cmdGoGetU.Run()
 	// When cross-compiling the command fails, but that is not an error
 	if err != nil {
-		log.Errorf("Updating go-flutter to %s version failed: %v", buildGoFlutterBranch, err)
+		logx.Errorf("Updating go-flutter to %s version failed: %v", buildGoFlutterBranch, err)
 		return
 	}
 
@@ -98,17 +98,17 @@ func upgradeGoFlutter(targetOS string, engineCachePath string) (err error) {
 
 	err = cmdGoModDownload.Run()
 	if err != nil {
-		log.Errorf("Go mod download failed: %v", err)
+		logx.Errorf("Go mod download failed: %v", err)
 		return
 	}
 
 	currentTag, err := versioncheck.CurrentGoFlutterTag(filepath.Join(wd, build.BuildPath))
 	if err != nil {
-		log.Errorf("%v", err)
+		logx.Errorf("%v", err)
 		os.Exit(1)
 	}
 
-	log.Printf("'go-flutter' is on version: %s", currentTag)
+	logx.Printf("'go-flutter' is on version: %s", currentTag)
 
 	return nil
 

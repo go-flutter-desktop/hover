@@ -11,7 +11,7 @@ import (
 	"strings"
 
 	"github.com/go-flutter-desktop/hover/internal/build"
-	"github.com/go-flutter-desktop/hover/internal/log"
+	"github.com/go-flutter-desktop/hover/internal/logx"
 	"github.com/go-flutter-desktop/hover/internal/pubspec"
 	"github.com/spf13/cobra"
 )
@@ -36,7 +36,7 @@ var publishPluginCmd = &cobra.Command{
 		goCheckTrackedCmd.Stderr = os.Stderr
 		err := goCheckTrackedCmd.Run()
 		if err != nil {
-			log.Errorf("The '%s' directory doesn't seems to be tracked by git. Error: %v", build.BuildPath, err)
+			logx.Errorf("The '%s' directory doesn't seems to be tracked by git. Error: %v", build.BuildPath, err)
 			os.Exit(1)
 		}
 
@@ -45,19 +45,19 @@ var publishPluginCmd = &cobra.Command{
 		goCheckCleanCmd.Stderr = os.Stderr
 		cleanOut, err := goCheckCleanCmd.Output()
 		if err != nil {
-			log.Errorf("Failed to check if '%s' is clean.", build.BuildPath, err)
+			logx.Errorf("Failed to check if '%s' is clean.", build.BuildPath, err)
 			os.Exit(1)
 		}
 		if len(cleanOut) != 0 {
-			log.Errorf("The '%s' directory doesn't seems to be clean. (make sure tracked files are committed)", build.BuildPath)
+			logx.Errorf("The '%s' directory doesn't seems to be clean. (make sure tracked files are committed)", build.BuildPath)
 			os.Exit(1)
 		}
 
 		// check if one of the git remote urls equals the package import 'url'
 		pluginImportStr, err := readPluginGoImport(filepath.Join(build.BuildPath, "import.go.tmpl"), pubspec.GetPubSpec().Name)
 		if err != nil {
-			log.Errorf("Failed to read the plugin import url: %v", err)
-			log.Infof("The file go/import.go.tmpl should look something like this:")
+			logx.Errorf("Failed to read the plugin import url: %v", err)
+			logx.Infof("The file go/import.go.tmpl should look something like this:")
 			fmt.Printf(`package main
 
 import (
@@ -71,7 +71,7 @@ import (
 		}
 		url, err := url.Parse("https://" + pluginImportStr)
 		if err != nil {
-			log.Errorf("Failed to parse %s: %v", pluginImportStr, err)
+			logx.Errorf("Failed to parse %s: %v", pluginImportStr, err)
 			os.Exit(1)
 		}
 		// from go import string "github.com/my-organization/test_hover/go"
@@ -85,35 +85,35 @@ import (
 		goCheckRemote.Stderr = os.Stderr
 		remoteOut, err := goCheckRemote.Output()
 		if err != nil {
-			log.Errorf("Failed to get git remotes: %v", err)
+			logx.Errorf("Failed to get git remotes: %v", err)
 			os.Exit(1)
 		}
 		match := re.FindStringSubmatch(string(remoteOut))
 		if len(match) < 1 {
-			log.Warnf("At least one git remote urls must matchs the plugin golang import URL.")
-			log.Printf("go import URL: %s", pluginImportStr)
-			log.Printf("git remote -v:\n%s\n", string(remoteOut))
+			logx.Warnf("At least one git remote urls must matchs the plugin golang import URL.")
+			logx.Printf("go import URL: %s", pluginImportStr)
+			logx.Printf("git remote -v:\n%s\n", string(remoteOut))
 			goCheckRemote.Stdout = os.Stdout
 			//default to origin
-			log.Warnf("Assuming origin is where the plugin code is stored")
-			log.Printf(" This warning can occur because the git repo name dosn't match the plugin name in pubspec.yaml")
+			logx.Warnf("Assuming origin is where the plugin code is stored")
+			logx.Printf(" This warning can occur because the git repo name dosn't match the plugin name in pubspec.yaml")
 			match = []string{"", "origin"}
 		}
 
 		tag := "go/v" + pubspec.GetPubSpec().GetVersion()
 
-		log.Infof("Your plugin at version '%s' is ready to be publish as a golang module.", pubspec.GetPubSpec().GetVersion())
-		log.Infof("Please run: `%s`", log.Au().Magenta("git tag "+tag))
-		log.Infof("            `%s`", log.Au().Magenta("git push "+match[1]+" "+tag))
+		logx.Infof("Your plugin at version '%s' is ready to be publish as a golang module.", pubspec.GetPubSpec().GetVersion())
+		logx.Infof("Please run: `%s`", logx.Au().Magenta("git tag "+tag))
+		logx.Infof("            `%s`", logx.Au().Magenta("git push "+match[1]+" "+tag))
 
-		log.Infof(fmt.Sprintf("Let hover run those commands? "))
+		logx.Infof(fmt.Sprintf("Let hover run those commands? "))
 		if askForConfirmation() {
 			gitTag := exec.Command(build.GitBin(), "tag", tag)
 			gitTag.Stderr = os.Stderr
 			gitTag.Stdout = os.Stdout
 			err = gitTag.Run()
 			if err != nil {
-				log.Errorf("The git command '%s' failed. Error: %v", gitTag.String(), err)
+				logx.Errorf("The git command '%s' failed. Error: %v", gitTag.String(), err)
 				os.Exit(1)
 			}
 
@@ -122,7 +122,7 @@ import (
 			gitPush.Stdout = os.Stdout
 			err = gitPush.Run()
 			if err != nil {
-				log.Errorf("The git command '%s' failed. Error: %v", gitPush.String(), err)
+				logx.Errorf("The git command '%s' failed. Error: %v", gitPush.String(), err)
 				os.Exit(1)
 			}
 		}

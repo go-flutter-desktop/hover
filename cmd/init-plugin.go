@@ -9,7 +9,7 @@ import (
 
 	"github.com/go-flutter-desktop/hover/internal/build"
 	"github.com/go-flutter-desktop/hover/internal/fileutils"
-	"github.com/go-flutter-desktop/hover/internal/log"
+	"github.com/go-flutter-desktop/hover/internal/logx"
 	"github.com/go-flutter-desktop/hover/internal/pubspec"
 )
 
@@ -35,10 +35,10 @@ var createPluginCmd = &cobra.Command{
 		err := os.Mkdir(build.BuildPath, 0775)
 		if err != nil {
 			if os.IsExist(err) {
-				log.Errorf("A file or directory named `" + build.BuildPath + "` already exists. Cannot continue init-plugin.")
+				logx.Errorf("A file or directory named `" + build.BuildPath + "` already exists. Cannot continue init-plugin.")
 				os.Exit(1)
 			}
-			log.Errorf("Failed to create '%s' directory: %v", build.BuildPath, err)
+			logx.Errorf("Failed to create '%s' directory: %v", build.BuildPath, err)
 			os.Exit(1)
 		}
 
@@ -55,7 +55,7 @@ var createPluginCmd = &cobra.Command{
 		dlibPath := filepath.Join(build.BuildPath, "dlib")
 		err = os.Mkdir(dlibPath, 0775)
 		if err != nil {
-			log.Errorf("Failed to create '%s' directory: %v", dlibPath, err)
+			logx.Errorf("Failed to create '%s' directory: %v", dlibPath, err)
 			os.Exit(1)
 		}
 		fileutils.ExecuteTemplateFromAssetsBox("plugin/README.md.dlib.tmpl", filepath.Join(dlibPath, "README.md"), fileutils.AssetsBox(), templateData)
@@ -65,7 +65,7 @@ var createPluginCmd = &cobra.Command{
 			platformPath := filepath.Join(dlibPath, platform)
 			err = os.Mkdir(platformPath, 0775)
 			if err != nil {
-				log.Errorf("Failed to create '%s' directory: %v", platformPath, err)
+				logx.Errorf("Failed to create '%s' directory: %v", platformPath, err)
 				os.Exit(1)
 			}
 		}

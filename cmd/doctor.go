@@ -16,7 +16,7 @@ import (
 	"github.com/go-flutter-desktop/hover/internal/build"
 	"github.com/go-flutter-desktop/hover/internal/config"
 	"github.com/go-flutter-desktop/hover/internal/flutterversion"
-	"github.com/go-flutter-desktop/hover/internal/log"
+	"github.com/go-flutter-desktop/hover/internal/logx"
 )
 
 func init() {
@@ -36,41 +36,41 @@ var doctorCmd = &cobra.Command{
 		assertInFlutterProject()
 
 		version := hoverVersion()
-		log.Infof("Hover version %s running on %s", version, runtime.GOOS)
+		logx.Infof("Hover version %s running on %s", version, runtime.GOOS)
 
-		log.Infof("Sharing flutter version")
+		logx.Infof("Sharing flutter version")
 		cmdFlutterVersion := exec.Command(build.FlutterBin(), "--version")
 		cmdFlutterVersion.Stderr = os.Stderr
 		cmdFlutterVersion.Stdout = os.Stdout
 		err := cmdFlutterVersion.Run()
 		if err != nil {
-			log.Errorf("Flutter --version failed: %v", err)
+			logx.Errorf("Flutter --version failed: %v", err)
 		}
 
 		engineCommitHash := flutterversion.FlutterRequiredEngineVersion()
-		log.Infof("Flutter engine commit: %s", log.Au().Magenta("https://github.com/flutter/engine/commit/"+engineCommitHash))
+		logx.Infof("Flutter engine commit: %s", logx.Au().Magenta("https://github.com/flutter/engine/commit/"+engineCommitHash))
 
 		checkFlutterChannel()
 
 		cmdGoEnvCC := exec.Command(build.GoBin(), "env", "CC")
 		cmdGoEnvCCOut, err := cmdGoEnvCC.Output()
 		if err != nil {
-			log.Errorf("Go env CC failed: %v", err)
+			logx.Errorf("Go env CC failed: %v", err)
 		}
 		cCompiler := strings.Trim(string(cmdGoEnvCCOut), " ")
 		cCompiler = strings.Trim(cCompiler, "\n")
 		if cCompiler != "" {
-			log.Infof("Finding out the C compiler version")
+			logx.Infof("Finding out the C compiler version")
 			cmdCCVersion := exec.Command(cCompiler, "--version")
 			cmdCCVersion.Stderr = os.Stderr
 			cmdCCVersion.Stdout = os.Stdout
 			cmdCCVersion.Run()
 		}
 
-		log.Infof("Sharing the content of go.mod")
+		logx.Infof("Sharing the content of go.mod")
 		file, err := os.Open(filepath.Join(build.BuildPath, "go.mod"))
 		if err != nil {
-			log.Errorf("Failed to read go.mod: %v", err)
+			logx.Errorf("Failed to read go.mod: %v", err)
 		} else {
 			defer file.Close()
 			b, _ := ioutil.ReadAll(file)
@@ -79,21 +79,21 @@ var doctorCmd = &cobra.Command{
 
 		hoverConfig, err := config.ReadConfigFile(filepath.Join(build.BuildPath, "hover.yaml"))
 		if err != nil {
-			log.Warnf("%v", err)
+			logx.Warnf("%v", err)
 		} else {
-			log.Infof("Sharing the content of hover.yaml")
+			logx.Infof("Sharing the content of hover.yaml")
 			dump, err := yaml.Marshal(hoverConfig)
 			if err != nil {
-				log.Warnf("%v", err)
+				logx.Warnf("%v", err)
 			} else {
 				fmt.Print(string(dump))
 			}
 		}
 
-		log.Infof("Sharing the content of go/cmd")
+		logx.Infof("Sharing the content of go/cmd")
 		files, err := filepath.Glob(filepath.Join(build.BuildPath, "cmd", "*"))
 		if err != nil {
-			log.Errorf("Failed to get the list of files in go/cmd", err)
+			logx.Errorf("Failed to get the list of files in go/cmd", err)
 			os.Exit(1)
 		}
 		fmt.Println(strings.Join(files, "\t"))

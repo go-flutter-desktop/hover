@@ -5,7 +5,7 @@ import (
 	"os/exec"
 	"sync"
 
-	"github.com/go-flutter-desktop/hover/internal/log"
+	"github.com/go-flutter-desktop/hover/internal/logx"
 )
 
 type binLookup struct {
@@ -20,7 +20,7 @@ func (b *binLookup) FullPath() string {
 		var err error
 		b.fullPath, err = exec.LookPath(b.Name)
 		if err != nil {
-			log.Errorf("Failed to lookup `%s` executable: %s. %s", b.Name, err, b.InstallInstructions)
+			logx.Errorf("Failed to lookup `%s` executable: %s. %s", b.Name, err, b.InstallInstructions)
 			os.Exit(1)
 		}
 	})

@@ -5,7 +5,7 @@ import (
 	"os"
 	"os/signal"
 
-	"github.com/go-flutter-desktop/hover/internal/log"
+	"github.com/go-flutter-desktop/hover/internal/logx"
 	"github.com/spf13/cobra"
 )
 
@@ -19,7 +19,7 @@ func init() {
 
 func initHover() {
 	if colors {
-		log.Colorize()
+		logx.Tune(logx.OptionColorize)
 	}
 	c := make(chan os.Signal, 1)
 	signal.Notify(c, os.Interrupt)
@@ -41,7 +41,7 @@ var rootCmd = &cobra.Command{
 func Execute() {
 	cobra.OnInitialize(initHover)
 	if err := rootCmd.Execute(); err != nil {
-		log.Errorf("Command failed: %v", err)
+		logx.Errorf("Command failed: %v", err)
 		os.Exit(1)
 	}
 }

@@ -2,13 +2,14 @@ package pubspec
 
 import (
 	"fmt"
-	"github.com/go-flutter-desktop/hover/internal/config"
 	"os"
 	"os/user"
 
+	"github.com/go-flutter-desktop/hover/internal/config"
+
 	"gopkg.in/yaml.v2"
 
-	"github.com/go-flutter-desktop/hover/internal/log"
+	"github.com/go-flutter-desktop/hover/internal/logx"
 	"github.com/pkg/errors"
 )
 
@@ -42,7 +43,7 @@ func (p PubSpec) GetAuthor() string {
 	if len(p.Author) == 0 {
 		u, err := user.Current()
 		if err != nil {
-			log.Errorf("Couldn't get current user: %v", err)
+			logx.Errorf("Couldn't get current user: %v", err)
 			os.Exit(1)
 		}
 		p.Author = u.Username
@@ -58,8 +59,8 @@ func GetPubSpec() PubSpec {
 	if pubspec.Name == "" {
 		pub, err := ReadPubSpecFile("pubspec.yaml")
 		if err != nil {
-			log.Errorf("%v", err)
-			log.Errorf("This command should be run from the root of your Flutter project.")
+			logx.Errorf("%v", err)
+			logx.Errorf("This command should be run from the root of your Flutter project.")
 			os.Exit(1)
 		}
 		pubspec = *pub

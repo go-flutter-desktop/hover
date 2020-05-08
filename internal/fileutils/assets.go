@@ -1,12 +1,13 @@
-//go:generate rice embed
 package fileutils
+
+//go:generate rice embed
 
 import (
 	"os"
 	"sync"
 
 	rice "github.com/GeertJohan/go.rice"
-	"github.com/go-flutter-desktop/hover/internal/log"
+	"github.com/go-flutter-desktop/hover/internal/logx"
 )
 
 var (
@@ -20,7 +21,7 @@ func AssetsBox() *rice.Box {
 		var err error
 		assetsBox, err = rice.FindBox("../../assets")
 		if err != nil {
-			log.Errorf("Failed to find hover assets: %v", err)
+			logx.Errorf("Failed to find hover assets: %v", err)
 			os.Exit(1)
 		}
 	})

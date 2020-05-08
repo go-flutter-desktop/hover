@@ -15,7 +15,7 @@ import (
 	"github.com/go-flutter-desktop/hover/cmd/packaging"
 	"github.com/go-flutter-desktop/hover/internal/build"
 	"github.com/go-flutter-desktop/hover/internal/config"
-	"github.com/go-flutter-desktop/hover/internal/log"
+	"github.com/go-flutter-desktop/hover/internal/logx"
 	"github.com/go-flutter-desktop/hover/internal/pubspec"
 )
 
@@ -51,7 +51,7 @@ var runCmd = &cobra.Command{
 
 		// ensure we have something to build
 		if runOmitEmbedder && runOmitFlutterBundle {
-			log.Errorf("Flags omit-embedder and omit-flutter are not compatible.")
+			logx.Errorf("Flags omit-embedder and omit-flutter are not compatible.")
 			os.Exit(1)
 		}
 
@@ -62,14 +62,14 @@ var runCmd = &cobra.Command{
 		buildDebug = true
 
 		if runOmitFlutterBundle {
-			log.Infof("Omiting flutter build bundle")
+			logx.Infof("Omiting flutter build bundle")
 		} else {
 			// TODO: cleaning can't be enabled because it would break when users --omit-embedder.
 			// cleanBuildOutputsDir(targetOS)
 			buildFlutterBundle(targetOS)
 		}
 		if runOmitEmbedder {
-			log.Infof("Omiting build the embedder")
+			logx.Infof("Omiting build the embedder")
 		} else {
 			vmArguments := []string{"--observatory-port=" + runObservatoryPort, "--enable-service-port-fallback", "--disable-service-auth-codes"}
 			if runDocker {
@@ -85,7 +85,7 @@ var runCmd = &cobra.Command{
 				buildGoBinary(targetOS, vmArguments)
 			}
 		}
-		log.Infof("Build finished, starting app...")
+		logx.Infof("Build finished, starting app...")
 		runAndAttach(projectName, targetOS)
 	},
 }
@@ -98,12 +98,12 @@ func runAndAttach(projectName string, targetOS string) {
 
 	stdoutApp, err := cmdApp.StdoutPipe()
 	if err != nil {
-		log.Errorf("Unable to create stdout pipe on app: %v", err)
+		logx.Errorf("Unable to create stdout pipe on app: %v", err)
 		os.Exit(1)
 	}
 	stderrApp, err := cmdApp.StderrPipe()
 	if err != nil {
-		log.Errorf("Unable to create stderr pipe on app: %v", err)
+		logx.Errorf("Unable to create stderr pipe on app: %v", err)
 		os.Exit(1)
 	}
 
@@ -117,7 +117,7 @@ func runAndAttach(projectName string, targetOS string) {
 			fmt.Println(text)
 			match := regexObservatory.FindStringSubmatch(text)
 			if len(match) == 2 {
-				log.Infof("Connecting hover to '%s' for hot reload", projectName)
+				logx.Infof("Connecting hover to '%s' for hot reload", projectName)
 				startHotReloadProcess(cmdFlutterAttach, buildTarget, match[1])
 				break
 			}
@@ -129,20 +129,20 @@ func runAndAttach(projectName string, targetOS string) {
 	// Non-blockingly echo command stderr to terminal
 	go io.Copy(os.Stderr, stderrApp)
 
-	log.Infof("Running %s in debug mode", projectName)
+	logx.Infof("Running %s in debug mode", projectName)
 	err = cmdApp.Start()
 	if err != nil {
-		log.Errorf("Failed to start app '%s': %v", projectName, err)
+		logx.Errorf("Failed to start app '%s': %v", projectName, err)
 		os.Exit(1)
 	}
 
 	err = cmdApp.Wait()
 	if err != nil {
-		log.Errorf("App '%s' exited with error: %v", projectName, err)
+		logx.Errorf("App '%s' exited with error: %v", projectName, err)
 		os.Exit(cmdApp.ProcessState.ExitCode())
 	}
-	log.Infof("App '%s' exited.", projectName)
-	log.Printf("Closing the flutter attach sub process..")
+	logx.Infof("App '%s' exited.", projectName)
+	logx.Printf("Closing the flutter attach sub process..")
 	cmdFlutterAttach.Wait()
 	os.Exit(0)
 }
@@ -160,6 +160,6 @@ func startHotReloadProcess(cmdFlutterAttach *exec.Cmd, buildTargetMainDart strin
 	}
 	err := cmdFlutterAttach.Start()
 	if err != nil {
-		log.Warnf("The command 'flutter attach' failed: %v hot reload disabled", err)
+		logx.Warnf("The command 'flutter attach' failed: %v hot reload disabled", err)
 	}
 }

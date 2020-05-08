@@ -5,14 +5,15 @@ import (
 	"path/filepath"
 	"runtime"
 
-	"github.com/go-flutter-desktop/hover/internal/log"
+	"github.com/go-flutter-desktop/hover/internal/logx"
 )
 
+// DefaultCachePath returns the default root directory for caching data.
 func DefaultCachePath() string {
 	// TODO: change to os.UserCacheDir()?
 	homePath, err := os.UserHomeDir()
 	if err != nil {
-		log.Errorf("Failed to resolve home path: %v", err)
+		logx.Errorf("Failed to resolve home path: %v", err)
 		os.Exit(1)
 	}
 
@@ -25,7 +26,7 @@ func DefaultCachePath() string {
 	case "windows":
 		p = filepath.Join(homePath, "AppData", "Local")
 	default:
-		log.Errorf("Cannot run on %s, enginecache not implemented.", runtime.GOOS)
+		logx.Errorf("Cannot run on %s, enginecache not implemented.", runtime.GOOS)
 		os.Exit(1)
 	}
 	return p

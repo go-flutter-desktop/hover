@@ -9,7 +9,7 @@ import (
 	"gopkg.in/yaml.v2"
 
 	"github.com/go-flutter-desktop/hover/internal/build"
-	"github.com/go-flutter-desktop/hover/internal/log"
+	"github.com/go-flutter-desktop/hover/internal/logx"
 )
 
 // BuildTargetDefault Default build target file
@@ -103,5 +103,5 @@ func ReadConfigFile(configPath string) (*Config, error) {
 }
 
 func PrintMissingField(name, file, def string) {
-	log.Warnf("Missing/Empty `%s` field in %s. Please add it or otherwise you may publish your app with a wrong %s. Continuing with `%s` as a placeholder %s.", name, file, name, def, name)
+	logx.Warnf("Missing/Empty `%s` field in %s. Please add it or otherwise you may publish your app with a wrong %s. Continuing with `%s` as a placeholder %s.", name, file, name, def, name)
 }

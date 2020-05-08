@@ -4,7 +4,7 @@ import (
 	"os"
 	"path/filepath"
 
-	"github.com/go-flutter-desktop/hover/internal/log"
+	"github.com/go-flutter-desktop/hover/internal/logx"
 )
 
 // BuildPath sets the name of the directory used to store the go-flutter project.
@@ -16,13 +16,13 @@ const BuildPath = "go"
 func buildDirectoryPath(targetOS, path string) string {
 	outputDirectoryPath, err := filepath.Abs(filepath.Join(BuildPath, "build", path, targetOS))
 	if err != nil {
-		log.Errorf("Failed to resolve absolute path for output directory: %v", err)
+		logx.Errorf("Failed to resolve absolute path for output directory: %v", err)
 		os.Exit(1)
 	}
 	if _, err := os.Stat(outputDirectoryPath); os.IsNotExist(err) {
 		err = os.MkdirAll(outputDirectoryPath, 0775)
 		if err != nil {
-			log.Errorf("Failed to create output directory %s: %v", outputDirectoryPath, err)
+			logx.Errorf("Failed to create output directory %s: %v", outputDirectoryPath, err)
 			os.Exit(1)
 		}
 	}
@@ -58,7 +58,7 @@ func OutputBinary(executableName, targetOS string) string {
 	case "windows":
 		outputBinaryName += ".exe"
 	default:
-		log.Errorf("Target platform %s is not supported.", targetOS)
+		logx.Errorf("Target platform %s is not supported.", targetOS)
 		os.Exit(1)
 	}
 	return outputBinaryName
@@ -82,7 +82,7 @@ func EngineFilename(targetOS string) string {
 	case "windows":
 		return "flutter_engine.dll"
 	default:
-		log.Errorf("%s has no implemented engine file", targetOS)
+		logx.Errorf("%s has no implemented engine file", targetOS)
 		os.Exit(1)
 		return ""
 	}

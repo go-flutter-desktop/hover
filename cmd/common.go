@@ -15,7 +15,7 @@ import (
 
 	"github.com/go-flutter-desktop/hover/internal/build"
 	"github.com/go-flutter-desktop/hover/internal/flutterversion"
-	"github.com/go-flutter-desktop/hover/internal/log"
+	"github.com/go-flutter-desktop/hover/internal/logx"
 	"github.com/go-flutter-desktop/hover/internal/pubspec"
 )
 
@@ -27,7 +27,7 @@ func assertInFlutterProject() {
 // assertInFlutterPluginProject asserts this command is executed in a flutter plugin project
 func assertInFlutterPluginProject() {
 	if _, ok := pubspec.GetPubSpec().Flutter["plugin"]; !ok {
-		log.Errorf("The directory doesn't appear to contain a plugin package.\nTo create a new plugin, first run `%s`, then run `%s`.", log.Au().Magenta("flutter create --template=plugin"), log.Au().Magenta("hover init-plugin"))
+		logx.Errorf("The directory doesn't appear to contain a plugin package.\nTo create a new plugin, first run `%s`, then run `%s`.", logx.Au().Magenta("flutter create --template=plugin"), logx.Au().Magenta("hover init-plugin"))
 		os.Exit(1)
 	}
 }
@@ -38,11 +38,11 @@ func assertHoverInitialized() {
 		if hoverMigrateDesktopToGo() {
 			return
 		}
-		log.Errorf("Directory '%s' is missing. Please init go-flutter first: %s", build.BuildPath, log.Au().Magenta("hover init"))
+		logx.Errorf("Directory '%s' is missing. Please init go-flutter first: %s", build.BuildPath, logx.Au().Magenta("hover init"))
 		os.Exit(1)
 	}
 	if err != nil {
-		log.Errorf("Failed to detect directory desktop: %v", err)
+		logx.Errorf("Failed to detect directory desktop: %v", err)
 		os.Exit(1)
 	}
 }
@@ -51,8 +51,8 @@ func checkFlutterChannel() {
 	channel := flutterversion.FlutterChannel()
 	ignoreWarning := os.Getenv("HOVER_IGNORE_CHANNEL_WARNING")
 	if channel != "beta" && ignoreWarning != "true" {
-		log.Warnf("⚠ The go-flutter project tries to stay compatible with the beta channel of Flutter.")
-		log.Warnf("⚠     It's advised to use the beta channel: `%s`", log.Au().Magenta("flutter channel beta"))
+		logx.Warnf("⚠ The go-flutter project tries to stay compatible with the beta channel of Flutter.")
+		logx.Warnf("⚠     It's advised to use the beta channel: `%s`", logx.Au().Magenta("flutter channel beta"))
 	}
 }
 
@@ -65,17 +65,17 @@ func hoverMigrateDesktopToGo() bool {
 	}
 	defer file.Close()
 
-	log.Warnf("⚠ Found older hover directory layout, hover is now expecting a 'go' directory instead of 'desktop'.")
-	log.Warnf("⚠    To migrate, rename the 'desktop' directory to 'go'.")
-	log.Warnf("     Let hover do the migration? ")
+	logx.Warnf("⚠ Found older hover directory layout, hover is now expecting a 'go' directory instead of 'desktop'.")
+	logx.Warnf("⚠    To migrate, rename the 'desktop' directory to 'go'.")
+	logx.Warnf("     Let hover do the migration? ")
 
 	if askForConfirmation() {
 		err := os.Rename(oldBuildPath, build.BuildPath)
 		if err != nil {
-			log.Warnf("Migration failed: %v", err)
+			logx.Warnf("Migration failed: %v", err)
 			return false
 		}
-		log.Infof("Migration success")
+		logx.Infof("Migration success")
 		return true
 	}
 
@@ -84,10 +84,10 @@ func hoverMigrateDesktopToGo() bool {
 
 // askForConfirmation asks the user for confirmation.
 func askForConfirmation() bool {
-	fmt.Print(log.Au().Bold(log.Au().Cyan("hover: ")).String() + "[y/N]? ")
+	fmt.Print(logx.Au().Bold(logx.Au().Cyan("hover: ")).String() + "[y/N]? ")
 
 	if len(os.Getenv("HOVER_DISABLE_INTERACTIONS")) > 0 {
-		fmt.Println(log.Au().Bold(log.Au().Yellow("Interactions disabled, assuming 'no'.")).String())
+		fmt.Println(logx.Au().Bold(logx.Au().Yellow("Interactions disabled, assuming 'no'.")).String())
 		return false
 	}
 
@@ -119,7 +119,7 @@ func toCamelCase(str string) string {
 func initializeGoModule(projectPath string) {
 	wd, err := os.Getwd()
 	if err != nil {
-		log.Errorf("Failed to get working dir: %v\n", err)
+		logx.Errorf("Failed to get working dir: %v\n", err)
 		os.Exit(1)
 	}
 
@@ -132,13 +132,13 @@ func initializeGoModule(projectPath string) {
 	cmdGoModInit.Stdout = os.Stdout
 	err = cmdGoModInit.Run()
 	if err != nil {
-		log.Errorf("Go mod init failed: %v\n", err)
+		logx.Errorf("Go mod init failed: %v\n", err)
 		os.Exit(1)
 	}
 
 	cmdGoModTidy := exec.Command(build.GoBin(), "mod", "tidy")
 	cmdGoModTidy.Dir = filepath.Join(wd, build.BuildPath)
-	log.Infof("You can add the '%s' directory to git.", cmdGoModTidy.Dir)
+	logx.Infof("You can add the '%s' directory to git.", cmdGoModTidy.Dir)
 	cmdGoModTidy.Env = append(os.Environ(),
 		"GO111MODULE=on",
 	)
@@ -146,7 +146,7 @@ func initializeGoModule(projectPath string) {
 	cmdGoModTidy.Stdout = os.Stdout
 	err = cmdGoModTidy.Run()
 	if err != nil {
-		log.Errorf("Go mod tidy failed: %v\n", err)
+		logx.Errorf("Go mod tidy failed: %v\n", err)
 		os.Exit(1)
 	}
 }

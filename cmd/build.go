@@ -19,7 +19,7 @@ import (
 	"github.com/go-flutter-desktop/hover/internal/build"
 	"github.com/go-flutter-desktop/hover/internal/config"
 	"github.com/go-flutter-desktop/hover/internal/fileutils"
-	"github.com/go-flutter-desktop/hover/internal/log"
+	"github.com/go-flutter-desktop/hover/internal/logx"
 	"github.com/go-flutter-desktop/hover/internal/pubspec"
 	"github.com/go-flutter-desktop/hover/internal/versioncheck"
 )
@@ -214,7 +214,7 @@ func initBuildParameters(targetOS string) {
 	}
 
 	if buildEngineVersion == config.BuildEngineDefault && config.GetConfig().Engine != "" {
-		log.Warnf("changing the engine version can lead to undesirable behavior")
+		logx.Warnf("changing the engine version can lead to undesirable behavior")
 		buildEngineVersion = config.GetConfig().Engine
 	}
 
@@ -252,35 +252,35 @@ func commonFlags() []string {
 func assertTargetFileExists(targetFilename string) {
 	_, err := os.Stat(targetFilename)
 	if os.IsNotExist(err) {
-		log.Warnf("Target file \"%s\" not found.", targetFilename)
+		logx.Warnf("Target file \"%s\" not found.", targetFilename)
 		if targetFilename == config.BuildTargetDefault {
-			log.Warnf("Let hover add the \"lib/main_desktop.dart\" file? ")
+			logx.Warnf("Let hover add the \"lib/main_desktop.dart\" file? ")
 			if askForConfirmation() {
 				fileutils.CopyAsset("app/main_desktop.dart", filepath.Join("lib", "main_desktop.dart"), fileutils.AssetsBox())
-				log.Infof("Target file \"lib/main_desktop.dart\" has been created.")
-				log.Infof("       Depending on your project, you might want to tweak it.")
+				logx.Infof("Target file \"lib/main_desktop.dart\" has been created.")
+				logx.Infof("\tDepending on your project, you might want to tweak it.")
 				return
 			}
 		}
-		log.Printf("You can define a custom traget by using the %s flag.", log.Au().Magenta("--target"))
+		logx.Printf("You can define a custom traget by using the %s flag.", logx.Au().Magenta("--target"))
 		os.Exit(1)
 	}
 	if err != nil {
-		log.Errorf("Failed to stat lib/main_desktop.dart: %v\n", err)
+		logx.Errorf("Failed to stat lib/main_desktop.dart: %v\n", err)
 		os.Exit(1)
 	}
 }
 
 func cleanBuildOutputsDir(targetOS string) {
 	err := os.RemoveAll(build.OutputDirectoryPath(targetOS))
-	log.Printf("Cleaning the build directory")
+	logx.Printf("Cleaning the build directory")
 	if err != nil {
-		log.Errorf("Failed to remove output directory %s: %v", build.OutputDirectoryPath(targetOS), err)
+		logx.Errorf("Failed to remove output directory %s: %v", build.OutputDirectoryPath(targetOS), err)
 		os.Exit(1)
 	}
 	err = os.MkdirAll(build.OutputDirectoryPath(targetOS), 0775)
 	if err != nil {
-		log.Errorf("Failed to create output directory %s: %v", build.OutputDirectoryPath(targetOS), err)
+		logx.Errorf("Failed to create output directory %s: %v", build.OutputDirectoryPath(targetOS), err)
 		os.Exit(1)
 	}
 }
@@ -293,14 +293,14 @@ func buildFlutterBundle(targetOS string) {
 
 	runPluginGet, err := shouldRunPluginGet()
 	if err != nil {
-		log.Errorf("Failed to check if plugin get should be run: %v.\n", err)
+		logx.Errorf("Failed to check if plugin get should be run: %v.\n", err)
 		os.Exit(1)
 	}
 	if runPluginGet {
-		log.Printf("listing available plugins:")
+		logx.Printf("listing available plugins:")
 		if hoverPluginGet(true) {
 			// TODO: change this so that it only logs when there are plugins missing..
-			log.Infof(fmt.Sprintf("Run `%s` to update plugins", log.Au().Magenta("hover plugins get")))
+			logx.Infof(fmt.Sprintf("Run `%s` to update plugins", logx.Au().Magenta("hover plugins get")))
 		}
 	}
 
@@ -318,10 +318,10 @@ func buildFlutterBundle(targetOS string) {
 	cmdFlutterBuildBundle.Stderr = os.Stderr
 	cmdFlutterBuildBundle.Stdout = os.Stdout
 
-	log.Infof("Building flutter bundle")
+	logx.Infof("Building flutter bundle")
 	err = cmdFlutterBuildBundle.Run()
 	if err != nil {
-		log.Errorf("Flutter build failed: %v", err)
+		logx.Errorf("Flutter build failed: %v", err)
 		os.Exit(1)
 	}
 }
@@ -340,7 +340,7 @@ func buildGoBinary(targetOS string, vmArguments []string) {
 		outputEngineFile,
 	)
 	if err != nil {
-		log.Errorf("Failed to copy %s: %v", build.EngineFilename(targetOS), err)
+		logx.Errorf("Failed to copy %s: %v", build.EngineFilename(targetOS), err)
 		os.Exit(1)
 	}
 
@@ -349,7 +349,7 @@ func buildGoBinary(targetOS string, vmArguments []string) {
 		filepath.Join(build.OutputDirectoryPath(targetOS), "icudtl.dat"),
 	)
 	if err != nil {
-		log.Errorf("Failed to copy icudtl.dat: %v", err)
+		logx.Errorf("Failed to copy icudtl.dat: %v", err)
 		os.Exit(1)
 	}
 
@@ -360,31 +360,31 @@ func buildGoBinary(targetOS string, vmArguments []string) {
 
 	wd, err := os.Getwd()
 	if err != nil {
-		log.Errorf("Failed to get working dir: %v", err)
+		logx.Errorf("Failed to get working dir: %v", err)
 		os.Exit(1)
 	}
 
 	if buildGoFlutterBranch == "" {
 		currentTag, err := versioncheck.CurrentGoFlutterTag(filepath.Join(wd, build.BuildPath))
 		if err != nil {
-			log.Errorf("%v", err)
+			logx.Errorf("%v", err)
 			os.Exit(1)
 		}
 
 		semver, err := version.NewSemver(currentTag)
 		if err != nil {
-			log.Errorf("Faild to parse 'go-flutter' semver: %v", err)
+			logx.Errorf("Faild to parse 'go-flutter' semver: %v", err)
 			os.Exit(1)
 		}
 
 		if semver.Prerelease() != "" {
-			log.Infof("Upgrading 'go-flutter' to the latest release")
+			logx.Infof("Upgrading 'go-flutter' to the latest release")
 			// no buildBranch provided and currentTag isn't a release,
 			// force update. (same behaviour as previous version of hover).
 			err = upgradeGoFlutter(targetOS, engineCachePath)
 			if err != nil {
 				// the upgrade can fail silently
-				log.Warnf("Upgrade ignored, current 'go-flutter' version: %s", currentTag)
+				logx.Warnf("Upgrade ignored, current 'go-flutter' version: %s", currentTag)
 			}
 		} else {
 			// when the buildBranch is empty and the currentTag is a release.
@@ -393,7 +393,7 @@ func buildGoBinary(targetOS string, vmArguments []string) {
 		}
 
 	} else {
-		log.Printf("Downloading 'go-flutter' %s", buildGoFlutterBranch)
+		logx.Printf("Downloading 'go-flutter' %s", buildGoFlutterBranch)
 
 		// when the buildBranch is set, fetch the go-flutter branch version.
 		err = upgradeGoFlutter(targetOS, engineCachePath)
@@ -403,13 +403,13 @@ func buildGoBinary(targetOS string, vmArguments []string) {
 	}
 
 	if buildOpenGlVersion == "none" {
-		log.Warnf("The '--opengl=none' flag makes go-flutter incompatible with texture plugins!")
+		logx.Warnf("The '--opengl=none' flag makes go-flutter incompatible with texture plugins!")
 	}
 
 	if !buildDebug && targetOS == "linux" {
 		err = exec.Command("strip", "-s", outputEngineFile).Run()
 		if err != nil {
-			log.Errorf("Failed to strip %s: %v", outputEngineFile, err)
+			logx.Errorf("Failed to strip %s: %v", outputEngineFile, err)
 			os.Exit(1)
 		}
 	}
@@ -424,13 +424,13 @@ func buildGoBinary(targetOS string, vmArguments []string) {
 	cmdGoBuild.Stderr = os.Stderr
 	cmdGoBuild.Stdout = os.Stdout
 
-	log.Infof("Compiling 'go-flutter' and plugins")
+	logx.Infof("Compiling 'go-flutter' and plugins")
 	err = cmdGoBuild.Run()
 	if err != nil {
-		log.Errorf("Go build failed: %v", err)
+		logx.Errorf("Go build failed: %v", err)
 		os.Exit(1)
 	}
-	log.Infof("Successfully compiled")
+	logx.Infof("Successfully compiled")
 }
 
 func buildEnv(targetOS string, engineCachePath string) []string {
@@ -447,7 +447,7 @@ func buildEnv(targetOS string, engineCachePath string) []string {
 	case "windows":
 		cgoLdflags = fmt.Sprintf("-L%s -L%s", engineCachePath, outputDirPath)
 	default:
-		log.Errorf("Target platform %s is not supported, cgo_ldflags not implemented.", targetOS)
+		logx.Errorf("Target platform %s is not supported, cgo_ldflags not implemented.", targetOS)
 		os.Exit(1)
 	}
 	env := []string{
@@ -475,7 +475,7 @@ func buildEnv(targetOS string, engineCachePath string) []string {
 func buildCommand(targetOS string, vmArguments []string, outputBinaryPath string) []string {
 	currentTag, err := versioncheck.CurrentGoFlutterTag(build.BuildPath)
 	if err != nil {
-		log.Errorf("%v", err)
+		logx.Errorf("%v", err)
 		os.Exit(1)
 	}
 

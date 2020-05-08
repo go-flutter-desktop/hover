@@ -7,7 +7,7 @@ import (
 	"os/exec"
 
 	"github.com/go-flutter-desktop/hover/internal/build"
-	"github.com/go-flutter-desktop/hover/internal/log"
+	"github.com/go-flutter-desktop/hover/internal/logx"
 )
 
 // FlutterRequiredEngineVersion returns the commit hash of the engine in use
@@ -23,7 +23,7 @@ func FlutterChannel() string {
 func readFlutterVersion() flutterVersionResponse {
 	out, err := exec.Command(build.FlutterBin(), "--version", "--machine").Output()
 	if err != nil {
-		log.Errorf("Failed to run %s: %v", log.Au().Magenta("flutter --version --machine"), err)
+		logx.Errorf("Failed to run %s: %v", logx.Au().Magenta("flutter --version --machine"), err)
 		os.Exit(1)
 	}
 
@@ -34,7 +34,7 @@ func readFlutterVersion() flutterVersionResponse {
 	for {
 		b, err := outputBuffer.ReadByte()
 		if err != nil {
-			log.Errorf("Failed to run %s: did not return information in json", log.Au().Magenta("flutter --version --machine"))
+			logx.Errorf("Failed to run %s: did not return information in json", logx.Au().Magenta("flutter --version --machine"))
 			os.Exit(1)
 		}
 		if b == '{' {
@@ -46,7 +46,7 @@ func readFlutterVersion() flutterVersionResponse {
 	var response flutterVersionResponse
 	err = json.NewDecoder(outputBuffer).Decode(&response)
 	if err != nil {
-		log.Errorf("Failed parsing json: %v", err)
+		logx.Errorf("Failed parsing json: %v", err)
 		os.Exit(1)
 	}
 	return response

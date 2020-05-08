@@ -10,7 +10,7 @@ import (
 	"time"
 
 	"github.com/go-flutter-desktop/hover/internal/fileutils"
-	"github.com/go-flutter-desktop/hover/internal/log"
+	"github.com/go-flutter-desktop/hover/internal/logx"
 	"github.com/pkg/errors"
 	"github.com/tcnksm/go-latest"
 )
@@ -23,7 +23,7 @@ func CheckForGoFlutterUpdate(goDirectoryPath string, currentTag string) {
 	cachedGoFlutterCheckPath := filepath.Join(goDirectoryPath, ".last_goflutter_check")
 	cachedGoFlutterCheckBytes, err := ioutil.ReadFile(cachedGoFlutterCheckPath)
 	if err != nil && !os.IsNotExist(err) {
-		log.Warnf("Failed to read the go-flutter last update check: %v", err)
+		logx.Warnf("Failed to read the go-flutter last update check: %v", err)
 		return
 	}
 
@@ -36,7 +36,7 @@ func CheckForGoFlutterUpdate(goDirectoryPath string, currentTag string) {
 	if cachedGoFlutterCheck == "" {
 		err = ioutil.WriteFile(cachedGoFlutterCheckPath, []byte(nowString), 0664)
 		if err != nil {
-			log.Warnf("Failed to write the update timestamp: %v", err)
+			logx.Warnf("Failed to write the update timestamp: %v", err)
 		}
 
 		// If needed, update the hover's .gitignore file with a new entry.
@@ -48,7 +48,7 @@ func CheckForGoFlutterUpdate(goDirectoryPath string, currentTag string) {
 
 	i, err := strconv.ParseInt(cachedGoFlutterCheck, 10, 64)
 	if err != nil {
-		log.Warnf("Failed to parse the last update of go-flutter: %v", err)
+		logx.Warnf("Failed to parse the last update of go-flutter: %v", err)
 		return
 	}
 	lastUpdateTimeStamp := time.Unix(i, 0)
@@ -61,7 +61,7 @@ func CheckForGoFlutterUpdate(goDirectoryPath string, currentTag string) {
 
 	checkUpdateOptOut := os.Getenv("HOVER_IGNORE_CHECK_NEW_RELEASE")
 	if newCheck && checkUpdateOptOut != "true" {
-		log.Printf("Checking available release on Github")
+		logx.Printf("Checking available release on Github")
 
 		// fecth the last githubTag
 		githubTag := &latest.GithubTag{
@@ -72,7 +72,7 @@ func CheckForGoFlutterUpdate(goDirectoryPath string, currentTag string) {
 
 		res, err := latest.Check(githubTag, currentTag)
 		if err != nil {
-			log.Warnf("Failed to check the latest release of 'go-flutter': %v", err)
+			logx.Warnf("Failed to check the latest release of 'go-flutter': %v", err)
 
 			// update the timestamp
 			// don't spam people who don't have access to internet
@@ -81,21 +81,21 @@ func CheckForGoFlutterUpdate(goDirectoryPath string, currentTag string) {
 
 			err = ioutil.WriteFile(cachedGoFlutterCheckPath, []byte(nowString), 0664)
 			if err != nil {
-				log.Warnf("Failed to write the update timestamp to file: %v", err)
+				logx.Warnf("Failed to write the update timestamp to file: %v", err)
 			}
 
 			return
 		}
 		if res.Outdated {
-			log.Infof("The core library 'go-flutter' has an update available. (%s -> %s)", currentTag, res.Current)
-			log.Infof("              To update 'go-flutter' in this project run: `%s`", log.Au().Magenta("hover bumpversion"))
+			logx.Infof("The core library 'go-flutter' has an update available. (%s -> %s)", currentTag, res.Current)
+			logx.Infof("              To update 'go-flutter' in this project run: `%s`", logx.Au().Magenta("hover bumpversion"))
 		}
 
 		if now.Sub(lastUpdateTimeStamp).Hours() > checkRate {
 			// update the timestamp
 			err = ioutil.WriteFile(cachedGoFlutterCheckPath, []byte(nowString), 0664)
 			if err != nil {
-				log.Warnf("Failed to write the update timestamp to file: %v", err)
+				logx.Warnf("Failed to write the update timestamp to file: %v", err)
 			}
 		}
 	}

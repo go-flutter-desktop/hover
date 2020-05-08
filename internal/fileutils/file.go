@@ -13,7 +13,7 @@ import (
 
 	rice "github.com/GeertJohan/go.rice"
 
-	"github.com/go-flutter-desktop/hover/internal/log"
+	"github.com/go-flutter-desktop/hover/internal/logx"
 )
 
 // IsFileExists checks if a file exists and is not a directory
@@ -38,7 +38,7 @@ func IsDirectory(path string) bool {
 func RemoveLinesFromFile(filePath, text string) {
 	input, err := ioutil.ReadFile(filePath)
 	if err != nil {
-		log.Errorf("Failed to read file %s: %v\n", filePath, err)
+		logx.Errorf("Failed to read file %s: %v\n", filePath, err)
 		os.Exit(1)
 	}
 
@@ -53,7 +53,7 @@ func RemoveLinesFromFile(filePath, text string) {
 	output := strings.Join(tmp, "\n")
 	err = ioutil.WriteFile(filePath, []byte(output), 0644)
 	if err != nil {
-		log.Errorf("Failed to write file %s: %v\n", filePath, err)
+		logx.Errorf("Failed to write file %s: %v\n", filePath, err)
 		os.Exit(1)
 	}
 }
@@ -64,13 +64,13 @@ func AddLineToFile(filePath, newLine string) {
 	f, err := os.OpenFile(filePath,
 		os.O_RDWR|os.O_APPEND, 0660)
 	if err != nil {
-		log.Errorf("Failed to open file %s: %v\n", filePath, err)
+		logx.Errorf("Failed to open file %s: %v\n", filePath, err)
 		os.Exit(1)
 	}
 	defer f.Close()
 	content, err := ioutil.ReadAll(f)
 	if err != nil {
-		log.Errorf("Failed to read file %s: %v\n", filePath, err)
+		logx.Errorf("Failed to read file %s: %v\n", filePath, err)
 		os.Exit(1)
 	}
 	lines := make(map[string]struct{})
@@ -82,7 +82,7 @@ func AddLineToFile(filePath, newLine string) {
 		return
 	}
 	if _, err := f.WriteString(newLine + "\n"); err != nil {
-		log.Errorf("Failed to append '%s' to the file (%s): %v\n", newLine, filePath, err)
+		logx.Errorf("Failed to append '%s' to the file (%s): %v\n", newLine, filePath, err)
 		os.Exit(1)
 	}
 }
@@ -91,20 +91,20 @@ func AddLineToFile(filePath, newLine string) {
 func CopyFile(src, to string) {
 	in, err := os.Open(src)
 	if err != nil {
-		log.Errorf("Failed to read %s: %v\n", src, err)
+		logx.Errorf("Failed to read %s: %v\n", src, err)
 		os.Exit(1)
 	}
 	defer in.Close()
 	file, err := os.Create(to)
 	if err != nil {
-		log.Errorf("Failed to create %s: %v\n", to, err)
+		logx.Errorf("Failed to create %s: %v\n", to, err)
 		os.Exit(1)
 	}
 	defer file.Close()
 
 	_, err = io.Copy(file, in)
 	if err != nil {
-		log.Errorf("Failed to copy %s to %s: %v\n", src, to, err)
+		logx.Errorf("Failed to copy %s to %s: %v\n", src, to, err)
 		os.Exit(1)
 	}
 }
@@ -115,17 +115,17 @@ func CopyDir(src, dst string) {
 	var fds []os.FileInfo
 
 	if !IsDirectory(src) {
-		log.Errorf("Failed to copy directory, %s not a directory\n", src)
+		logx.Errorf("Failed to copy directory, %s not a directory\n", src)
 		os.Exit(1)
 	}
 
 	if err = os.MkdirAll(dst, 0755); err != nil {
-		log.Errorf("Failed to copy directory %s to %s: %v\n", src, dst, err)
+		logx.Errorf("Failed to copy directory %s to %s: %v\n", src, dst, err)
 		os.Exit(1)
 	}
 
 	if fds, err = ioutil.ReadDir(src); err != nil {
-		log.Errorf("Failed to list directory %s: %v\n", src, err)
+		logx.Errorf("Failed to list directory %s: %v\n", src, err)
 		os.Exit(1)
 	}
 
@@ -150,14 +150,14 @@ func CopyTemplateDir(boxed, to string, templateData interface{}) {
 	})
 	files = files[1:]
 	if err != nil {
-		log.Errorf("Failed to list files in directory %s: %v\n", boxed, err)
+		logx.Errorf("Failed to list files in directory %s: %v\n", boxed, err)
 		os.Exit(1)
 	}
 	for _, file := range files {
 		newFile := filepath.Join(to, strings.Join(strings.Split(file, "")[len(boxed)+1:], ""))
 		tmplFile, err := template.New("").Option("missingkey=error").Parse(newFile)
 		if err != nil {
-			log.Errorf("Failed to parse template string: %v\n", err)
+			logx.Errorf("Failed to parse template string: %v\n", err)
 			os.Exit(1)
 		}
 		var tmplBytes bytes.Buffer
@@ -175,7 +175,7 @@ func CopyTemplateDir(boxed, to string, templateData interface{}) {
 		case mode.IsDir():
 			err := os.MkdirAll(newFile, 0755)
 			if err != nil {
-				log.Errorf("Failed to create directory %s: %v\n", newFile, err)
+				logx.Errorf("Failed to create directory %s: %v\n", newFile, err)
 				os.Exit(1)
 			}
 		case mode.IsRegular():
@@ -190,13 +190,13 @@ func CopyTemplateDir(boxed, to string, templateData interface{}) {
 func executeTemplateFromString(templateString, to string, templateData interface{}) {
 	tmplFile, err := template.New("").Option("missingkey=error").Parse(templateString)
 	if err != nil {
-		log.Errorf("Failed to parse template string: %v\n", err)
+		logx.Errorf("Failed to parse template string: %v\n", err)
 		os.Exit(1)
 	}
 
 	toFile, err := os.Create(to)
 	if err != nil {
-		log.Errorf("Failed to create '%s': %v\n", to, err)
+		logx.Errorf("Failed to create '%s': %v\n", to, err)
 		os.Exit(1)
 	}
 	defer toFile.Close()
@@ -208,7 +208,7 @@ func executeTemplateFromString(templateString, to string, templateData interface
 func ExecuteTemplateFromFile(boxed, to string, templateData interface{}) {
 	templateString, err := ioutil.ReadFile(boxed)
 	if err != nil {
-		log.Errorf("Failed to find template file: %v\n", err)
+		logx.Errorf("Failed to find template file: %v\n", err)
 		os.Exit(1)
 	}
 	executeTemplateFromString(string(templateString), to, templateData)
@@ -218,7 +218,7 @@ func ExecuteTemplateFromFile(boxed, to string, templateData interface{}) {
 func ExecuteTemplateFromAssetsBox(boxed, to string, assetsBox *rice.Box, templateData interface{}) {
 	templateString, err := assetsBox.String(boxed)
 	if err != nil {
-		log.Errorf("Failed to find template file: %v\n", err)
+		logx.Errorf("Failed to find template file: %v\n", err)
 		os.Exit(1)
 	}
 	executeTemplateFromString(templateString, to, templateData)
@@ -228,19 +228,19 @@ func ExecuteTemplateFromAssetsBox(boxed, to string, assetsBox *rice.Box, templat
 func CopyAsset(boxed, to string, assetsBox *rice.Box) {
 	file, err := os.Create(to)
 	if err != nil {
-		log.Errorf("Failed to create %s: %v", to, err)
+		logx.Errorf("Failed to create %s: %v", to, err)
 		os.Exit(1)
 	}
 	defer file.Close()
 	boxedFile, err := assetsBox.Open(boxed)
 	if err != nil {
-		log.Errorf("Failed to find boxed file %s: %v", boxed, err)
+		logx.Errorf("Failed to find boxed file %s: %v", boxed, err)
 		os.Exit(1)
 	}
 	defer boxedFile.Close()
 	_, err = io.Copy(file, boxedFile)
 	if err != nil {
-		log.Errorf("Failed to write file %s: %v", to, err)
+		logx.Errorf("Failed to write file %s: %v", to, err)
 		os.Exit(1)
 	}
 }
@@ -249,21 +249,21 @@ func CopyAsset(boxed, to string, assetsBox *rice.Box) {
 func DownloadFile(url string, filepath string) {
 	resp, err := http.Get(url)
 	if err != nil {
-		log.Errorf("Failed to download '%v': %v\n", url, err)
+		logx.Errorf("Failed to download '%v': %v\n", url, err)
 		os.Exit(1)
 	}
 	defer resp.Body.Close()
 
 	out, err := os.Create(filepath)
 	if err != nil {
-		log.Errorf("Failed to create file '%s': %v\n", filepath, err)
+		logx.Errorf("Failed to create file '%s': %v\n", filepath, err)
 		os.Exit(1)
 	}
 	defer out.Close()
 
 	_, err = io.Copy(out, resp.Body)
 	if err != nil {
-		log.Errorf("Failed to write file '%s': %v\n", filepath, err)
+		logx.Errorf("Failed to write file '%s': %v\n", filepath, err)
 		os.Exit(1)
 	}
 }

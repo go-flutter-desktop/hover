@@ -18,7 +18,7 @@ import (
 	"github.com/go-flutter-desktop/hover/internal/build"
 	"github.com/go-flutter-desktop/hover/internal/config"
 	"github.com/go-flutter-desktop/hover/internal/fileutils"
-	"github.com/go-flutter-desktop/hover/internal/log"
+	"github.com/go-flutter-desktop/hover/internal/logx"
 	"github.com/go-flutter-desktop/hover/internal/pubspec"
 )
 
@@ -27,7 +27,7 @@ var packagingPath = filepath.Join(build.BuildPath, "packaging")
 func packagingFormatPath(packagingFormat string) string {
 	directoryPath, err := filepath.Abs(filepath.Join(packagingPath, packagingFormat))
 	if err != nil {
-		log.Errorf("Failed to resolve absolute path for %s directory: %v", packagingFormat, err)
+		logx.Errorf("Failed to resolve absolute path for %s directory: %v", packagingFormat, err)
 		os.Exit(1)
 	}
 	return directoryPath
@@ -35,12 +35,12 @@ func packagingFormatPath(packagingFormat string) string {
 
 func createPackagingFormatDirectory(packagingFormat string) {
 	if _, err := os.Stat(packagingFormatPath(packagingFormat)); !os.IsNotExist(err) {
-		log.Errorf("A file or directory named `%s` already exists. Cannot continue packaging init for %s.", packagingFormat, packagingFormat)
+		logx.Errorf("A file or directory named `%s` already exists. Cannot continue packaging init for %s.", packagingFormat, packagingFormat)
 		os.Exit(1)
 	}
 	err := os.MkdirAll(packagingFormatPath(packagingFormat), 0775)
 	if err != nil {
-		log.Errorf("Failed to create %s directory %s: %v", packagingFormat, packagingFormatPath(packagingFormat), err)
+		logx.Errorf("Failed to create %s directory %s: %v", packagingFormat, packagingFormatPath(packagingFormat), err)
 		os.Exit(1)
 	}
 }
@@ -48,7 +48,7 @@ func createPackagingFormatDirectory(packagingFormat string) {
 func getTemporaryBuildDirectory(projectName string, packagingFormat string) string {
 	tmpPath, err := ioutil.TempDir("", "hover-build-"+projectName+"-"+packagingFormat)
 	if err != nil {
-		log.Errorf("Couldn't get temporary build directory: %v", err)
+		logx.Errorf("Couldn't get temporary build directory: %v", err)
 		os.Exit(1)
 	}
 	return tmpPath
@@ -61,13 +61,13 @@ func runPackaging(path string, command string) {
 	bashCmd.Dir = path
 	err := bashCmd.Run()
 	if err != nil {
-		log.Warnf("Packaging is very experimental and has only been tested on Linux.")
-		log.Infof("To help us debuging this error, please zip the content of:\n       \"%s\"\n       %s",
-			log.Au().Blue(path),
-			log.Au().Green("and try to package on another OS. You can also share this zip with the go-flutter team."))
-		log.Infof("You can package the app without hover by running:")
-		log.Infof("  `%s`", log.Au().Magenta("cd "+path))
-		log.Infof("  executed command: `%s`", log.Au().Magenta(bashCmd.String()))
+		logx.Warnf("Packaging is very experimental and has only been tested on Linux.")
+		logx.Infof("To help us debuging this error, please zip the content of:\n       \"%s\"\n       %s",
+			logx.Au().Blue(path),
+			logx.Au().Green("and try to package on another OS. You can also share this zip with the go-flutter team."))
+		logx.Infof("You can package the app without hover by running:")
+		logx.Infof("  `%s`", logx.Au().Magenta("cd "+path))
+		logx.Infof("  executed command: `%s`", logx.Au().Magenta(bashCmd.String()))
 		os.Exit(1)
 	}
 }
@@ -137,15 +137,15 @@ func (t *packagingTask) init(ignoreAlreadyExists bool) {
 			destinationFile = filepath.Join(dir, destinationFile)
 			err := os.MkdirAll(filepath.Dir(destinationFile), 0775)
 			if err != nil {
-				log.Errorf("Failed to create directory %s: %v", filepath.Dir(destinationFile), err)
+				logx.Errorf("Failed to create directory %s: %v", filepath.Dir(destinationFile), err)
 				os.Exit(1)
 			}
 			fileutils.CopyAsset(fmt.Sprintf("packaging/%s", sourceFile), destinationFile, fileutils.AssetsBox())
 		}
-		log.Infof("go/packaging/%s has been created. You can modify the configuration files and add it to git.", t.packagingFormatName)
-		log.Infof(fmt.Sprintf("You now can package the %s using `%s`", strings.Split(t.packagingFormatName, "-")[0], log.Au().Magenta("hover build "+t.packagingFormatName)))
+		logx.Infof("go/packaging/%s has been created. You can modify the configuration files and add it to git.", t.packagingFormatName)
+		logx.Infof(fmt.Sprintf("You now can package the %s using `%s`", strings.Split(t.packagingFormatName, "-")[0], logx.Au().Magenta("hover build "+t.packagingFormatName)))
 	} else if !ignoreAlreadyExists {
-		log.Errorf("%s is already initialized for packaging.", t.packagingFormatName)
+		logx.Errorf("%s is already initialized for packaging.", t.packagingFormatName)
 		os.Exit(1)
 	}
 }
@@ -159,44 +159,44 @@ func (t *packagingTask) Pack(buildVersion string) {
 	defer func() {
 		err := os.RemoveAll(tmpPath)
 		if err != nil {
-			log.Errorf("Could not remove temporary build directory: %v", err)
+			logx.Errorf("Could not remove temporary build directory: %v", err)
 			os.Exit(1)
 		}
 	}()
-	log.Infof("Packaging %s in %s", strings.Split(t.packagingFormatName, "-")[1], tmpPath)
+	logx.Infof("Packaging %s in %s", strings.Split(t.packagingFormatName, "-")[1], tmpPath)
 
 	if t.buildOutputDirectory != "" {
 		err := copy.Copy(build.OutputDirectoryPath(strings.Split(t.packagingFormatName, "-")[0]), executeStringTemplate(filepath.Join(tmpPath, t.buildOutputDirectory), t.getTemplateData(projectName, buildVersion)))
 		if err != nil {
-			log.Errorf("Could not copy build folder: %v", err)
+			logx.Errorf("Could not copy build folder: %v", err)
 			os.Exit(1)
 		}
 	}
 	for task, destination := range t.dependsOn {
 		err := copy.Copy(build.OutputDirectoryPath(task.packagingFormatName), filepath.Join(tmpPath, destination))
 		if err != nil {
-			log.Errorf("Could not copy build folder of %s: %v", task.packagingFormatName, err)
+			logx.Errorf("Could not copy build folder of %s: %v", task.packagingFormatName, err)
 			os.Exit(1)
 		}
 	}
 	fileutils.CopyTemplateDir(packagingFormatPath(t.packagingFormatName), filepath.Join(tmpPath), t.getTemplateData(projectName, buildVersion))
 	if t.generateBuildFiles != nil {
-		log.Infof("Generating dynamic build files")
+		logx.Infof("Generating dynamic build files")
 		t.generateBuildFiles(config.GetConfig().GetPackageName(projectName), tmpPath)
 	}
 
 	for _, file := range t.executableFiles {
 		err := os.Chmod(executeStringTemplate(filepath.Join(tmpPath, file), t.getTemplateData(projectName, buildVersion)), 0777)
 		if err != nil {
-			log.Errorf("Failed to change file permissions for %s file: %v", file, err)
+			logx.Errorf("Failed to change file permissions for %s file: %v", file, err)
 			os.Exit(1)
 		}
 	}
 
 	err := os.RemoveAll(build.OutputDirectoryPath(t.packagingFormatName))
-	log.Printf("Cleaning the build directory")
+	logx.Printf("Cleaning the build directory")
 	if err != nil {
-		log.Errorf("Failed to clean output directory %s: %v", build.OutputDirectoryPath(t.packagingFormatName), err)
+		logx.Errorf("Failed to clean output directory %s: %v", build.OutputDirectoryPath(t.packagingFormatName), err)
 		os.Exit(1)
 	}
 
@@ -220,7 +220,7 @@ func (t *packagingTask) Pack(buildVersion string) {
 	outputFilePath := executeStringTemplate(filepath.Join(build.OutputDirectoryPath(t.packagingFormatName), outputFileName), t.getTemplateData(projectName, buildVersion))
 	err = copy.Copy(filepath.Join(tmpPath, outputFileName), outputFilePath)
 	if err != nil {
-		log.Errorf("Could not move %s file: %v", outputFileName, err)
+		logx.Errorf("Could not move %s file: %v", outputFileName, err)
 		os.Exit(1)
 	}
 }
@@ -230,7 +230,7 @@ func (t *packagingTask) AssertInitialized() {
 		return
 	}
 	if !t.IsInitialized() {
-		log.Errorf("%s is not initialized for packaging. Please run `hover init-packaging %s` first.", t.packagingFormatName, t.packagingFormatName)
+		logx.Errorf("%s is not initialized for packaging. Please run `hover init-packaging %s` first.", t.packagingFormatName, t.packagingFormatName)
 		os.Exit(1)
 	}
 }
@@ -243,7 +243,7 @@ func (t *packagingTask) IsInitialized() bool {
 func executeStringTemplate(t string, data map[string]string) string {
 	tmplFile, err := template.New("").Option("missingkey=error").Parse(t)
 	if err != nil {
-		log.Errorf("Failed to parse template string: %v\n", err)
+		logx.Errorf("Failed to parse template string: %v\n", err)
 		os.Exit(1)
 	}
 	var tmplBytes bytes.Buffer
