@@ -16,6 +16,7 @@ import (
 
 	"github.com/go-flutter-desktop/hover/internal/flutterversion"
 	"github.com/go-flutter-desktop/hover/internal/logx"
+	"github.com/go-flutter-desktop/hover/internal/tracex"
 )
 
 func createSymLink(oldname, newname string) error {
@@ -227,6 +228,7 @@ func ValidateOrUpdateEngineAtPath(targetOS, cachePath, requiredEngineVersion str
 	if cachedEngineVersion != "" {
 		if cachedEngineVersion == requiredEngineVersion {
 			logx.Printf("Using engine from cache")
+			tracex.Println(engineCachePath)
 			return engineCachePath
 		}
 

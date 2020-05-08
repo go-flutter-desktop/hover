@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/go-flutter-desktop/hover/internal/enginecache"
+	"github.com/go-flutter-desktop/hover/internal/tracex"
 
 	"github.com/hashicorp/go-version"
 	"github.com/otiai10/copy"
@@ -176,6 +177,17 @@ var buildWindowsMsiCmd = &cobra.Command{
 
 // TODO: replace targetOS with a same Task type for build (build.Task) ?
 func subcommandBuild(targetOS string, packagingTask packaging.Task) {
+	tracex.Println("config - buildtarget", buildTarget)
+	tracex.Println("config - buildGoFlutterBranch", buildGoFlutterBranch)
+	tracex.Println("config - buildCachePath", buildCachePath)
+	tracex.Println("config - buildOpenGlVersion", buildOpenGlVersion)
+	tracex.Println("config - buildEngineVersion", buildEngineVersion)
+	tracex.Println("config - buildDocker", buildDocker)
+	tracex.Println("config - buildDebug", buildDebug)
+	tracex.Println("config - buildVersionNumber", buildVersionNumber)
+	tracex.Println("config - buildSkipEngineDownload", buildSkipEngineDownload)
+	tracex.Println("config - buildSkipFlutterBuildBundle", buildSkipFlutterBuildBundle)
+
 	assertHoverInitialized()
 	packagingTask.AssertInitialized()
 
@@ -183,6 +195,7 @@ func subcommandBuild(targetOS string, packagingTask packaging.Task) {
 		cleanBuildOutputsDir(targetOS)
 		buildFlutterBundle(targetOS)
 	}
+
 	if buildDocker {
 		var buildFlags []string
 		buildFlags = append(buildFlags, commonFlags()...)
@@ -272,15 +285,17 @@ func assertTargetFileExists(targetFilename string) {
 }
 
 func cleanBuildOutputsDir(targetOS string) {
-	err := os.RemoveAll(build.OutputDirectoryPath(targetOS))
+	dir := build.OutputDirectoryPath(targetOS)
 	logx.Printf("Cleaning the build directory")
+	tracex.Println(dir)
+	err := os.RemoveAll(dir)
 	if err != nil {
-		logx.Errorf("Failed to remove output directory %s: %v", build.OutputDirectoryPath(targetOS), err)
+		logx.Errorf("Failed to remove output directory %s: %v", dir, err)
 		os.Exit(1)
 	}
-	err = os.MkdirAll(build.OutputDirectoryPath(targetOS), 0775)
+	err = os.MkdirAll(dir, 0775)
 	if err != nil {
-		logx.Errorf("Failed to create output directory %s: %v", build.OutputDirectoryPath(targetOS), err)
+		logx.Errorf("Failed to create output directory %s: %v", dir, err)
 		os.Exit(1)
 	}
 }
@@ -394,7 +409,6 @@ func buildGoBinary(targetOS string, vmArguments []string) {
 
 	} else {
 		logx.Printf("Downloading 'go-flutter' %s", buildGoFlutterBranch)
-
 		// when the buildBranch is set, fetch the go-flutter branch version.
 		err = upgradeGoFlutter(targetOS, engineCachePath)
 		if err != nil {

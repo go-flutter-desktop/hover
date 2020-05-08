@@ -11,7 +11,9 @@ import (
 
 	"github.com/go-flutter-desktop/hover/internal/build"
 	"github.com/go-flutter-desktop/hover/internal/enginecache"
+	"github.com/go-flutter-desktop/hover/internal/execx"
 	"github.com/go-flutter-desktop/hover/internal/logx"
+	"github.com/go-flutter-desktop/hover/internal/tracex"
 	"github.com/go-flutter-desktop/hover/internal/versioncheck"
 )
 
@@ -48,6 +50,7 @@ func upgrade(targetOS string) (err error) {
 }
 
 func upgradeGoFlutter(targetOS string, engineCachePath string) (err error) {
+	tracex.Println("targetOS", targetOS, "engineCachePath", engineCachePath)
 	wd, err := os.Getwd()
 	if err != nil {
 		logx.Errorf("Failed to get working dir: %v", err)
@@ -81,6 +84,7 @@ func upgradeGoFlutter(targetOS string, engineCachePath string) (err error) {
 	cmdGoGetU.Stderr = os.Stderr
 	cmdGoGetU.Stdout = os.Stdout
 
+	tracex.Println("executing", execx.Describe(cmdGoGetU))
 	err = cmdGoGetU.Run()
 	// When cross-compiling the command fails, but that is not an error
 	if err != nil {
@@ -96,6 +100,7 @@ func upgradeGoFlutter(targetOS string, engineCachePath string) (err error) {
 	cmdGoModDownload.Stderr = os.Stderr
 	cmdGoModDownload.Stdout = os.Stdout
 
+	tracex.Println("executing", execx.Describe(cmdGoModDownload))
 	err = cmdGoModDownload.Run()
 	if err != nil {
 		logx.Errorf("Go mod download failed: %v", err)
