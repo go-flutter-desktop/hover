@@ -2,6 +2,7 @@ package logx
 
 import (
 	"fmt"
+	"io/ioutil"
 	"log"
 	"os"
 	"sync"
@@ -16,13 +17,35 @@ type output interface {
 // Option for loggers.
 type Option func(*Logger)
 
+// OptionNoop does nothing useful for optional settings.
+func OptionNoop(l *Logger) {
+
+}
+
 // OptionColorize enable colors for this logger.
 func OptionColorize(l *Logger) {
 	l.au = aurora.NewAurora(true)
 }
 
+// OptionOutput set the output for the logger.
+func OptionOutput(o output) Option {
+	return func(l *Logger) {
+		l.out = o
+	}
+}
+
+// OptionStderr configure with default settings.
+func OptionStderr(l *Logger) {
+	l.out = log.New(os.Stderr, "", log.LstdFlags|log.Lshortfile)
+}
+
+// OptionDiscard configure with discard settings.
+func OptionDiscard(l *Logger) {
+	l.out = log.New(ioutil.Discard, "", 0)
+}
+
 var (
-	defaultl = New()
+	defaultl = New(OptionStderr)
 	mu       sync.Mutex
 )
 
@@ -31,6 +54,11 @@ func Tune(options ...Option) {
 	mu.Lock()
 	defer mu.Unlock()
 	defaultl = defaultl.Tune(options...)
+}
+
+// Println see fmt.Sprintln
+func Println(parts ...interface{}) {
+	defaultl.Output(2, fmt.Sprintln(parts...))
 }
 
 // Printf print a message with formatting
@@ -61,9 +89,8 @@ func Au() aurora.Aurora {
 // New logger with colors disabled.
 func New(options ...Option) Logger {
 	return Logger{
-		au:  aurora.NewAurora(false),
-		out: log.New(os.Stderr, "", log.LstdFlags|log.Lshortfile),
-	}.Tune(options...)
+		au: aurora.NewAurora(false),
+	}.Tune(OptionStderr).Tune(options...)
 }
 
 // Logger general logger for hover.
