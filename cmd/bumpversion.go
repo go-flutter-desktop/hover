@@ -43,7 +43,6 @@ func upgrade(targetOS string) (err error) {
 	} else {
 		engineCachePath = enginecache.ValidateOrUpdateEngine(targetOS, "")
 	}
-	engineCachePath = enginecache.ValidateOrUpdateEngine(targetOS, buildCachePath)
 	return upgradeGoFlutter(targetOS, engineCachePath)
 }
 
