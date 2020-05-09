@@ -16,7 +16,7 @@ import (
 )
 
 func init() {
-	upgradeCmd.Flags().StringVarP(&buildCachePath, "cache-path", "", "", "The path that hover uses to cache dependencies such as the Flutter engine .so/.dll (defaults to the standard user cache directory)")
+	upgradeCmd.Flags().StringVarP(&buildCachePath, "cache-path", "", enginecache.DefaultCachePath(), "The path that hover uses to cache dependencies such as the Flutter engine .so/.dll (defaults to the standard user cache directory)")
 	upgradeCmd.Flags().MarkHidden("branch")
 	rootCmd.AddCommand(upgradeCmd)
 }
@@ -37,13 +37,7 @@ var upgradeCmd = &cobra.Command{
 }
 
 func upgrade(targetOS string) (err error) {
-	var engineCachePath string
-	if buildCachePath != "" {
-		engineCachePath = enginecache.ValidateOrUpdateEngineAtPath(targetOS, buildCachePath, "")
-	} else {
-		engineCachePath = enginecache.ValidateOrUpdateEngine(targetOS, "")
-	}
-	return upgradeGoFlutter(targetOS, engineCachePath)
+	return upgradeGoFlutter(targetOS, enginecache.ValidateOrUpdateEngineAtPath(targetOS, buildCachePath, ""))
 }
 
 func upgradeGoFlutter(targetOS string, engineCachePath string) (err error) {

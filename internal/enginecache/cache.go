@@ -358,11 +358,3 @@ func ValidateOrUpdateEngineAtPath(targetOS, cachePath, requiredEngineVersion str
 
 	return engineCachePath
 }
-
-// ValidateOrUpdateEngine validates the engine we have cached matches the
-// flutter version, or otherwise downloads a new engine. The returned path is
-// that of the engine location.
-func ValidateOrUpdateEngine(targetOS string, requiredEngineVersion string) (engineCachePath string) {
-	engineCachePath = ValidateOrUpdateEngineAtPath(targetOS, DefaultCachePath(), requiredEngineVersion)
-	return
-}
