@@ -17,7 +17,7 @@ var DarwinPkgTask = &packagingTask{
 		"darwin-pkg/PackageInfo.tmpl":  "flat/base.pkg/PackageInfo.tmpl",
 		"darwin-pkg/Distribution.tmpl": "flat/Distribution.tmpl",
 	},
-	packagingFunction: func(tmpPath, applicationName, packageName, executableName, version, release string) (string, error) {
+	packagingFunction: func(tmpPath, applicationName, strippedApplicationName, packageName, executableName, version, release string) (string, error) {
 		outputFileName := fmt.Sprintf("%s %s.pkg", applicationName, version)
 
 		payload, err := os.OpenFile(filepath.Join("flat", "base.pkg", "Payload"), os.O_RDWR|os.O_CREATE, 0755)

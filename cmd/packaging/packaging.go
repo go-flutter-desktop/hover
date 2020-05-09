@@ -55,17 +55,17 @@ func getTemporaryBuildDirectory(projectName string, packagingFormat string) stri
 }
 
 type packagingTask struct {
-	packagingFormatName            string                                                                                               // Name of the packaging format: OS-TYPE
-	dependsOn                      map[*packagingTask]string                                                                            // Packaging tasks this task depends on
-	templateFiles                  map[string]string                                                                                    // Template files to copy over on init
-	executableFiles                []string                                                                                             // Files that should be executable
-	linuxDesktopFileExecutablePath string                                                                                               // Path of the executable for linux .desktop file (only set on linux)
-	linuxDesktopFileIconPath       string                                                                                               // Path of the icon for linux .desktop file (only set on linux)
-	generateBuildFiles             func(packageName, path string)                                                                       // Generate dynamic build files. Operates in the temporary directory
-	flutterBuildOutputDirectory    string                                                                                               // Path to copy the build output of the app to. Operates in the temporary directory
-	packagingFunction              func(tmpPath, applicationName, packageName, executableName, version, release string) (string, error) // Function that actually packages the app. Needs to check for OS specific tools etc. . Returns the path of the packaged file
-	skipAssertInitialized          bool                                                                                                 // Set to true when a task doesn't need to be initialized.
-	requiredTools                  map[string][]string                                                                                  // Map of list of tools required to package per OS
+	packagingFormatName            string                                                                                                                        // Name of the packaging format: OS-TYPE
+	dependsOn                      map[*packagingTask]string                                                                                                     // Packaging tasks this task depends on
+	templateFiles                  map[string]string                                                                                                             // Template files to copy over on init
+	executableFiles                []string                                                                                                                      // Files that should be executable
+	linuxDesktopFileExecutablePath string                                                                                                                        // Path of the executable for linux .desktop file (only set on linux)
+	linuxDesktopFileIconPath       string                                                                                                                        // Path of the icon for linux .desktop file (only set on linux)
+	generateBuildFiles             func(packageName, path string)                                                                                                // Generate dynamic build files. Operates in the temporary directory
+	flutterBuildOutputDirectory    string                                                                                                                        // Path to copy the build output of the app to. Operates in the temporary directory
+	packagingFunction              func(tmpPath, applicationName, strippedApplicationName, packageName, executableName, version, release string) (string, error) // Function that actually packages the app. Needs to check for OS specific tools etc. . Returns the path of the packaged file
+	skipAssertInitialized          bool                                                                                                                          // Set to true when a task doesn't need to be initialized.
+	requiredTools                  map[string][]string                                                                                                           // Map of list of tools required to package per OS
 }
 
 func (t *packagingTask) AssertSupported() {
@@ -95,15 +95,16 @@ var templateData map[string]string
 var once sync.Once
 
 var (
-	projectName      string
-	release          string
-	description      string
-	organizationName string
-	author           string
-	applicationName  string
-	executableName   string
-	packageName      string
-	license          string
+	projectName             string
+	release                 string
+	description             string
+	organizationName        string
+	author                  string
+	applicationName         string
+	strippedApplicationName string
+	executableName          string
+	packageName             string
+	license                 string
 )
 
 func (t *packagingTask) initData(version string) map[string]string {
@@ -114,20 +115,22 @@ func (t *packagingTask) initData(version string) map[string]string {
 		organizationName = androidmanifest.AndroidOrganizationName()
 		author = pubspec.GetPubSpec().GetAuthor()
 		applicationName = config.GetConfig().GetApplicationName(projectName)
+		strippedApplicationName = strings.ReplaceAll(applicationName, " ", "_")
 		executableName = config.GetConfig().GetExecutableName(projectName)
 		packageName = config.GetConfig().GetPackageName(projectName)
 		license = config.GetConfig().GetLicense()
 		templateData = map[string]string{
-			"projectName":      projectName,
-			"version":          version,
-			"release":          release,
-			"description":      description,
-			"organizationName": organizationName,
-			"author":           author,
-			"applicationName":  applicationName,
-			"executableName":   executableName,
-			"packageName":      packageName,
-			"license":          license,
+			"projectName":             projectName,
+			"version":                 version,
+			"release":                 release,
+			"description":             description,
+			"organizationName":        organizationName,
+			"author":                  author,
+			"applicationName":         applicationName,
+			"strippedApplicationName": strippedApplicationName,
+			"executableName":          executableName,
+			"packageName":             packageName,
+			"license":                 license,
 		}
 		templateData["iconPath"] = executeStringTemplate(t.linuxDesktopFileIconPath, templateData)
 		templateData["executablePath"] = executeStringTemplate(t.linuxDesktopFileExecutablePath, templateData)
@@ -199,7 +202,7 @@ func (t *packagingTask) Pack(version string) {
 	fileutils.CopyTemplateDir(packagingFormatPath(t.packagingFormatName), filepath.Join(tmpPath), templateData)
 	if t.generateBuildFiles != nil {
 		log.Infof("Generating dynamic build files")
-		t.generateBuildFiles(config.GetConfig().GetPackageName(projectName), tmpPath)
+		t.generateBuildFiles(packageName, tmpPath)
 	}
 
 	for _, file := range t.executableFiles {
@@ -217,7 +220,7 @@ func (t *packagingTask) Pack(version string) {
 		os.Exit(1)
 	}
 
-	relativeOutputFilePath, err := t.packagingFunction(tmpPath, applicationName, packageName, executableName, version, release)
+	relativeOutputFilePath, err := t.packagingFunction(tmpPath, applicationName, strippedApplicationName, packageName, executableName, version, release)
 	if err != nil {
 		log.Errorf("%v", err)
 		log.Warnf("Packaging is very experimental and has only been tested on Linux.")

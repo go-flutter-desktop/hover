@@ -22,7 +22,7 @@ var WindowsMsiTask = &packagingTask{
 		"windows-msi/app.wxs.tmpl": "{{.packageName}}.wxs.tmpl",
 	},
 	flutterBuildOutputDirectory: "build",
-	packagingFunction: func(tmpPath, applicationName, packageName, executableName, version, release string) (string, error) {
+	packagingFunction: func(tmpPath, applicationName, strippedApplicationName, packageName, executableName, version, release string) (string, error) {
 		outputFileName := fmt.Sprintf("%s %s.msi", applicationName, version)
 		cmdConvert := exec.Command("convert", "-resize", "x16", "build/assets/icon.png", "build/assets/icon.ico")
 		cmdConvert.Dir = tmpPath

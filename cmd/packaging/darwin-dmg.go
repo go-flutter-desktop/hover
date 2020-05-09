@@ -12,7 +12,7 @@ var DarwinDmgTask = &packagingTask{
 	dependsOn: map[*packagingTask]string{
 		DarwinBundleTask: "dmgdir",
 	},
-	packagingFunction: func(tmpPath, applicationName, packageName, executableName, version, release string) (string, error) {
+	packagingFunction: func(tmpPath, applicationName, strippedApplicationName, packageName, executableName, version, release string) (string, error) {
 		outputFileName := fmt.Sprintf("%s %s.dmg", applicationName, version)
 		cmdLn := exec.Command("ln", "-sf", "/Applications", "dmgdir/Applications")
 		cmdLn.Dir = tmpPath

@@ -16,7 +16,7 @@ var LinuxSnapTask = &packagingTask{
 	linuxDesktopFileExecutablePath: "/{{.executableName}}",
 	linuxDesktopFileIconPath:       "/icon.png",
 	flutterBuildOutputDirectory:    "build",
-	packagingFunction: func(tmpPath, applicationName, packageName, executableName, version, release string) (string, error) {
+	packagingFunction: func(tmpPath, applicationName, strippedApplicationName, packageName, executableName, version, release string) (string, error) {
 		cmdSnapcraft := exec.Command("snapcraft")
 		cmdSnapcraft.Dir = tmpPath
 		cmdSnapcraft.Stdout = os.Stdout
