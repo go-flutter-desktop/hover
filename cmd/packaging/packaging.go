@@ -223,10 +223,10 @@ func (t *packagingTask) Pack(version string) {
 	relativeOutputFilePath, err := t.packagingFunction(tmpPath, applicationName, strippedApplicationName, packageName, executableName, version, release)
 	if err != nil {
 		log.Errorf("%v", err)
-		log.Warnf("Packaging is very experimental and has only been tested on Linux.")
-		log.Infof("To help us debuging this error, please zip the content of:\n       \"%s\"\n       %s",
-			log.Au().Blue(tmpPath),
-			log.Au().Green("and try to package on another OS. You can also share this zip with the go-flutter team."))
+		log.Warnf("Packaging is very experimental and has mostly been tested on Linux.")
+		log.Infof("Please open an issue at https://github.com/go-flutter-desktop/go-flutter/issues/new?template=BUG.md")
+		log.Infof("with the log and a reproducible example if possible. You may also zip your app code")
+		log.Infof("if you are comfortable with it (closed source etc.) and attach it to the issue.")
 		os.Exit(1)
 	}
 	outputFileName := filepath.Base(relativeOutputFilePath)
