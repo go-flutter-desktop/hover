@@ -432,7 +432,7 @@ func buildGoBinary(targetOS string, vmArguments []string) {
 		log.Errorf("Go build failed: %v", err)
 		os.Exit(1)
 	}
-	log.Infof("Successfully compiled")
+	log.Infof("Successfully compiled executable binary for %s", targetOS)
 }
 
 func buildEnv(targetOS string, engineCachePath string) []string {
