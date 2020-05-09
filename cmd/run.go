@@ -91,7 +91,7 @@ var runCmd = &cobra.Command{
 }
 
 func runAndAttach(projectName string, targetOS string) {
-	cmdApp := exec.Command(dotSlash + filepath.Join(build.BuildPath, "build", "outputs", targetOS, projectName))
+	cmdApp := exec.Command(dotSlash + filepath.Join(build.BuildPath, "build", "outputs", targetOS, config.GetConfig().GetExecutableName(projectName)))
 	cmdApp.Env = append(os.Environ(),
 		"GOFLUTTER_ROUTE="+runInitialRoute)
 	cmdFlutterAttach := exec.Command("flutter", "attach")
