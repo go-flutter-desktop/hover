@@ -11,8 +11,10 @@ import (
 
 	"github.com/go-flutter-desktop/hover/cmd/packaging"
 	"github.com/go-flutter-desktop/hover/internal/build"
+	"github.com/go-flutter-desktop/hover/internal/execx"
 	"github.com/go-flutter-desktop/hover/internal/logstreamer"
 	"github.com/go-flutter-desktop/hover/internal/logx"
+	"github.com/go-flutter-desktop/hover/internal/tracex"
 )
 
 func dockerHoverBuild(targetOS string, packagingTask packaging.Task, buildFlags []string, vmArguments []string) {
@@ -51,6 +53,14 @@ func dockerHoverBuild(targetOS string, packagingTask packaging.Task, buildFlags 
 		"--mount", "type=bind,source=" + dockerGoCacheDir + ",target=/go-cache",
 		"--env", "GOCACHE=/go-cache",
 	}
+
+	// override the docker image hover binary builtin with the local version.
+	if path, err := os.Executable(); err == nil {
+		dockerArgs = append(dockerArgs, "--mount", fmt.Sprintf("type=bind,source=%s,target=/go/bin/hover", path))
+	} else {
+		logx.Warnf("unable to located hover executable: %s", err)
+	}
+
 	if runtime.GOOS != "windows" {
 		currentUser, err := user.Current()
 		if err != nil {
@@ -60,36 +70,26 @@ func dockerHoverBuild(targetOS string, packagingTask packaging.Task, buildFlags 
 		dockerArgs = append(dockerArgs, "--env", "HOVER_SAFE_CHOWN_UID="+currentUser.Uid)
 		dockerArgs = append(dockerArgs, "--env", "HOVER_SAFE_CHOWN_GID="+currentUser.Gid)
 	}
-	goproxy, err := exec.Command("go", "env", "GOPROXY").Output()
-	if err != nil {
-		logx.Errorf("Failed to get GOPROXY: %v", err)
+
+	if goproxy := os.Getenv("GOPROXY"); goproxy != "" {
+		dockerArgs = append(dockerArgs, "--env", fmt.Sprintf("GOPROXY=%s", goproxy))
 	}
-	if string(goproxy) != "" {
-		dockerArgs = append(dockerArgs, "--env", "GOPROXY="+string(goproxy))
+
+	if goprivate := os.Getenv("GOPRIVATE"); goprivate != "" {
+		dockerArgs = append(dockerArgs, "--env", fmt.Sprintf("GOPRIVATE=%s", goprivate))
 	}
-	goprivate, err := exec.Command("go", "env", "GOPRIVATE").Output()
-	if err != nil {
-		logx.Errorf("Failed to get GOPRIVATE: %v", err)
-	}
-	if string(goprivate) != "" {
-		dockerArgs = append(dockerArgs, "--env", "GOPRIVATE="+string(goprivate))
-	}
+
 	if len(vmArguments) > 0 {
 		// I (GeertJohan) am not too happy with this, it make the hover inside
 		// the container aware of it being inside the container. But for now
 		// this is the best way to go about.
 		//
-		// HOVER_BUILD_INDOCKER_VMARGS is explicitly not document, it is not
+		// HOVER_BUILD_INDOCKER_VMARGS is explicitly not documented, it is not
 		// intended to be abused and may disappear at any time.
 		dockerArgs = append(dockerArgs, "--env", "HOVER_IN_DOCKER_BUILD_VMARGS="+strings.Join(vmArguments, ","))
 	}
 
-	version := hoverVersion()
-	if version == "(devel)" {
-		version = "latest"
-	}
-	dockerImage := "goflutter/hover:" + version
-	dockerArgs = append(dockerArgs, dockerImage)
+	dockerArgs = append(dockerArgs, buildDockerImage)
 	targetOSAndPackaging := targetOS
 	if packName := packagingTask.Name(); packName != "" {
 		targetOSAndPackaging += "-" + packName
@@ -99,13 +99,12 @@ func dockerHoverBuild(targetOS string, packagingTask packaging.Task, buildFlags 
 	dockerArgs = append(dockerArgs, hoverCommand...)
 
 	dockerRunCmd := exec.Command(dockerBin, dockerArgs...)
-	// TODO: remove debug line
-	fmt.Printf("Running this docker command: %v\n", dockerRunCmd.String())
 	dockerRunCmd.Stderr = logstreamer.NewLogstreamerForStderr("docker container: ")
 	dockerRunCmd.Stdout = logstreamer.NewLogstreamerForStdout("docker container: ")
 	dockerRunCmd.Dir = wd
-	err = dockerRunCmd.Run()
-	if err != nil {
+
+	tracex.Println("docker command:", execx.Describe(dockerRunCmd))
+	if err = dockerRunCmd.Run(); err != nil {
 		logx.Errorf("Docker run failed: %v", err)
 		os.Exit(1)
 	}

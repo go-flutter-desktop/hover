@@ -44,5 +44,6 @@ func hoverVersion() string {
 		}
 		hoverVersionValue = buildInfo.Main.Version
 	})
+
 	return hoverVersionValue
 }

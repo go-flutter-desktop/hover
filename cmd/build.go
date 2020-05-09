@@ -9,6 +9,7 @@ import (
 	"strings"
 
 	"github.com/go-flutter-desktop/hover/internal/enginecache"
+	"github.com/go-flutter-desktop/hover/internal/execx"
 	"github.com/go-flutter-desktop/hover/internal/tracex"
 
 	"github.com/hashicorp/go-version"
@@ -41,6 +42,7 @@ var (
 	buildVersionNumber          string
 	buildSkipEngineDownload     bool
 	buildSkipFlutterBuildBundle bool
+	buildDockerImage            string
 )
 
 const mingwGccBinName = "x86_64-w64-mingw32-gcc"
@@ -55,6 +57,7 @@ func init() {
 	buildCmd.PersistentFlags().StringVar(&buildCachePath, "cache-path", "", "The path that hover uses to cache dependencies such as the Flutter engine .so/.dll (defaults to the standard user cache directory)")
 	buildCmd.PersistentFlags().StringVar(&buildOpenGlVersion, "opengl", config.BuildOpenGlVersionDefault, "The OpenGL version specified here is only relevant for external texture plugin (i.e. video_plugin).\nIf 'none' is provided, texture won't be supported. Note: the Flutter Engine still needs a OpenGL compatible context.")
 	buildCmd.PersistentFlags().StringVar(&buildVersionNumber, "version-number", "", "Override the version number used in build and packaging. You may use it with $(git describe --tags)")
+	buildCmd.PersistentFlags().StringVar(&buildDockerImage, "docker-image", fmt.Sprintf("goflutter/hover:%s", strings.Replace(hoverVersion(), "(devel)", "latest", -1)), "docker image to use")
 	buildCmd.PersistentFlags().BoolVar(&buildDebug, "debug", false, "Build a debug version of the app.")
 	buildCmd.PersistentFlags().BoolVar(&buildDocker, "docker", false, "Execute the go build and packaging in a docker container. The Flutter build is always run locally.")
 	buildCmd.PersistentFlags().BoolVar(&buildSkipEngineDownload, "skip-engine-download", false, "Skip donwloading the Flutter Engine and artifacts.")
@@ -183,6 +186,7 @@ func subcommandBuild(targetOS string, packagingTask packaging.Task) {
 	tracex.Println("config - buildOpenGlVersion", buildOpenGlVersion)
 	tracex.Println("config - buildEngineVersion", buildEngineVersion)
 	tracex.Println("config - buildDocker", buildDocker)
+	tracex.Println("config - buildDockerImage", buildDockerImage)
 	tracex.Println("config - buildDebug", buildDebug)
 	tracex.Println("config - buildVersionNumber", buildVersionNumber)
 	tracex.Println("config - buildSkipEngineDownload", buildSkipEngineDownload)
@@ -248,15 +252,23 @@ func initBuildParameters(targetOS string) {
 
 func commonFlags() []string {
 	f := []string{}
+
+	if verbose > 0 {
+		f = append(f, fmt.Sprintf("-%s", strings.Repeat("v", verbose)))
+	}
+
 	if buildTarget != config.BuildTargetDefault {
 		f = append(f, "--target", buildTarget)
 	}
+
 	if buildGoFlutterBranch != config.BuildBranchDefault {
 		f = append(f, "--branch", buildGoFlutterBranch)
 	}
+
 	if buildOpenGlVersion != config.BuildOpenGlVersionDefault {
 		f = append(f, "--opengl", buildOpenGlVersion)
 	}
+
 	return f
 }
 
@@ -439,6 +451,7 @@ func buildGoBinary(targetOS string, vmArguments []string) {
 	cmdGoBuild.Stdout = os.Stdout
 
 	logx.Infof("Compiling 'go-flutter' and plugins")
+	tracex.Println("executing", execx.Describe(cmdGoBuild))
 	err = cmdGoBuild.Run()
 	if err != nil {
 		logx.Errorf("Go build failed: %v", err)
