@@ -33,6 +33,9 @@ var (
 	buildCachePath       string
 	buildOpenGlVersion   string
 	buildEngineVersion   string
+	// TODO(GeertJohan): Separate the init code for the common build flags (run
+	// and build) into a function that's used for both buildCmd and runCmd. Also
+	// rename those to `compileFooBar`.
 
 	// `hover build`-only build flags
 	buildDocker                 bool
@@ -51,7 +54,7 @@ func init() {
 	buildCmd.PersistentFlags().StringVarP(&buildTarget, "target", "t", config.BuildTargetDefault, "The main entry-point file of the application.")
 	buildCmd.PersistentFlags().StringVarP(&buildGoFlutterBranch, "branch", "b", config.BuildBranchDefault, "The 'go-flutter' version to use. (@master or @v0.20.0 for example)")
 	buildCmd.PersistentFlags().StringVar(&buildEngineVersion, "engine-version", config.BuildEngineDefault, "The flutter engine version to use.")
-	buildCmd.PersistentFlags().StringVar(&buildCachePath, "cache-path", enginecache.DefaultCachePath(), "The path that hover uses to cache dependencies such as the Flutter engine .so/.dll (defaults to the standard user cache directory)")
+	buildCmd.PersistentFlags().StringVar(&buildCachePath, "cache-path", enginecache.DefaultCachePath(), "The path that hover uses to cache dependencies such as the Flutter engine .so/.dll")
 	buildCmd.PersistentFlags().StringVar(&buildOpenGlVersion, "opengl", config.BuildOpenGlVersionDefault, "The OpenGL version specified here is only relevant for external texture plugin (i.e. video_plugin).\nIf 'none' is provided, texture won't be supported. Note: the Flutter Engine still needs a OpenGL compatible context.")
 	buildCmd.PersistentFlags().StringVar(&buildVersionNumber, "version-number", "", "Override the version number used in build and packaging. You may use it with $(git describe --tags)")
 	buildCmd.PersistentFlags().BoolVar(&buildDebug, "debug", false, "Build a debug version of the app.")
@@ -201,16 +204,17 @@ func subcommandBuild(targetOS string, packagingTask packaging.Task) {
 	}
 }
 
+// initBuildParameters is used to initialize all the build parameters. It sets
+// fallback values based on config or defaults for values that have not
+// explicitly been set through flags.
 func initBuildParameters(targetOS string) {
 	if buildGoFlutterBranch == config.BuildBranchDefault && config.GetConfig().Branch != "" {
 		buildGoFlutterBranch = config.GetConfig().Branch
 	}
 
-	if buildCachePath == "" && config.GetConfig().CachePath != "" {
-		buildCachePath = config.GetConfig().CachePath
-	}
 	if buildCachePath == "" {
-		buildCachePath = enginecache.DefaultCachePath()
+		log.Errorf("Missing cache path, cannot continue. Please see previous warning.")
+		os.Exit(1)
 	}
 
 	if buildEngineVersion == config.BuildEngineDefault && config.GetConfig().Engine != "" {
@@ -218,6 +222,12 @@ func initBuildParameters(targetOS string) {
 		buildEngineVersion = config.GetConfig().Engine
 	}
 
+	// TODO: This override doesn't work properly when the config specifies a
+	// value other than the default, and the flag is used to revert back to the
+	// default.
+	//
+	// The comment on (*FlagSet).Lookup(..).Changed isn't very clear, but we
+	// could test how that behaves and switch to it.
 	if buildOpenGlVersion == config.BuildOpenGlVersionDefault && config.GetConfig().OpenGL != "" {
 		buildOpenGlVersion = config.GetConfig().OpenGL
 	}
@@ -226,6 +236,7 @@ func initBuildParameters(targetOS string) {
 		buildVersionNumber = pubspec.GetPubSpec().GetVersion()
 	}
 
+	// TODO(GeertJohan): This is complicated to read and can be simplified.
 	if buildSkipEngineDownload {
 		engineCachePath = enginecache.EngineCachePath(targetOS, buildCachePath)
 	} else {
