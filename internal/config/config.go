@@ -74,7 +74,15 @@ func GetConfig() Config {
 	if !config.loaded {
 		c, err := ReadConfigFile(filepath.Join(build.BuildPath, "hover.yaml"))
 		if err != nil {
-			return config
+			if os.IsNotExist(errors.Cause(err)) {
+				// TODO: Add a solution for the user. Perhaps we can let `hover
+				// init` write missing files when ran on an existing project.
+				// https://github.com/go-flutter-desktop/hover/pull/121#pullrequestreview-408680348
+				log.Warnf("Missing config: %v", err)
+				return config
+			}
+			log.Errorf("Failed to load config: %v", err)
+			os.Exit(1)
 		}
 		config = *c
 		config.loaded = true
@@ -82,22 +90,22 @@ func GetConfig() Config {
 	return config
 }
 
-// ReadConfigFile reads a .yaml file at a path and return a correspond
-// Config struct
+// ReadConfigFile reads a .yaml file at a path and return a correspond Config
+// struct
 func ReadConfigFile(configPath string) (*Config, error) {
 	file, err := os.Open(configPath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return nil, errors.Wrap(err, "Warning: No hover.yaml file found")
+			return nil, errors.Wrap(err, "file hover.yaml not found")
 		}
-		return nil, errors.Wrap(err, "Failed to open hover.yaml")
+		return nil, errors.Wrap(err, "failed to open hover.yaml")
 	}
 	defer file.Close()
 
 	var config Config
 	err = yaml.NewDecoder(file).Decode(&config)
 	if err != nil {
-		return nil, errors.Wrap(err, "Failed to decode hover.yaml")
+		return nil, errors.Wrap(err, "failed to decode hover.yaml")
 	}
 	return &config, nil
 }
