@@ -2,31 +2,17 @@ package enginecache
 
 import (
 	"os"
-	"path/filepath"
-	"runtime"
 
 	"github.com/go-flutter-desktop/hover/internal/log"
 )
 
+// DefaultCachePath tries to resolve the user cache directory. DefaultCachePath
+// may return an empty string when none was found, in that case it will print a
+// warning to the user.
 func DefaultCachePath() string {
-	// TODO: change to os.UserCacheDir()?
-	homePath, err := os.UserHomeDir()
+	cachePath, err := os.UserCacheDir()
 	if err != nil {
-		log.Errorf("Failed to resolve home path: %v", err)
-		os.Exit(1)
+		log.Warnf("Failed to resolve cache path: %v", err)
 	}
-
-	var p string
-	switch runtime.GOOS {
-	case "linux":
-		p = filepath.Join(homePath, ".cache")
-	case "darwin":
-		p = filepath.Join(homePath, "Library", "Caches")
-	case "windows":
-		p = filepath.Join(homePath, "AppData", "Local")
-	default:
-		log.Errorf("Cannot run on %s, enginecache not implemented.", runtime.GOOS)
-		os.Exit(1)
-	}
-	return p
+	return cachePath
 }

@@ -26,16 +26,16 @@ const BuildOpenGlVersionDefault = "3.3"
 
 // Config contains the parsed contents of hover.yaml
 type Config struct {
-	loaded          bool
-	ApplicationName string `yaml:"application-name"`
-	ExecutableName  string `yaml:"executable-name"`
-	PackageName     string `yaml:"package-name"`
-	License         string
-	Target          string
-	Branch          string
-	CachePath       string `yaml:"cache-path"`
-	OpenGL          string
-	Engine          string `yaml:"engine-version"`
+	loaded           bool
+	ApplicationName  string `yaml:"application-name"`
+	ExecutableName   string `yaml:"executable-name"`
+	PackageName      string `yaml:"package-name"`
+	License          string
+	Target           string
+	Branch           string
+	CachePathREMOVED string `yaml:"cache-path"`
+	OpenGL           string
+	Engine           string `yaml:"engine-version"`
 }
 
 func (c Config) GetApplicationName(projectName string) string {
@@ -71,6 +71,7 @@ var config = Config{}
 
 // GetConfig returns the working directory hover.yaml as a Config
 func GetConfig() Config {
+	// TODO(GeertJohan): Add sync.Once
 	if !config.loaded {
 		c, err := ReadConfigFile(filepath.Join(build.BuildPath, "hover.yaml"))
 		if err != nil {
@@ -86,6 +87,11 @@ func GetConfig() Config {
 		}
 		config = *c
 		config.loaded = true
+
+		if config.CachePathREMOVED != "" {
+			log.Errorf("The hover.yaml field 'cache-path' is not used anymore. Remove it from your hover.yaml and use --cache-path instead.")
+			os.Exit(1)
+		}
 	}
 	return config
 }

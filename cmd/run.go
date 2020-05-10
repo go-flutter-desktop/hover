@@ -15,6 +15,7 @@ import (
 	"github.com/go-flutter-desktop/hover/cmd/packaging"
 	"github.com/go-flutter-desktop/hover/internal/build"
 	"github.com/go-flutter-desktop/hover/internal/config"
+	"github.com/go-flutter-desktop/hover/internal/enginecache"
 	"github.com/go-flutter-desktop/hover/internal/log"
 	"github.com/go-flutter-desktop/hover/internal/pubspec"
 )
@@ -30,7 +31,10 @@ var (
 func init() {
 	runCmd.Flags().StringVarP(&buildTarget, "target", "t", config.BuildTargetDefault, "The main entry-point file of the application.")
 	runCmd.Flags().StringVarP(&buildGoFlutterBranch, "branch", "b", config.BuildBranchDefault, "The 'go-flutter' version to use. (@master or @v0.20.0 for example)")
-	runCmd.Flags().StringVar(&buildCachePath, "cache-path", "", "The path that hover uses to cache dependencies such as the Flutter engine .so/.dll (defaults to the standard user cache directory)")
+	// TODO: The variable buildCachePath is set twice, once during the setup of
+	// buildCmd, and once during the setup of runCmd. The last of the two will
+	// override the value with it's default, which leads to strange problems.
+	runCmd.Flags().StringVar(&buildCachePath, "cache-path", enginecache.DefaultCachePath(), "The path that hover uses to cache dependencies such as the Flutter engine .so/.dll (defaults to the standard user cache directory)")
 	runCmd.PersistentFlags().StringVar(&buildEngineVersion, "engine-version", "", "The flutter engine version to use.")
 	runCmd.Flags().StringVar(&buildOpenGlVersion, "opengl", config.BuildOpenGlVersionDefault, "The OpenGL version specified here is only relevant for external texture plugin (i.e. video_plugin).\nIf 'none' is provided, texture won't be supported. Note: the Flutter Engine still needs a OpenGL compatible context.")
 
