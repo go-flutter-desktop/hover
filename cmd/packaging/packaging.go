@@ -96,6 +96,7 @@ var once sync.Once
 
 var (
 	projectName             string
+	version                 string
 	release                 string
 	description             string
 	organizationName        string
@@ -107,10 +108,15 @@ var (
 	license                 string
 )
 
-func (t *packagingTask) initData(version string) map[string]string {
+func (t *packagingTask) initData(fullVersion string) map[string]string {
 	once.Do(func() {
 		projectName = pubspec.GetPubSpec().Name
-		release = strings.Split(version, "+")[1]
+		version = strings.Split(fullVersion, "+")[0]
+		if strings.Contains(fullVersion, "+") {
+			release = strings.Split(fullVersion, "+")[1]
+		} else {
+			release = strings.ReplaceAll(fullVersion, ".", "")
+		}
 		description = pubspec.GetPubSpec().Description
 		organizationName = androidmanifest.AndroidOrganizationName()
 		author = pubspec.GetPubSpec().GetAuthor()
@@ -170,10 +176,14 @@ func (t *packagingTask) init(ignoreAlreadyExists bool) {
 	}
 }
 
-func (t *packagingTask) Pack(version string) {
-	t.initData(version)
+func (t *packagingTask) Pack(fullVersion string) {
+	t.initData(fullVersion)
+	t.pack(fullVersion)
+}
+
+func (t *packagingTask) pack(fullVersion string) {
 	for task := range t.dependsOn {
-		task.Pack(version)
+		task.Pack(fullVersion)
 	}
 	tmpPath := getTemporaryBuildDirectory(projectName, t.packagingFormatName)
 	defer func() {
