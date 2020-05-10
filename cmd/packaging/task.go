@@ -8,4 +8,5 @@ type Task interface {
 	IsInitialized() bool
 	AssertInitialized()
 	Pack(buildVersion string)
+	AssertSupported()
 }

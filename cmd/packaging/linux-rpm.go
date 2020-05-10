@@ -1,5 +1,11 @@
 package packaging
 
+import (
+	"fmt"
+	"os"
+	"os/exec"
+)
+
 // LinuxRpmTask packaging for linux as rpm
 var LinuxRpmTask = &packagingTask{
 	packagingFormatName: "linux-rpm",
@@ -14,9 +20,19 @@ var LinuxRpmTask = &packagingTask{
 	},
 	linuxDesktopFileExecutablePath: "/usr/lib/{{.packageName}}/{{.executableName}}",
 	linuxDesktopFileIconPath:       "/usr/lib/{{.packageName}}/assets/icon.png",
-	buildOutputDirectory:           "BUILD/{{.packageName}}-{{.version}}-{{.release}}.x86_64/usr/lib/{{.packageName}}",
-	packagingScriptTemplate:        "rpmbuild --define \"_topdir $(pwd)\" --define \"_unpackaged_files_terminate_build 0\" -ba ./SPECS/{{.packageName}}.spec && mv -n RPMS/x86_64/{{.packageName}}-{{.version}}-{{.release}}.x86_64.rpm {{.packageName}}-{{.version}}.rpm",
-	outputFileExtension:            "rpm",
-	outputFileContainsVersion:      true,
-	outputFileUsesApplicationName:  false,
+	flutterBuildOutputDirectory:    "BUILD/{{.packageName}}-{{.version}}-{{.release}}.x86_64/usr/lib/{{.packageName}}",
+	packagingFunction: func(tmpPath, applicationName, strippedApplicationName, packageName, executableName, version, release string) (string, error) {
+		cmdRpmbuild := exec.Command("rpmbuild", "--define", fmt.Sprintf("_topdir %s", tmpPath), "--define", "_unpackaged_files_terminate_build 0", "-ba", fmt.Sprintf("./SPECS/%s.spec", packageName))
+		cmdRpmbuild.Dir = tmpPath
+		cmdRpmbuild.Stdout = os.Stdout
+		cmdRpmbuild.Stderr = os.Stderr
+		err := cmdRpmbuild.Run()
+		if err != nil {
+			return "", err
+		}
+		return fmt.Sprintf("RPMS/x86_64/%s-%s-%s.x86_64.rpm", packageName, version, release), nil
+	},
+	requiredTools: map[string][]string{
+		"linux": {"rpmbuild"},
+	},
 }

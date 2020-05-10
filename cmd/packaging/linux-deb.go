@@ -1,5 +1,11 @@
 package packaging
 
+import (
+	"fmt"
+	"os"
+	"os/exec"
+)
+
 // LinuxDebTask packaging for linux as deb
 var LinuxDebTask = &packagingTask{
 	packagingFormatName: "linux-deb",
@@ -14,9 +20,20 @@ var LinuxDebTask = &packagingTask{
 	},
 	linuxDesktopFileExecutablePath: "/usr/lib/{{.packageName}}/{{.executableName}}",
 	linuxDesktopFileIconPath:       "/usr/lib/{{.packageName}}/assets/icon.png",
-	buildOutputDirectory:           "usr/lib/{{.packageName}}",
-	packagingScriptTemplate:        "dpkg-deb --build . {{.packageName}}-{{.version}}.deb",
-	outputFileExtension:            "deb",
-	outputFileContainsVersion:      true,
-	outputFileUsesApplicationName:  false,
+	flutterBuildOutputDirectory:    "usr/lib/{{.packageName}}",
+	packagingFunction: func(tmpPath, applicationName, strippedApplicationName, packageName, executableName, version, release string) (string, error) {
+		outputFileName := fmt.Sprintf("%s_%s_amd64.deb", packageName, version)
+		cmdDpkgDeb := exec.Command("dpkg-deb", "--build", ".", outputFileName)
+		cmdDpkgDeb.Dir = tmpPath
+		cmdDpkgDeb.Stdout = os.Stdout
+		cmdDpkgDeb.Stderr = os.Stderr
+		err := cmdDpkgDeb.Run()
+		if err != nil {
+			return "", err
+		}
+		return outputFileName, nil
+	},
+	requiredTools: map[string][]string{
+		"linux": {"dpkg-deb"},
+	},
 }

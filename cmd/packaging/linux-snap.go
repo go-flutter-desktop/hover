@@ -1,5 +1,11 @@
 package packaging
 
+import (
+	"fmt"
+	"os"
+	"os/exec"
+)
+
 // LinuxSnapTask packaging for linux as snap
 var LinuxSnapTask = &packagingTask{
 	packagingFormatName: "linux-snap",
@@ -9,9 +15,19 @@ var LinuxSnapTask = &packagingTask{
 	},
 	linuxDesktopFileExecutablePath: "/{{.executableName}}",
 	linuxDesktopFileIconPath:       "/icon.png",
-	buildOutputDirectory:           "build",
-	packagingScriptTemplate:        "snapcraft && mv -n {{.packageName}}_{{.version}}_{{.arch}}.snap {{.packageName}}-{{.version}}.snap",
-	outputFileExtension:            "snap",
-	outputFileContainsVersion:      true,
-	outputFileUsesApplicationName:  false,
+	flutterBuildOutputDirectory:    "build",
+	packagingFunction: func(tmpPath, applicationName, strippedApplicationName, packageName, executableName, version, release string) (string, error) {
+		cmdSnapcraft := exec.Command("snapcraft")
+		cmdSnapcraft.Dir = tmpPath
+		cmdSnapcraft.Stdout = os.Stdout
+		cmdSnapcraft.Stderr = os.Stderr
+		err := cmdSnapcraft.Run()
+		if err != nil {
+			return "", err
+		}
+		return fmt.Sprintf("%s_%s_amd64.snap", packageName, version), nil
+	},
+	requiredTools: map[string][]string{
+		"linux": {"snapcraft"},
+	},
 }

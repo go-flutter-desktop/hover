@@ -1,8 +1,10 @@
 package packaging
 
 import (
+	"fmt"
 	"io/ioutil"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strings"
 
@@ -19,11 +21,30 @@ var WindowsMsiTask = &packagingTask{
 	templateFiles: map[string]string{
 		"windows-msi/app.wxs.tmpl": "{{.packageName}}.wxs.tmpl",
 	},
-	buildOutputDirectory:          "build",
-	packagingScriptTemplate:       "convert -resize x16 build/assets/icon.png build/assets/icon.ico && wixl -v {{.packageName}}.wxs && mv -n {{.packageName}}.msi \"{{.applicationName}} {{.version}}.msi\"",
-	outputFileExtension:           "msi",
-	outputFileContainsVersion:     true,
-	outputFileUsesApplicationName: true,
+	flutterBuildOutputDirectory: "build",
+	packagingFunction: func(tmpPath, applicationName, strippedApplicationName, packageName, executableName, version, release string) (string, error) {
+		outputFileName := fmt.Sprintf("%s %s.msi", applicationName, version)
+		cmdConvert := exec.Command("convert", "-resize", "x16", "build/assets/icon.png", "build/assets/icon.ico")
+		cmdConvert.Dir = tmpPath
+		cmdConvert.Stdout = os.Stdout
+		cmdConvert.Stderr = os.Stderr
+		err := cmdConvert.Run()
+		if err != nil {
+			return "", err
+		}
+		cmdWixl := exec.Command("wixl", "-v", fmt.Sprintf("%s.wxs", packageName), "-o", outputFileName)
+		cmdWixl.Dir = tmpPath
+		cmdWixl.Stdout = os.Stdout
+		cmdWixl.Stderr = os.Stderr
+		err = cmdWixl.Run()
+		if err != nil {
+			return "", err
+		}
+		return outputFileName, nil
+	},
+	requiredTools: map[string][]string{
+		"linux": {"convert", "wixl"},
+	},
 	generateBuildFiles: func(packageName, tmpPath string) {
 		directoriesFilePath, err := filepath.Abs(filepath.Join(tmpPath, "directories.wxi"))
 		if err != nil {

@@ -181,6 +181,9 @@ var buildWindowsMsiCmd = &cobra.Command{
 func subcommandBuild(targetOS string, packagingTask packaging.Task) {
 	assertHoverInitialized()
 	packagingTask.AssertInitialized()
+	if !buildDocker {
+		packagingTask.AssertSupported()
+	}
 
 	if !buildSkipFlutterBuildBundle {
 		cleanBuildOutputsDir(targetOS)
