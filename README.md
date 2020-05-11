@@ -140,3 +140,19 @@ No text visible? Make sure to use fonts that are included in the flutter assets/
 ## Issues
 
 Please report issues at the [go-flutter issue tracker](https://github.com/go-flutter-desktop/go-flutter/issues/).
+
+## Cross-compilation support
+
+WIP
+
+| Host \ Target | darwin | -bundle | -dmg | -pkg | linux | -appimage | -deb | -pkg | -rpm | -snap | windows | -msi |
+|-----------------------|--------|---------|------|------|-------|-----------|------|------|------|-------|---------|------|
+| Darwin (MacOS) | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ❌ | ❌ | ❌ | ❌ | ❌ | ✔️ | ❌ |
+| Linux | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |
+| Windows | ✔️ | ❌ | ❌ | ❌ | ✔️ | ❌ | ❌ | ❌ | ❌ | ❌ | ✔️ | ✔️ |
+| Darwin with --docker | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |
+| Linux with --docker | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |
+| Windows with --docker | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ | ✔️ |
+
+<!-- Created using https://www.tablesgenerator.com/markdown_tables.
+Change this table by loading the cross-compilation-support-table.tgn file on that site. -->
