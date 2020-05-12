@@ -16,5 +16,5 @@ require (
 	github.com/tcnksm/go-latest v0.0.0-20170313132115-e3007ae9052e
 	golang.org/x/mod v0.2.0
 	golang.org/x/net v0.0.0-20200324143707-d3edc9973b7e // indirect
-	gopkg.in/yaml.v2 v2.2.8
+	gopkg.in/yaml.v2 v2.3.0
 )
