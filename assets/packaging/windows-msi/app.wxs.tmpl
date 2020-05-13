@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
-    <Product Id="*" UpgradeCode="*" Version="{{.version}}" Language="1033" Name="{{.applicationName}}" Manufacturer="{{.author}}">
+    <Product Id="*" UpgradeCode="{{.upgradeCode}}" Version="{{.version}}" Language="1033" Name="{{.applicationName}}" Manufacturer="{{.author}}">
         <Package InstallerVersion="300" Compressed="yes"/>
         <Media Id="1" Cabinet="{{.packageName}}.cab" EmbedCab="yes" />
         <Directory Id="TARGETDIR" Name="SourceDir">
@@ -16,21 +16,25 @@
                 <Directory Id="ApplicationProgramsFolder" Name="{{.applicationName}}"/>
             </Directory>
         </Directory>
-        <Icon Id="ShortcutIcon" SourceFile="build/assets/icon.ico"/>
+        <Icon Id="ShortcutIcon" SourceFile="build{{.pathSeparator}}assets{{.pathSeparator}}icon.ico"/>
+        <Property Id="ARPPRODUCTICON" Value="ShortcutIcon"/>
         <DirectoryRef Id="APPLICATIONROOTDIRECTORY">
             <Component Id="{{.executableName}}.exe" Guid="*">
-                <File Id="{{.executableName}}.exe" Source="build/{{.executableName}}.exe" KeyPath="yes"/>
+                <File Id="{{.executableName}}.exe" Source="build{{.pathSeparator}}{{.executableName}}.exe" KeyPath="yes"/>
             </Component>
             <Component Id="flutter_engine.dll" Guid="*">
-                <File Id="flutter_engine.dll" Source="build/flutter_engine.dll" KeyPath="yes"/>
+                <File Id="flutter_engine.dll" Source="build{{.pathSeparator}}flutter_engine.dll" KeyPath="yes"/>
             </Component>
             <Component Id="icudtl.dat" Guid="*">
-                <File Id="icudtl.dat" Source="build/icudtl.dat" KeyPath="yes"/>
+                <File Id="icudtl.dat" Source="build{{.pathSeparator}}icudtl.dat" KeyPath="yes"/>
             </Component>
         </DirectoryRef>
         <DirectoryRef Id="ASSETSDIRECTORY">
             <Component Id="icon.png" Guid="*">
-                <File Id="icon.png" Source="build/assets/icon.png" KeyPath="yes"/>
+                <File Id="icon.png" Source="build{{.pathSeparator}}assets{{.pathSeparator}}icon.png" KeyPath="yes"/>
+            </Component>
+            <Component Id="icon.ico" Guid="*">
+                <File Id="icon.ico" Source="build{{.pathSeparator}}assets{{.pathSeparator}}icon.ico" KeyPath="yes"/>
             </Component>
         </DirectoryRef>
         <?include directory_refs.wxi ?>

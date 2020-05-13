@@ -62,6 +62,8 @@ type packagingTask struct {
 	linuxDesktopFileExecutablePath string                                                                                                                        // Path of the executable for linux .desktop file (only set on linux)
 	linuxDesktopFileIconPath       string                                                                                                                        // Path of the icon for linux .desktop file (only set on linux)
 	generateBuildFiles             func(packageName, path string)                                                                                                // Generate dynamic build files. Operates in the temporary directory
+	generateInitFiles              func(packageName, path string)                                                                                                // Generate dynamic init files
+	extraTemplateData              func(packageName, path string) map[string]string                                                                              // Update the template data on build. This is used for inserting values that are generated on init
 	flutterBuildOutputDirectory    string                                                                                                                        // Path to copy the build output of the app to. Operates in the temporary directory
 	packagingFunction              func(tmpPath, applicationName, strippedApplicationName, packageName, executableName, version, release string) (string, error) // Function that actually packages the app. Needs to check for OS specific tools etc. . Returns the path of the packaged file
 	skipAssertInitialized          bool                                                                                                                          // Set to true when a task doesn't need to be initialized.
@@ -168,6 +170,10 @@ func (t *packagingTask) init(ignoreAlreadyExists bool) {
 			}
 			fileutils.CopyAsset(fmt.Sprintf("packaging/%s", sourceFile), destinationFile, fileutils.AssetsBox())
 		}
+		if t.generateInitFiles != nil {
+			log.Infof("Generating dynamic init files")
+			t.generateInitFiles(config.GetConfig().GetPackageName(projectName), dir)
+		}
 		log.Infof("go/packaging/%s has been created. You can modify the configuration files and add it to git.", t.packagingFormatName)
 		log.Infof(fmt.Sprintf("You now can package the %s using `%s`", strings.Split(t.packagingFormatName, "-")[0], log.Au().Magenta("hover build "+t.packagingFormatName)))
 	} else if !ignoreAlreadyExists {
@@ -182,8 +188,13 @@ func (t *packagingTask) Pack(fullVersion string) {
 }
 
 func (t *packagingTask) pack(fullVersion string) {
+	if t.extraTemplateData != nil {
+		for key, value := range t.extraTemplateData(packageName, packagingFormatPath(t.packagingFormatName)) {
+			templateData[key] = value
+		}
+	}
 	for task := range t.dependsOn {
-		task.Pack(fullVersion)
+		task.pack(fullVersion)
 	}
 	tmpPath := getTemporaryBuildDirectory(projectName, t.packagingFormatName)
 	defer func() {
