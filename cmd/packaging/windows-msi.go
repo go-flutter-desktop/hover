@@ -114,10 +114,10 @@ var WindowsMsiTask = &packagingTask{
 	extraTemplateData: func(packageName, path string) map[string]string {
 		data, err := ioutil.ReadFile(filepath.Join(path, "upgrade-code.txt"))
 		if err != nil {
-			log.Errorf("Failed to read `upgrade-code.txt`: %v", err)
+			log.Errorf("Failed to read `go/packaging/windows-msi/upgrade-code.txt`: %v", err)
 			if os.IsNotExist(err) {
-				log.Errorf("Please re-init windows-msi to create an `upgrade-code.txt`")
-				log.Errorf("or put a GUID from https://www.guidgen.com/ into a new `upgrade-code.txt` file.")
+				log.Errorf("Please re-init windows-msi to generate the `go/packaging/windows-msi/upgrade-code.txt`")
+				log.Errorf("or put a GUID from https://www.guidgen.com/ into a new `go/packaging/windows-msi/upgrade-code.txt` file.")
 			}
 			os.Exit(1)
 		}
