@@ -239,11 +239,9 @@ func initBuildParameters(targetOS string) {
 		buildVersionNumber = pubspec.GetPubSpec().GetVersion()
 	}
 
-	// TODO(GeertJohan): This is complicated to read and can be simplified.
-	if buildSkipEngineDownload {
-		engineCachePath = enginecache.EngineCachePath(targetOS, buildCachePath)
-	} else {
-		engineCachePath = enginecache.ValidateOrUpdateEngineAtPath(targetOS, buildCachePath, buildEngineVersion)
+	engineCachePath = enginecache.EngineCachePath(targetOS, buildCachePath)
+	if !buildSkipEngineDownload {
+		enginecache.ValidateOrUpdateEngine(targetOS, buildCachePath, buildEngineVersion)
 	}
 }
 
@@ -395,7 +393,7 @@ func buildGoBinary(targetOS string, vmArguments []string) {
 			log.Infof("Upgrading 'go-flutter' to the latest release")
 			// no buildBranch provided and currentTag isn't a release,
 			// force update. (same behaviour as previous version of hover).
-			err = upgradeGoFlutter(targetOS, engineCachePath)
+			err = upgradeGoFlutter(targetOS)
 			if err != nil {
 				// the upgrade can fail silently
 				log.Warnf("Upgrade ignored, current 'go-flutter' version: %s", currentTag)
@@ -410,7 +408,7 @@ func buildGoBinary(targetOS string, vmArguments []string) {
 		log.Printf("Downloading 'go-flutter' %s", buildGoFlutterBranch)
 
 		// when the buildBranch is set, fetch the go-flutter branch version.
-		err = upgradeGoFlutter(targetOS, engineCachePath)
+		err = upgradeGoFlutter(targetOS)
 		if err != nil {
 			os.Exit(1)
 		}
