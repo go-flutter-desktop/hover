@@ -449,6 +449,7 @@ func buildGoBinary(targetOS string, vmArguments []string) {
 
 func buildEnv(targetOS string, engineCachePath string) []string {
 	var cgoLdflags string
+	var cgoCflags string
 
 	outputDirPath := filepath.Join("build", "outputs", targetOS)
 
@@ -456,6 +457,8 @@ func buildEnv(targetOS string, engineCachePath string) []string {
 	case "darwin":
 		cgoLdflags = fmt.Sprintf("-F%s -Wl,-rpath,@executable_path", engineCachePath)
 		cgoLdflags = fmt.Sprintf("%s -F%s -L%s", cgoLdflags, outputDirPath, outputDirPath)
+		cgoLdflags = fmt.Sprintf("%s -mmacosx-version-min=10.10", cgoLdflags)
+		cgoCflags = fmt.Sprintf("-mmacosx-version-min=10.10")
 	case "linux":
 		cgoLdflags = fmt.Sprintf("-L%s -L%s", engineCachePath, outputDirPath)
 	case "windows":
@@ -467,6 +470,7 @@ func buildEnv(targetOS string, engineCachePath string) []string {
 	env := []string{
 		"GO111MODULE=on",
 		"CGO_LDFLAGS=" + cgoLdflags,
+		"CGO_CFLAGS=" + cgoCflags,
 		"GOOS=" + targetOS,
 		"GOARCH=amd64",
 		"CGO_ENABLED=1",
