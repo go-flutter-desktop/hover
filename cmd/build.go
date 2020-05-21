@@ -459,8 +459,8 @@ func buildEnv(targetOS string, engineCachePath string) []string {
 	case "darwin":
 		cgoLdflags = fmt.Sprintf("-F%s -Wl,-rpath,@executable_path", engineCachePath)
 		cgoLdflags = fmt.Sprintf("%s -F%s -L%s", cgoLdflags, outputDirPath, outputDirPath)
-		cgoLdflags = fmt.Sprintf("%s -mmacosx-version-min=10.12", cgoLdflags)
-		cgoCflags = fmt.Sprintf("-mmacosx-version-min=10.12")
+		cgoLdflags = fmt.Sprintf("%s -mmacosx-version-min=10.10", cgoLdflags)
+		cgoCflags = fmt.Sprintf("-mmacosx-version-min=10.10")
 	case "linux":
 		cgoLdflags = fmt.Sprintf("-L%s -L%s", engineCachePath, outputDirPath)
 	case "windows":
