@@ -37,10 +37,12 @@ var upgradeCmd = &cobra.Command{
 }
 
 func upgrade(targetOS string) (err error) {
-	return upgradeGoFlutter(targetOS, enginecache.ValidateOrUpdateEngineAtPath(targetOS, buildCachePath, ""))
+	enginecache.ValidateOrUpdateEngine(targetOS, buildCachePath, "")
+	return upgradeGoFlutter(targetOS)
 }
 
-func upgradeGoFlutter(targetOS string, engineCachePath string) (err error) {
+func upgradeGoFlutter(targetOS string) (err error) {
+	engineCachePath := enginecache.EngineCachePath(targetOS, buildCachePath)
 	wd, err := os.Getwd()
 	if err != nil {
 		log.Errorf("Failed to get working dir: %v", err)
