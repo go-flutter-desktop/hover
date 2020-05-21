@@ -457,7 +457,7 @@ func buildEnv(targetOS string, engineCachePath string) []string {
 	switch targetOS {
 	case "darwin":
 		cgoLdflags = fmt.Sprintf("-F%s -Wl,-rpath,@executable_path", engineCachePath)
-		cgoLdflags = fmt.Sprintf("%s -F%s -L%s", cgoLdflags, outputDirPath, outputDirPath)
+		cgoLdflags = fmt.Sprintf("%s -F%s -L%s -mmacosx-version-min=10.12", cgoLdflags, outputDirPath, outputDirPath)
 	case "linux":
 		cgoLdflags = fmt.Sprintf("-L%s -L%s", engineCachePath, outputDirPath)
 	case "windows":
@@ -469,6 +469,7 @@ func buildEnv(targetOS string, engineCachePath string) []string {
 	env := []string{
 		"GO111MODULE=on",
 		"CGO_LDFLAGS=" + cgoLdflags,
+		"CGO_CFLAGS=-mmacosx-version-min=10.12",
 		"GOOS=" + targetOS,
 		"GOARCH=amd64",
 		"CGO_ENABLED=1",
