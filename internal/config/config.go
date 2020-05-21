@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
@@ -26,7 +27,6 @@ const BuildOpenGlVersionDefault = "3.3"
 
 // Config contains the parsed contents of hover.yaml
 type Config struct {
-	loaded           bool
 	ApplicationName  string `yaml:"application-name"`
 	ExecutableName   string `yaml:"executable-name"`
 	PackageName      string `yaml:"package-name"`
@@ -67,53 +67,54 @@ func (c Config) GetLicense() string {
 	return c.License
 }
 
-var config = Config{}
+var (
+	config         Config
+	configLoadOnce sync.Once
+)
 
 // GetConfig returns the working directory hover.yaml as a Config
 func GetConfig() Config {
-	// TODO(GeertJohan): Add sync.Once
-	if !config.loaded {
-		c, err := ReadConfigFile(filepath.Join(build.BuildPath, "hover.yaml"))
+	configLoadOnce.Do(func() {
+		var err error
+		config, err = ReadConfigFile(filepath.Join(build.BuildPath, "hover.yaml"))
 		if err != nil {
 			if os.IsNotExist(errors.Cause(err)) {
 				// TODO: Add a solution for the user. Perhaps we can let `hover
 				// init` write missing files when ran on an existing project.
 				// https://github.com/go-flutter-desktop/hover/pull/121#pullrequestreview-408680348
 				log.Warnf("Missing config: %v", err)
-				return config
+				return
 			}
 			log.Errorf("Failed to load config: %v", err)
 			os.Exit(1)
 		}
-		config = *c
-		config.loaded = true
 
 		if config.CachePathREMOVED != "" {
 			log.Errorf("The hover.yaml field 'cache-path' is not used anymore. Remove it from your hover.yaml and use --cache-path instead.")
 			os.Exit(1)
 		}
-	}
+	})
 	return config
 }
 
 // ReadConfigFile reads a .yaml file at a path and return a correspond Config
 // struct
-func ReadConfigFile(configPath string) (*Config, error) {
+func ReadConfigFile(configPath string) (Config, error) {
 	file, err := os.Open(configPath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return nil, errors.Wrap(err, "file hover.yaml not found")
+			return Config{}, errors.Wrap(err, "file hover.yaml not found")
 		}
-		return nil, errors.Wrap(err, "failed to open hover.yaml")
+		return Config{}, errors.Wrap(err, "failed to open hover.yaml")
 	}
 	defer file.Close()
 
 	var config Config
 	err = yaml.NewDecoder(file).Decode(&config)
 	if err != nil {
-		return nil, errors.Wrap(err, "failed to decode hover.yaml")
+		return Config{}, errors.Wrap(err, "failed to decode hover.yaml")
 	}
-	return &config, nil
+	return config, nil
 }
 
 func PrintMissingField(name, file, def string) {
