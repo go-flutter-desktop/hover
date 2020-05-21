@@ -97,6 +97,7 @@ var templateData map[string]string
 var once sync.Once
 
 var (
+	// TODO: these all need documentation
 	projectName             string
 	version                 string
 	release                 string
@@ -110,6 +111,7 @@ var (
 	license                 string
 )
 
+// TODO: it doesn't make sense to have a global "once" function as method on packagingTask
 func (t *packagingTask) initData(fullVersion string) map[string]string {
 	once.Do(func() {
 		projectName = pubspec.GetPubSpec().Name
