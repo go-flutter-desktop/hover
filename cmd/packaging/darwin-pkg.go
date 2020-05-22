@@ -22,7 +22,7 @@ var DarwinPkgTask = &packagingTask{
 	packagingFunction: func(tmpPath, applicationName, packageName, executableName, version, release string) (string, error) {
 		outputFileName := fmt.Sprintf("%s %s.pkg", applicationName, version)
 
-		payload, err := os.OpenFile(filepath.Join("flat", "base.pkg", "Payload"), os.O_RDWR|os.O_CREATE, 0755)
+		payload, err := os.OpenFile(filepath.Join(tmpPath, "flat", "base.pkg", "Payload"), os.O_RDWR|os.O_CREATE, 0755)
 		if err != nil {
 			return "", err
 		}
@@ -79,8 +79,12 @@ var DarwinPkgTask = &packagingTask{
 		}
 
 		var files []string
-		err = filepath.Walk(tmpPath, func(path string, info os.FileInfo, err error) error {
-			files = append(files, path)
+		err = filepath.Walk(filepath.Join(tmpPath, "flat"), func(path string, info os.FileInfo, err error) error {
+			relativePath, err := filepath.Rel(filepath.Join(tmpPath, "flat"), path)
+			if err != nil {
+				return err
+			}
+			files = append(files, relativePath)
 			return nil
 		})
 		if err != nil {
