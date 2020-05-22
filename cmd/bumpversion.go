@@ -16,7 +16,7 @@ import (
 )
 
 func init() {
-	upgradeCmd.Flags().StringVarP(&buildCachePath, "cache-path", "", enginecache.DefaultCachePath(), "The path that hover uses to cache dependencies such as the Flutter engine .so/.dll (defaults to the standard user cache directory)")
+	upgradeCmd.Flags().StringVarP(&buildOrRunCachePath, "cache-path", "", enginecache.DefaultCachePath(), "The path that hover uses to cache dependencies such as the Flutter engine .so/.dll (defaults to the standard user cache directory)")
 	upgradeCmd.Flags().MarkHidden("branch")
 	rootCmd.AddCommand(upgradeCmd)
 }
@@ -37,10 +37,12 @@ var upgradeCmd = &cobra.Command{
 }
 
 func upgrade(targetOS string) (err error) {
-	return upgradeGoFlutter(targetOS, enginecache.ValidateOrUpdateEngineAtPath(targetOS, buildCachePath, ""))
+	enginecache.ValidateOrUpdateEngine(targetOS, buildOrRunCachePath, "")
+	return upgradeGoFlutter(targetOS)
 }
 
-func upgradeGoFlutter(targetOS string, engineCachePath string) (err error) {
+func upgradeGoFlutter(targetOS string) (err error) {
+	engineCachePath := enginecache.EngineCachePath(targetOS, buildOrRunCachePath)
 	wd, err := os.Getwd()
 	if err != nil {
 		log.Errorf("Failed to get working dir: %v", err)
@@ -60,11 +62,11 @@ func upgradeGoFlutter(targetOS string, engineCachePath string) (err error) {
 		return
 	}
 
-	if buildGoFlutterBranch == "" {
-		buildGoFlutterBranch = "@latest"
+	if buildOrRunGoFlutterBranch == "" {
+		buildOrRunGoFlutterBranch = "@latest"
 	}
 
-	cmdGoGetU := exec.Command(build.GoBin(), "get", "-u", "github.com/go-flutter-desktop/go-flutter"+buildGoFlutterBranch)
+	cmdGoGetU := exec.Command(build.GoBin(), "get", "-u", "github.com/go-flutter-desktop/go-flutter"+buildOrRunGoFlutterBranch)
 	cmdGoGetU.Dir = filepath.Join(wd, build.BuildPath)
 	cmdGoGetU.Env = append(os.Environ(),
 		"GOPROXY=direct", // github.com/golang/go/issues/32955 (allows '/' in branch name)
@@ -77,7 +79,7 @@ func upgradeGoFlutter(targetOS string, engineCachePath string) (err error) {
 	err = cmdGoGetU.Run()
 	// When cross-compiling the command fails, but that is not an error
 	if err != nil {
-		log.Errorf("Updating go-flutter to %s version failed: %v", buildGoFlutterBranch, err)
+		log.Errorf("Updating go-flutter to %s version failed: %v", buildOrRunGoFlutterBranch, err)
 		return
 	}
 

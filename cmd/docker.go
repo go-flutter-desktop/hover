@@ -20,7 +20,7 @@ func dockerHoverBuild(targetOS string, packagingTask packaging.Task, buildFlags 
 	var err error
 	dockerBin := build.DockerBin()
 
-	hoverCacheDir := filepath.Join(buildCachePath, "hover")
+	hoverCacheDir := filepath.Join(buildOrRunCachePath, "hover")
 
 	engineCacheDir := filepath.Join(hoverCacheDir, "engine")
 	err = os.MkdirAll(engineCacheDir, 0755)
