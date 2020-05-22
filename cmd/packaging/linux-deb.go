@@ -19,9 +19,9 @@ var LinuxDebTask = &packagingTask{
 		"usr/share/applications/{{.executableName}}.desktop",
 	},
 	linuxDesktopFileExecutablePath: "/usr/lib/{{.packageName}}/{{.executableName}}",
-	linuxDesktopFileIconPath:       "/usr/lib/{{.packageName}}/assets/icon.png",
+	linuxDesktopFileIconPath:       "/usr/lib/{{.packageName}}/assets/icon",
 	flutterBuildOutputDirectory:    "usr/lib/{{.packageName}}",
-	packagingFunction: func(tmpPath, applicationName, strippedApplicationName, packageName, executableName, version, release string) (string, error) {
+	packagingFunction: func(tmpPath, applicationName, packageName, executableName, version, release string) (string, error) {
 		outputFileName := fmt.Sprintf("%s_%s_amd64.deb", packageName, version)
 		cmdDpkgDeb := exec.Command("dpkg-deb", "--build", ".", outputFileName)
 		cmdDpkgDeb.Dir = tmpPath

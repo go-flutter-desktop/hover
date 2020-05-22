@@ -15,7 +15,7 @@ var DarwinBundleTask = &packagingTask{
 	},
 	executableFiles:             []string{},
 	flutterBuildOutputDirectory: "{{.applicationName}} {{.version}}.app/Contents/MacOS",
-	packagingFunction: func(tmpPath, applicationName, strippedApplicationName, packageName, executableName, version, release string) (string, error) {
+	packagingFunction: func(tmpPath, applicationName, packageName, executableName, version, release string) (string, error) {
 		outputFileName := fmt.Sprintf("%s %s.app", applicationName, version)
 		err := os.MkdirAll(filepath.Join(tmpPath, outputFileName, "Contents", "Resources"), 0755)
 		if err != nil {
