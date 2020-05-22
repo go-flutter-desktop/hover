@@ -528,13 +528,13 @@ func buildCommand(targetOS string, vmArguments []string, outputBinaryPath string
 	ldflags = append(ldflags, fmt.Sprintf("-X main.vmArguments=%s", strings.Join(vmArguments, ";")))
 	// overwrite go-flutter build-constants values
 	ldflags = append(ldflags, fmt.Sprintf(
-		"-X github.com/go-flutter-desktop/go-flutter.ProjectVersion=%s "+
-			" -X github.com/go-flutter-desktop/go-flutter.PlatformVersion=%s "+
-			" -X github.com/go-flutter-desktop/go-flutter.ProjectName=%s "+
-			" -X github.com/go-flutter-desktop/go-flutter.ProjectOrganizationName=%s",
+		"-X 'github.com/go-flutter-desktop/go-flutter.ProjectVersion=%s' "+
+			" -X 'github.com/go-flutter-desktop/go-flutter.PlatformVersion=%s' "+
+			" -X 'github.com/go-flutter-desktop/go-flutter.ProjectName=%s' "+
+			" -X 'github.com/go-flutter-desktop/go-flutter.ProjectOrganizationName=%s'",
 		buildVersionNumber,
 		currentTag,
-		pubspec.GetPubSpec().Name,
+		config.GetConfig().GetApplicationName(pubspec.GetPubSpec().Name),
 		androidmanifest.AndroidOrganizationName()))
 
 	outputCommand := []string{
