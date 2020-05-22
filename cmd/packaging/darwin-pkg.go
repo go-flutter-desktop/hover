@@ -5,6 +5,8 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+
+	"github.com/pkg/errors"
 )
 
 // DarwinPkgTask packaging for darwin as pkg
@@ -22,7 +24,7 @@ var DarwinPkgTask = &packagingTask{
 
 		payload, err := os.OpenFile(filepath.Join("flat", "base.pkg", "Payload"), os.O_RDWR|os.O_CREATE, 0755)
 		if err != nil {
-			return "", nil
+			return "", err
 		}
 
 		cmdFind := exec.Command("find", ".")
@@ -34,37 +36,37 @@ var DarwinPkgTask = &packagingTask{
 		// Pipes like this: find | cpio | gzip > Payload
 		cmdCpio.Stdin, err = cmdFind.StderrPipe()
 		if err != nil {
-			return "", nil
+			return "", err
 		}
 		cmdGzip.Stdin, err = cmdCpio.StderrPipe()
 		if err != nil {
-			return "", nil
+			return "", err
 		}
 		cmdGzip.Stdout = payload
 
 		err = cmdGzip.Start()
 		if err != nil {
-			return "", nil
+			return "", err
 		}
 		err = cmdCpio.Start()
 		if err != nil {
-			return "", nil
+			return "", err
 		}
 		err = cmdFind.Run()
 		if err != nil {
-			return "", nil
+			return "", err
 		}
 		err = cmdCpio.Wait()
 		if err != nil {
-			return "", nil
+			return "", err
 		}
 		err = cmdGzip.Wait()
 		if err != nil {
-			return "", nil
+			return "", err
 		}
 		err = payload.Close()
 		if err != nil {
-			return "", nil
+			return "", err
 		}
 
 		cmdMkbom := exec.Command("mkbom", "-u", "0", "-g", "80", filepath.Join("flat", "root"), filepath.Join("flat", "base.pkg", "Payload"))
@@ -82,7 +84,7 @@ var DarwinPkgTask = &packagingTask{
 			return nil
 		})
 		if err != nil {
-			return "", nil
+			return "", errors.Wrap(err, "failed to iterate over ")
 		}
 
 		cmdXar := exec.Command("xar", append([]string{"--compression", "none", "-cf", filepath.Join("..", outputFileName)}, files...)...)
@@ -91,7 +93,7 @@ var DarwinPkgTask = &packagingTask{
 		cmdXar.Stderr = os.Stderr
 		err = cmdXar.Run()
 		if err != nil {
-			return "", nil
+			return "", errors.Wrap(err, "failed to run xar")
 		}
 		return outputFileName, nil
 	},
