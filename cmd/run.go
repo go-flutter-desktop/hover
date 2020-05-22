@@ -15,7 +15,6 @@ import (
 	"github.com/go-flutter-desktop/hover/cmd/packaging"
 	"github.com/go-flutter-desktop/hover/internal/build"
 	"github.com/go-flutter-desktop/hover/internal/config"
-	"github.com/go-flutter-desktop/hover/internal/enginecache"
 	"github.com/go-flutter-desktop/hover/internal/log"
 	"github.com/go-flutter-desktop/hover/internal/pubspec"
 )
@@ -25,24 +24,15 @@ var (
 	runInitialRoute      string
 	runOmitEmbedder      bool
 	runOmitFlutterBundle bool
-	runDocker            bool
 )
 
 func init() {
-	runCmd.Flags().StringVarP(&buildTarget, "target", "t", config.BuildTargetDefault, "The main entry-point file of the application.")
-	runCmd.Flags().StringVarP(&buildGoFlutterBranch, "branch", "b", config.BuildBranchDefault, "The 'go-flutter' version to use. (@master or @v0.20.0 for example)")
-	// TODO: The variable buildCachePath is set twice, once during the setup of
-	// buildCmd, and once during the setup of runCmd. The last of the two will
-	// override the value with it's default, which leads to strange problems.
-	runCmd.Flags().StringVar(&buildCachePath, "cache-path", enginecache.DefaultCachePath(), "The path that hover uses to cache dependencies such as the Flutter engine .so/.dll (defaults to the standard user cache directory)")
-	runCmd.PersistentFlags().StringVar(&buildEngineVersion, "engine-version", "", "The flutter engine version to use.")
-	runCmd.Flags().StringVar(&buildOpenGlVersion, "opengl", config.BuildOpenGlVersionDefault, "The OpenGL version specified here is only relevant for external texture plugin (i.e. video_plugin).\nIf 'none' is provided, texture won't be supported. Note: the Flutter Engine still needs a OpenGL compatible context.")
+	initCompileFlags(runCmd)
 
 	runCmd.Flags().StringVar(&runInitialRoute, "route", "", "Which route to load when running the app.")
 	runCmd.Flags().StringVarP(&runObservatoryPort, "observatory-port", "", "50300", "The observatory port used to connect hover to VM services (hot-reload/debug/..)")
 	runCmd.Flags().BoolVar(&runOmitFlutterBundle, "omit-flutter", false, "Don't (re)compile the current Flutter project, useful when only working with Golang code (plugin)")
 	runCmd.Flags().BoolVar(&runOmitEmbedder, "omit-embedder", false, "Don't (re)compile 'go-flutter' source code, useful when only working with Dart code")
-	runCmd.Flags().BoolVar(&runDocker, "docker", false, "Execute the go build in a docker container. The Flutter build is always run locally")
 	rootCmd.AddCommand(runCmd)
 }
 
@@ -76,7 +66,7 @@ var runCmd = &cobra.Command{
 			log.Infof("Omiting build the embedder")
 		} else {
 			vmArguments := []string{"--observatory-port=" + runObservatoryPort, "--enable-service-port-fallback", "--disable-service-auth-codes"}
-			if runDocker {
+			if buildOrRunDocker {
 				var buildFlags []string
 				buildFlags = append(buildFlags, commonFlags()...)
 				buildFlags = append(buildFlags, []string{
@@ -122,7 +112,7 @@ func runAndAttach(projectName string, targetOS string) {
 			match := regexObservatory.FindStringSubmatch(text)
 			if len(match) == 2 {
 				log.Infof("Connecting hover to '%s' for hot reload", projectName)
-				startHotReloadProcess(cmdFlutterAttach, buildTarget, match[1])
+				startHotReloadProcess(cmdFlutterAttach, buildOrRunFlutterTarget, match[1])
 				break
 			}
 		}
