@@ -351,6 +351,13 @@ func buildGoBinary(targetOS string, vmArguments []string) {
 	fileutils.CopyDir(build.IntermediatesDirectoryPath(targetOS), build.OutputDirectoryPath(targetOS))
 
 	outputEngineFile := filepath.Join(build.OutputDirectoryPath(targetOS), build.EngineFilename(targetOS))
+	if _, err := os.Stat(outputEngineFile); err == nil || os.IsExist(err) {
+		err = os.RemoveAll(outputEngineFile)
+		if err != nil {
+			log.Errorf("Failed to remove old engine: %v", err)
+			os.Exit(1)
+		}
+	}
 	err := copy.Copy(
 		filepath.Join(engineCachePath, build.EngineFilename(targetOS)),
 		outputEngineFile,
