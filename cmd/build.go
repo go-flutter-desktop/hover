@@ -462,7 +462,7 @@ func buildEnv(targetOS string, engineCachePath string) []string {
 	var cgoLdflags string
 	var cgoCflags string
 
-	outputDirPath := filepath.Join("build", "outputs", targetOS)
+	outputDirPath := build.OutputDirectoryPath(targetOS)
 
 	switch targetOS {
 	case "darwin":
