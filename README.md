@@ -133,10 +133,6 @@ To get a list of all available packaging formats run:
 hover build --help
 ```
 
-## Fonts
-
-No text visible? Make sure to use fonts that are included in the flutter assets/fonts system. The default font for `MaterialApp`, Roboto, is not installed on all machines.
-
 ## Issues
 
 Please report issues at the [go-flutter issue tracker](https://github.com/go-flutter-desktop/go-flutter/issues/).
