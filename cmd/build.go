@@ -252,6 +252,9 @@ func commonFlags() []string {
 	if buildOrRunFlutterTarget != config.BuildTargetDefault {
 		f = append(f, "--target", buildOrRunFlutterTarget)
 	}
+	if buildOrRunGoFlutterBranch != "" {
+		f = append(f, "--branch", buildOrRunGoFlutterBranch)
+	}
 	if buildOrRunOpenGlVersion != config.BuildOpenGlVersionDefault {
 		f = append(f, "--opengl", buildOrRunOpenGlVersion)
 	}
