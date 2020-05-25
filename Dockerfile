@@ -33,10 +33,9 @@ RUN git clone --single-branch --depth=1 --branch 0.2 https://github.com/hogliux/
 FROM ubuntu:bionic as appimagebuilder
 RUN apt-get update \
 	&& apt-get install -y \
-	    wget
+	    curl
 RUN cd /opt \
-	&& wget -c https://github.com/$(wget -q https://github.com/probonopd/go-appimage/releases -O - | grep "appimagetool-.*-x86_64.AppImage" | head -n 1 | cut -d '"' -f 2) \
-	&& mv appimagetool-*-x86_64.AppImage appimagetool-x86_64.AppImage \
+	&& curl -LO https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage \
 	&& chmod a+x appimagetool-x86_64.AppImage \
 	&& sed 's|AI\x02|\x00\x00\x00|g' -i appimagetool-x86_64.AppImage \
 	&& ./appimagetool-x86_64.AppImage --appimage-extract \
