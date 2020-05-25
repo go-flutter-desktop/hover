@@ -66,7 +66,7 @@ func upgradeGoFlutter(targetOS string) (err error) {
 		buildOrRunGoFlutterBranch = "@latest"
 	}
 
-	cmdGoGetU := exec.Command(build.GoBin(), "get", "-u", "github.com/go-flutter-desktop/go-flutter"+buildOrRunGoFlutterBranch)
+	cmdGoGetU := exec.Command(build.GoBin(), "get", "-u", "-d", "github.com/go-flutter-desktop/go-flutter"+buildOrRunGoFlutterBranch)
 	cmdGoGetU.Dir = filepath.Join(wd, build.BuildPath)
 	cmdGoGetU.Env = append(os.Environ(),
 		"GOPROXY=direct", // github.com/golang/go/issues/32955 (allows '/' in branch name)
