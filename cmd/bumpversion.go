@@ -16,7 +16,7 @@ import (
 
 func init() {
 	upgradeCmd.Flags().StringVarP(&buildOrRunCachePath, "cache-path", "", enginecache.DefaultCachePath(), "The path that hover uses to cache dependencies such as the Flutter engine .so/.dll (defaults to the standard user cache directory)")
-	upgradeCmd.Flags().MarkHidden("branch")
+	upgradeCmd.Flags().StringVarP(&buildOrRunGoFlutterBranch, "branch", "b", "", "The 'go-flutter' version to use. (@master or @v0.20.0 for example)")
 	rootCmd.AddCommand(upgradeCmd)
 }
 

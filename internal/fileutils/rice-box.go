@@ -29,9 +29,9 @@ func init() {
 	}
 	file6 := &embedded.EmbeddedFile{
 		Filename:    "app/hover.yaml.tmpl",
-		FileModTime: time.Unix(1589984168, 0),
+		FileModTime: time.Unix(1590426180, 0),
 
-		Content: string("#application-name: \"{{.applicationName}}\" # Uncomment to modify this value.\n#executable-name: \"{{.executableName}}\" # Uncomment to modify this value. Only lowercase a-z, numbers, underscores and no spaces\n#package-name: \"{{.packageName}}\" # Uncomment to modify this value. Only lowercase a-z, numbers and no underscores or spaces\nlicense: \"\" # MANDATORY: Fill in your SPDX license name: https://spdx.org/licenses\ntarget: lib/main_desktop.dart\nbranch: \"\" # Change to \"@latest\" to download the latest go-flutter version on every build\n# opengl: \"none\" # Uncomment this line if you have trouble with your OpenGL driver (https://github.com/go-flutter-desktop/go-flutter/issues/272)\ndocker: false\nengine-version: \"\" # change to a engine version commit\n"),
+		Content: string("#application-name: \"{{.applicationName}}\" # Uncomment to modify this value.\n#executable-name: \"{{.executableName}}\" # Uncomment to modify this value. Only lowercase a-z, numbers, underscores and no spaces\n#package-name: \"{{.packageName}}\" # Uncomment to modify this value. Only lowercase a-z, numbers and no underscores or spaces\nlicense: \"\" # MANDATORY: Fill in your SPDX license name: https://spdx.org/licenses\ntarget: lib/main_desktop.dart\n# opengl: \"none\" # Uncomment this line if you have trouble with your OpenGL driver (https://github.com/go-flutter-desktop/go-flutter/issues/272)\ndocker: false\nengine-version: \"\" # change to a engine version commit\n"),
 	}
 	file7 := &embedded.EmbeddedFile{
 		Filename:    "app/icon.png",
@@ -165,7 +165,7 @@ func init() {
 	}
 	dir3 := &embedded.EmbeddedDir{
 		Filename:   "app",
-		DirModTime: time.Unix(1590247051, 0),
+		DirModTime: time.Unix(1590426180, 0),
 		ChildFiles: []*embedded.EmbeddedFile{
 			file4, // "app/gitignore"
 			file5, // "app/go.mod"

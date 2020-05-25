@@ -16,9 +16,6 @@ import (
 // BuildTargetDefault Default build target file
 const BuildTargetDefault = "lib/main_desktop.dart"
 
-// BuildBranchDefault Default go-flutter branch
-const BuildBranchDefault = ""
-
 // BuildEngineDefault Default go-flutter engine version
 const BuildEngineDefault = ""
 
@@ -32,7 +29,6 @@ type Config struct {
 	PackageName      string `yaml:"package-name"`
 	License          string
 	Target           string
-	Branch           string
 	CachePathREMOVED string `yaml:"cache-path"`
 	OpenGL           string
 	Engine           string `yaml:"engine-version"`

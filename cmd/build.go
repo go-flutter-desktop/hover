@@ -38,11 +38,13 @@ var (
 
 func initCompileFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringVarP(&buildOrRunFlutterTarget, "target", "t", config.BuildTargetDefault, "The main entry-point file of the application.")
-	cmd.PersistentFlags().StringVarP(&buildOrRunGoFlutterBranch, "branch", "b", config.BuildBranchDefault, "The 'go-flutter' version to use. (@master or @v0.20.0 for example)")
+	cmd.PersistentFlags().StringVarP(&buildOrRunGoFlutterBranch, "branch", "b", "", "The 'go-flutter' version to use. (@master or @v0.20.0 for example)")
 	cmd.PersistentFlags().StringVar(&buildOrRunCachePath, "cache-path", enginecache.DefaultCachePath(), "The path that hover uses to cache dependencies such as the Flutter engine .so/.dll")
 	cmd.PersistentFlags().StringVar(&buildOrRunOpenGlVersion, "opengl", config.BuildOpenGlVersionDefault, "The OpenGL version specified here is only relevant for external texture plugin (i.e. video_plugin).\nIf 'none' is provided, texture won't be supported. Note: the Flutter Engine still needs a OpenGL compatible context.")
 	cmd.PersistentFlags().StringVar(&buildOrRunEngineVersion, "engine-version", config.BuildEngineDefault, "The flutter engine version to use.")
 	cmd.PersistentFlags().BoolVar(&buildOrRunDocker, "docker", false, "Execute the go build and packaging in a docker container. The Flutter build is always run locally")
+
+	cmd.PersistentFlags().MarkHidden("branch")
 }
 
 var (
@@ -215,10 +217,6 @@ func subcommandBuild(targetOS string, packagingTask packaging.Task) {
 // fallback values based on config or defaults for values that have not
 // explicitly been set through flags.
 func initBuildParameters(targetOS string) {
-	if buildOrRunGoFlutterBranch == config.BuildBranchDefault && config.GetConfig().Branch != "" {
-		buildOrRunGoFlutterBranch = config.GetConfig().Branch
-	}
-
 	if buildOrRunCachePath == "" {
 		log.Errorf("Missing cache path, cannot continue. Please see previous warning.")
 		os.Exit(1)
@@ -253,9 +251,6 @@ func commonFlags() []string {
 	f := []string{}
 	if buildOrRunFlutterTarget != config.BuildTargetDefault {
 		f = append(f, "--target", buildOrRunFlutterTarget)
-	}
-	if buildOrRunGoFlutterBranch != config.BuildBranchDefault {
-		f = append(f, "--branch", buildOrRunGoFlutterBranch)
 	}
 	if buildOrRunOpenGlVersion != config.BuildOpenGlVersionDefault {
 		f = append(f, "--opengl", buildOrRunOpenGlVersion)
