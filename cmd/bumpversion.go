@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -42,23 +41,9 @@ func upgrade(targetOS string) (err error) {
 }
 
 func upgradeGoFlutter(targetOS string) (err error) {
-	engineCachePath := enginecache.EngineCachePath(targetOS, buildOrRunCachePath)
 	wd, err := os.Getwd()
 	if err != nil {
 		log.Errorf("Failed to get working dir: %v", err)
-		return
-	}
-
-	var cgoLdflags string
-	switch targetOS {
-	case "darwin":
-		cgoLdflags = fmt.Sprintf("-F%s -Wl,-rpath,@executable_path", engineCachePath)
-	case "linux":
-		cgoLdflags = fmt.Sprintf("-L%s", engineCachePath)
-	case "windows":
-		cgoLdflags = fmt.Sprintf("-L%s", engineCachePath)
-	default:
-		log.Errorf("Target platform %s is not supported, cgo_ldflags not implemented.", targetOS)
 		return
 	}
 
@@ -71,7 +56,6 @@ func upgradeGoFlutter(targetOS string) (err error) {
 	cmdGoGetU.Env = append(os.Environ(),
 		"GOPROXY=direct", // github.com/golang/go/issues/32955 (allows '/' in branch name)
 		"GO111MODULE=on",
-		"CGO_LDFLAGS="+cgoLdflags,
 	)
 	cmdGoGetU.Stderr = os.Stderr
 	cmdGoGetU.Stdout = os.Stdout
