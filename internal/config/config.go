@@ -29,6 +29,7 @@ type Config struct {
 	PackageName      string `yaml:"package-name"`
 	License          string
 	Target           string
+	BranchREMOVED    string `yaml:"branch"`
 	CachePathREMOVED string `yaml:"cache-path"`
 	OpenGL           string
 	Engine           string `yaml:"engine-version"`
@@ -87,6 +88,10 @@ func GetConfig() Config {
 
 		if config.CachePathREMOVED != "" {
 			log.Errorf("The hover.yaml field 'cache-path' is not used anymore. Remove it from your hover.yaml and use --cache-path instead.")
+			os.Exit(1)
+		}
+		if config.BranchREMOVED != "" {
+			log.Errorf("The hover.yaml field 'branch' is not used anymore. Remove it from your hover.yaml and use --branch instead.")
 			os.Exit(1)
 		}
 	})
