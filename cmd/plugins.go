@@ -15,11 +15,13 @@ import (
 
 	"github.com/pkg/errors"
 	"github.com/spf13/cobra"
+	"golang.org/x/mod/modfile"
 	"gopkg.in/yaml.v2"
 
 	"github.com/go-flutter-desktop/hover/internal/build"
 	"github.com/go-flutter-desktop/hover/internal/fileutils"
 	"github.com/go-flutter-desktop/hover/internal/log"
+	"github.com/go-flutter-desktop/hover/internal/modx"
 	"github.com/go-flutter-desktop/hover/internal/pubspec"
 )
 
@@ -168,8 +170,18 @@ var pluginTidyCmd = &cobra.Command{
 		return nil
 	},
 	Run: func(cmd *cobra.Command, args []string) {
+		var (
+			err   error
+			gomod *modfile.File
+		)
 		assertInFlutterProject()
 		assertHoverInitialized()
+
+		gomod, err = modx.Open(build.BuildPath)
+		if err != nil {
+			log.Errorf("failed to open go.mod", err)
+			os.Exit(1)
+		}
 
 		desktopCmdPath := filepath.Join(build.BuildPath, "cmd")
 		dependencyList, err := listPlatformPlugin()
@@ -191,8 +203,9 @@ var pluginTidyCmd = &cobra.Command{
 			if isPlugin {
 				pluginName := strings.TrimPrefix(f.Name(), "import-")
 				pluginName = strings.TrimSuffix(pluginName, "-plugin.go")
-
+				pluginImportPath := filepath.Join(desktopCmdPath, f.Name())
 				pluginInUse := false
+
 				for _, dep := range dependencyList {
 					if dep.name == pluginName {
 						// plugin in pubspec.lock
@@ -202,14 +215,9 @@ var pluginTidyCmd = &cobra.Command{
 				}
 
 				if !pluginInUse || tidyPurge {
-					if dryRun {
-						log.Infof("       plugin: [%s] can be removed", pluginName)
-						continue
-					}
-					pluginImportPath := filepath.Join(desktopCmdPath, f.Name())
-
 					// clean-up go.mod
-					pluginImportStr, _ := readPluginGoImport(pluginImportPath, pluginName)
+					pluginImportStr, err := readPluginGoImport(pluginImportPath, pluginName)
+
 					// Delete the 'replace' and 'require' import strings from go.mod.
 					// Not mission critical, if the plugins not correctly removed from
 					// the go.mod file, the project still works and the plugin is
@@ -217,19 +225,39 @@ var pluginTidyCmd = &cobra.Command{
 					if err != nil || pluginImportStr == "" {
 						log.Warnf("Couldn't clean the '%s' plugin from the 'go.mod' file. Error: %v", pluginName, err)
 					} else {
-						fileutils.RemoveLinesFromFile(filepath.Join(build.BuildPath, "go.mod"), pluginImportStr)
+						if err = modx.RemoveModule(gomod, pluginImportStr); err != nil {
+							log.Warnf("failed remove %s from %s/go.mod: %v", pluginImportStr, build.BuildPath, err)
+						}
 					}
 
 					// remove import file
-					err = os.Remove(pluginImportPath)
-					if err != nil {
-						log.Warnf("Couldn't remove plugin %s: %v", pluginName, err)
-						continue
+					if !dryRun {
+						if err = os.Remove(pluginImportPath); err != nil {
+							log.Warnf("Couldn't remove plugin %s: %v", pluginName, err)
+							continue
+						}
 					}
 					log.Infof("       plugin: [%s] removed", pluginName)
 				}
 			}
 		}
+
+		if dryRun {
+			s, err := modx.Print(gomod)
+			if err != nil {
+				log.Errorf("failed to print updated go.mod: %v", err)
+				os.Exit(1)
+			}
+
+			log.Infof("modified go.mod:\n%s", s)
+		} else {
+			err = modx.Replace(build.BuildPath, gomod)
+			if err != nil {
+				log.Errorf("failed to update go.mod: %v", err)
+				os.Exit(1)
+			}
+		}
+
 		if tidyPurge {
 			intermediatesDirectoryPath, err := filepath.Abs(filepath.Join(build.BuildPath, "build", "intermediates"))
 			if err != nil {
@@ -267,7 +295,6 @@ func hoverPluginGet(dryRun bool) bool {
 	}
 
 	for _, dep := range dependencyList {
-
 		if !dep.desktop {
 			continue
 		}
@@ -287,7 +314,6 @@ func hoverPluginGet(dryRun bool) bool {
 		}
 
 		pluginImportOutPath := filepath.Join(build.BuildPath, "cmd", fmt.Sprintf("import-%s-plugin.go", dep.name))
-
 		if dep.imported() && !reImport {
 			pluginImportStr, err := readPluginGoImport(pluginImportOutPath, dep.name)
 			if err != nil {
@@ -355,7 +381,16 @@ func hoverPluginGet(dryRun bool) bool {
 					log.Errorf("Failed to resolve absolute path for plugin '%s': %v", dep.name, err)
 					os.Exit(1)
 				}
-				fileutils.AddLineToFile(filepath.Join(build.BuildPath, "go.mod"), fmt.Sprintf("replace %s => %s", pluginImportStr, path))
+
+				// mutation we're applying to go.mod
+				mut := func(gomod *modfile.File) error {
+					return gomod.AddReplace(pluginImportStr, "", path, "")
+				}
+
+				if err = modx.Mutate(build.BuildPath, mut); err != nil {
+					log.Errorf("failed to update go.mod: %v", err)
+					os.Exit(1)
+				}
 			}
 
 			log.Infof("       plugin: [%s] imported", dep.name)
@@ -561,7 +596,7 @@ func fetchStandaloneImplementationList() ([]StandaloneImplementation, error) {
 
 // goGetModuleSuccess updates a module at a version, if it fails, return false.
 func goGetModuleSuccess(pluginImportStr, version string) bool {
-	cmdGoGetU := exec.Command(build.GoBin(), "get", "-u", pluginImportStr+"@v"+version)
+	cmdGoGetU := exec.Command(build.GoBin(), "get", "-u", "-d", pluginImportStr+"@v"+version)
 	cmdGoGetU.Dir = filepath.Join(build.BuildPath)
 	cmdGoGetU.Env = append(os.Environ(),
 		"GOPROXY=direct", // github.com/golang/go/issues/32955 (allows '/' in branch name)
