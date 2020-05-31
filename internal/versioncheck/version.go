@@ -137,6 +137,18 @@ func CurrentGoFlutterTag(goDirectoryPath string) (currentTag string, err error) 
 		return "", err
 	}
 
+	for _, pkg := range m.Replace {
+		if pkg.New.Path == expected {
+			return pkg.New.Version, nil
+		}
+	}
+
+	for _, pkg := range m.Require {
+		if pkg.Mod.Path == expected {
+			return pkg.Mod.Version, nil
+		}
+	}
+
 	if v := modx.Version(m, expected); v.Path == expected {
 		return v.Version, nil
 	}
