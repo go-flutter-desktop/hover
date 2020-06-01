@@ -7,13 +7,16 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
 
+	copy "github.com/otiai10/copy"
 	"github.com/pkg/errors"
 
+	"github.com/go-flutter-desktop/hover/internal/build"
 	"github.com/go-flutter-desktop/hover/internal/flutterversion"
 	"github.com/go-flutter-desktop/hover/internal/log"
 )
@@ -120,36 +123,6 @@ func printDownloadPercent(done chan chan struct{}, path string, expectedSize int
 	}
 }
 
-func moveFile(srcPath, destPath string) error {
-	srcFile, err := os.Open(srcPath)
-	if err != nil {
-		return fmt.Errorf("Couldn't open src file: %s", err)
-	}
-	srcFileInfo, err := srcFile.Stat()
-	if err != nil {
-		return err
-	}
-	flag := os.O_WRONLY | os.O_CREATE | os.O_TRUNC
-	perm := srcFileInfo.Mode() & os.ModePerm
-	destFile, err := os.OpenFile(destPath, flag, perm)
-	if err != nil {
-		srcFile.Close()
-		return fmt.Errorf("Couldn't open dest file: %s", err)
-	}
-	defer destFile.Close()
-	_, err = io.Copy(destFile, srcFile)
-	srcFile.Close()
-	if err != nil {
-		return fmt.Errorf("Writing to output file failed: %s", err)
-	}
-	// The copy was successful, so now delete the original file
-	err = os.Remove(srcPath)
-	if err != nil {
-		return fmt.Errorf("Failed removing original file: %s", err)
-	}
-	return nil
-}
-
 // Function to download file with given path and url.
 func downloadFile(filepath string, url string) error {
 	// // Printf download url in case user needs it.
@@ -194,16 +167,20 @@ func downloadFile(filepath string, url string) error {
 	return nil
 }
 
+func EngineConfig(targetOS string, mode build.Mode) string {
+	return fmt.Sprintf("%s-%s", targetOS, mode.Name)
+}
+
 //noinspection GoNameStartsWithPackageName
-func EngineCachePath(targetOS, cachePath string) string {
-	return filepath.Join(cachePath, "hover", "engine", targetOS)
+func EngineCachePath(targetOS, cachePath string, mode build.Mode) string {
+	return filepath.Join(cachePath, "hover", "engine", EngineConfig(targetOS, mode))
 }
 
 // ValidateOrUpdateEngine validates the engine we have cached matches the
 // flutter version, or otherwise downloads a new engine. The engine cache
 // location is set by the the user.
-func ValidateOrUpdateEngine(targetOS, cachePath, requiredEngineVersion string) {
-	engineCachePath := EngineCachePath(targetOS, cachePath)
+func ValidateOrUpdateEngine(targetOS, cachePath, requiredEngineVersion string, mode build.Mode) {
+	engineCachePath := EngineCachePath(targetOS, cachePath, mode)
 
 	if strings.Contains(engineCachePath, " ") {
 		log.Errorf("Cannot save the engine to '%s', engine cache is not compatible with path containing spaces.", cachePath)
@@ -224,12 +201,10 @@ func ValidateOrUpdateEngine(targetOS, cachePath, requiredEngineVersion string) {
 		requiredEngineVersion = flutterversion.FlutterRequiredEngineVersion()
 	}
 
-	if cachedEngineVersion != "" {
-		if cachedEngineVersion == requiredEngineVersion {
-			log.Printf("Using engine from cache")
-			return
-		}
-
+	if cachedEngineVersion == requiredEngineVersion {
+		log.Printf("Using engine from cache")
+		return
+	} else {
 		// Engine is outdated, we remove the old engine and continue to download
 		// the new engine.
 		err = os.RemoveAll(engineCachePath)
@@ -245,31 +220,6 @@ func ValidateOrUpdateEngine(targetOS, cachePath, requiredEngineVersion string) {
 		os.Exit(1)
 	}
 
-	targetedDomain := "https://storage.googleapis.com"
-	envURLFlutter := os.Getenv("FLUTTER_STORAGE_BASE_URL")
-	if envURLFlutter != "" {
-		targetedDomain = envURLFlutter
-	}
-
-	// TODO: support more arch's than x64?
-	var platform = targetOS + "-x64"
-
-	// Build the URL for downloading the correct engine
-	var engineDownloadURL = fmt.Sprintf(targetedDomain+"/flutter_infra/flutter/%s/%s/", requiredEngineVersion, platform)
-	switch targetOS {
-	case "darwin":
-		engineDownloadURL += "FlutterEmbedder.framework.zip"
-	case "linux":
-		engineDownloadURL += platform + "-embedder"
-	case "windows":
-		engineDownloadURL += platform + "-embedder.zip"
-	default:
-		log.Errorf("Cannot run on %s, download engine not implemented.", targetOS)
-		os.Exit(1)
-	}
-
-	icudtlDownloadURL := fmt.Sprintf(targetedDomain+"/flutter_infra/flutter/%s/%s/artifacts.zip", requiredEngineVersion, platform)
-
 	dir, err := ioutil.TempDir("", "hover-engine-download")
 	if err != nil {
 		log.Errorf("Failed to create tmp dir for engine download: %v", err)
@@ -284,68 +234,69 @@ func ValidateOrUpdateEngine(targetOS, cachePath, requiredEngineVersion string) {
 
 	engineZipPath := filepath.Join(dir, "engine.zip")
 	engineExtractPath := filepath.Join(dir, "engine")
-	artifactsZipPath := filepath.Join(dir, "artifacts.zip")
 
-	log.Printf("Downloading engine for platform %s at version %s...", platform, requiredEngineVersion)
+	log.Printf("Downloading engine for platform %s at version %s...", EngineConfig(targetOS, mode), requiredEngineVersion)
+
+	file := ""
+	switch targetOS {
+	case "linux":
+		file += "linux"
+	case "darwin":
+		file += "macosx"
+	case "windows":
+		file += "windows"
+	}
+	file += fmt.Sprintf("_x64-host_%s.zip", mode.Name)
+	engineDownloadURL := fmt.Sprintf("https://github.com/flutter-rs/engine-builds/releases/download/f-%s/%s", requiredEngineVersion, file)
+
 	err = downloadFile(engineZipPath, engineDownloadURL)
 	if err != nil {
 		log.Errorf("Failed to download engine: %v", err)
+		log.Errorf("Engine builds are a bit delayed after they are published in flutter.")
+		log.Errorf("You can either try again later or switch the flutter channel to beta, because these engines are more likely to be already built.")
+		log.Errorf("To dig into the already built engines look at https://github.com/flutter-rs/engine-builds/releases and https://github.com/flutter-rs/engine-builds/actions")
 		os.Exit(1)
 	}
-
-	// TODO, optimization: make artifacts download a separate function, it doesn't need to be
-	// downloaded with engine because it's OS independent.
-	log.Printf("Downloading artifacts at version %s...", requiredEngineVersion)
-	err = downloadFile(artifactsZipPath, icudtlDownloadURL)
-	if err != nil {
-		log.Errorf("Failed to download artifacts: %v", err)
-		os.Exit(1)
-	}
-
-	_, err = unzip(engineZipPath, engineExtractPath) // engineCachePath)
+	_, err = unzip(engineZipPath, engineExtractPath)
 	if err != nil {
 		log.Warnf("%v", err)
 	}
 
-	artifactsCachePath := filepath.Join(engineCachePath, "artifacts")
-	_, err = unzip(artifactsZipPath, artifactsCachePath) // filepath.Join(engineCachePath, "artifacts"))
-	if err != nil {
-		log.Warnf("%v", err)
+	for _, engineFile := range build.EngineFiles(targetOS, mode) {
+		err := copy.Copy(
+			filepath.Join(engineExtractPath, engineFile),
+			filepath.Join(engineCachePath, engineFile),
+		)
+		if err != nil {
+			log.Errorf("Failed to copy downloaded %s: %v", engineFile, err)
+			os.Exit(1)
+		}
 	}
 
-	switch platform {
-	case "darwin-x64":
-		frameworkZipPath := filepath.Join(engineExtractPath, "FlutterEmbedder.framework.zip")
-		frameworkDestPath := filepath.Join(engineCachePath, "FlutterEmbedder.framework")
-		_, err = unzip(frameworkZipPath, frameworkDestPath)
+	// Strip linux engine after download and not at every build
+	if targetOS == "linux" {
+		unstrippedEngineFile := filepath.Join(engineCachePath, build.EngineFiles(targetOS, mode)[0])
+		err = exec.Command("strip", "-s", unstrippedEngineFile).Run()
 		if err != nil {
-			log.Errorf("Failed to unzip engine framework: %v", err)
+			log.Errorf("Failed to strip %s: %v", unstrippedEngineFile, err)
 			os.Exit(1)
 		}
+	}
 
-		createSymLink("A", frameworkDestPath+"/Versions/Current")
-		createSymLink("Versions/Current/FlutterEmbedder", frameworkDestPath+"/FlutterEmbedder")
-		createSymLink("Versions/Current/Headers", frameworkDestPath+"/Headers")
-		createSymLink("Versions/Current/Modules", frameworkDestPath+"/Modules")
-		createSymLink("Versions/Current/Resources", frameworkDestPath+"/Resources")
-
-	case "linux-x64":
-		err := moveFile(
-			filepath.Join(engineExtractPath, "libflutter_engine.so"),
-			filepath.Join(engineCachePath, "/libflutter_engine.so"),
+	files := []string{
+		"dart" + build.ExecutableExtension(targetOS),
+		"gen_snapshot" + build.ExecutableExtension(targetOS),
+		"icudtl.dat",
+		"gen",
+		"flutter_patched_sdk",
+	}
+	for _, file := range files {
+		err = copy.Copy(
+			filepath.Join(engineExtractPath, file),
+			filepath.Join(engineCachePath, file),
 		)
 		if err != nil {
-			log.Errorf("Failed to move downloaded libflutter_engine.so: %v", err)
-			os.Exit(1)
-		}
-
-	case "windows-x64":
-		err := moveFile(
-			filepath.Join(engineExtractPath, "flutter_engine.dll"),
-			filepath.Join(engineCachePath, "/flutter_engine.dll"),
-		)
-		if err != nil {
-			log.Errorf("Failed to move downloaded flutter_engine.dll: %v", err)
+			log.Errorf("Failed to copy downloaded %s: %v", file, err)
 			os.Exit(1)
 		}
 	}
@@ -355,6 +306,4 @@ func ValidateOrUpdateEngine(targetOS, cachePath, requiredEngineVersion string) {
 		log.Errorf("Failed to write version file: %v", err)
 		os.Exit(1)
 	}
-
-	return
 }

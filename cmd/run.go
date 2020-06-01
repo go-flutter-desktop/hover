@@ -6,7 +6,6 @@ import (
 	"io"
 	"os"
 	"os/exec"
-	"path/filepath"
 	"regexp"
 	"runtime"
 
@@ -20,10 +19,8 @@ import (
 )
 
 var (
-	runObservatoryPort   string
-	runInitialRoute      string
-	runOmitEmbedder      bool
-	runOmitFlutterBundle bool
+	runObservatoryPort string
+	runInitialRoute    string
 )
 
 func init() {
@@ -31,8 +28,6 @@ func init() {
 
 	runCmd.Flags().StringVar(&runInitialRoute, "route", "", "Which route to load when running the app.")
 	runCmd.Flags().StringVarP(&runObservatoryPort, "observatory-port", "", "50300", "The observatory port used to connect hover to VM services (hot-reload/debug/..)")
-	runCmd.Flags().BoolVar(&runOmitFlutterBundle, "omit-flutter", false, "Don't (re)compile the current Flutter project, useful when only working with Golang code (plugin)")
-	runCmd.Flags().BoolVar(&runOmitEmbedder, "omit-embedder", false, "Don't (re)compile 'go-flutter' source code, useful when only working with Dart code")
 	rootCmd.AddCommand(runCmd)
 }
 
@@ -43,49 +38,23 @@ var runCmd = &cobra.Command{
 		projectName := pubspec.GetPubSpec().Name
 		assertHoverInitialized()
 
-		// ensure we have something to build
-		if runOmitEmbedder && runOmitFlutterBundle {
-			log.Errorf("Flags omit-embedder and omit-flutter are not compatible.")
-			os.Exit(1)
-		}
-
 		// Can only run on host OS
 		targetOS := runtime.GOOS
 
-		// forcefully enable --debug as it is not optional for 'hover run'
-		buildDebug = true
+		initBuildParameters(targetOS, build.DebugMode)
+		subcommandBuild(targetOS, packaging.NoopTask, []string{
+			"--observatory-port=" + runObservatoryPort,
+			"--enable-service-port-fallback",
+			"--disable-service-auth-codes",
+		})
 
-		if runOmitFlutterBundle {
-			log.Infof("Omiting flutter build bundle")
-		} else {
-			// TODO: cleaning can't be enabled because it would break when users --omit-embedder.
-			// cleanBuildOutputsDir(targetOS)
-			buildFlutterBundle(targetOS)
-		}
-		if runOmitEmbedder {
-			log.Infof("Omiting build the embedder")
-		} else {
-			vmArguments := []string{"--observatory-port=" + runObservatoryPort, "--enable-service-port-fallback", "--disable-service-auth-codes"}
-			if buildOrRunDocker {
-				var buildFlags []string
-				buildFlags = append(buildFlags, commonFlags()...)
-				buildFlags = append(buildFlags, []string{
-					"--skip-flutter-build-bundle",
-					"--skip-engine-download",
-					"--debug",
-				}...)
-				dockerHoverBuild(targetOS, packaging.NoopTask, buildFlags, vmArguments)
-			} else {
-				buildGoBinary(targetOS, vmArguments)
-			}
-		}
 		log.Infof("Build finished, starting app...")
 		runAndAttach(projectName, targetOS)
 	},
 }
 
 func runAndAttach(projectName string, targetOS string) {
-	cmdApp := exec.Command(dotSlash + filepath.Join(build.BuildPath, "build", "outputs", targetOS, config.GetConfig().GetExecutableName(projectName)))
+	cmdApp := exec.Command(build.OutputBinaryPath(config.GetConfig().GetExecutableName(projectName), targetOS, buildOrRunMode))
 	cmdApp.Env = append(os.Environ(),
 		"GOFLUTTER_ROUTE="+runInitialRoute)
 	cmdFlutterAttach := exec.Command("flutter", "attach")
@@ -123,7 +92,7 @@ func runAndAttach(projectName string, targetOS string) {
 	// Non-blockingly echo command stderr to terminal
 	go io.Copy(os.Stderr, stderrApp)
 
-	log.Infof("Running %s in debug mode", projectName)
+	log.Infof("Running %s in %s mode", projectName, buildOrRunMode.Name)
 	err = cmdApp.Start()
 	if err != nil {
 		log.Errorf("Failed to start app '%s': %v", projectName, err)
