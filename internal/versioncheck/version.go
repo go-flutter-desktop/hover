@@ -12,6 +12,7 @@ import (
 	"github.com/pkg/errors"
 	"github.com/tcnksm/go-latest"
 	"golang.org/x/mod/modfile"
+	"golang.org/x/mod/module"
 
 	"github.com/go-flutter-desktop/hover/internal/fileutils"
 	"github.com/go-flutter-desktop/hover/internal/log"
@@ -137,7 +138,7 @@ func CurrentGoFlutterTag(goDirectoryPath string) (currentTag string, err error) 
 		return "", err
 	}
 
-	if v := modx.Version(m, expected); v.Path == expected {
+	if v := modx.Version(m, expected); (v != module.Version{}) {
 		return v.Version, nil
 	}
 
