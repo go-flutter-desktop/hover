@@ -392,25 +392,29 @@ func buildGoBinary(targetOS string, vmArguments []string) {
 			os.Exit(1)
 		}
 
-		semver, err := version.NewSemver(currentTag)
-		if err != nil {
-			log.Errorf("Faild to parse 'go-flutter' semver: %v", err)
-			os.Exit(1)
-		}
-
-		if semver.Prerelease() != "" {
-			log.Infof("Upgrading 'go-flutter' to the latest release")
-			// no buildBranch provided and currentTag isn't a release,
-			// force update. (same behaviour as previous version of hover).
-			err = upgradeGoFlutter(targetOS)
-			if err != nil {
-				// the upgrade can fail silently
-				log.Warnf("Upgrade ignored, current 'go-flutter' version: %s", currentTag)
-			}
+		if currentTag == "" {
+			log.Warnf("Empty version found for go-flutter. Skipping upgrade check. (This may be caused by replace statement in the application go.mod)")
 		} else {
-			// when the buildBranch is empty and the currentTag is a release.
-			// Check if the 'go-flutter' needs updates.
-			versioncheck.CheckForGoFlutterUpdate(filepath.Join(wd, build.BuildPath), currentTag)
+			semver, err := version.NewSemver(currentTag)
+			if err != nil {
+				log.Errorf("Faild to parse 'go-flutter' semver: %v", err)
+				os.Exit(1)
+			}
+
+			if semver.Prerelease() != "" {
+				log.Infof("Upgrading 'go-flutter' to the latest release")
+				// no buildBranch provided and currentTag isn't a release,
+				// force update. (same behaviour as previous version of hover).
+				err = upgradeGoFlutter(targetOS)
+				if err != nil {
+					// the upgrade can fail silently
+					log.Warnf("Upgrade ignored, current 'go-flutter' version: %s", currentTag)
+				}
+			} else {
+				// when the buildBranch is empty and the currentTag is a release.
+				// Check if the 'go-flutter' needs updates.
+				versioncheck.CheckForGoFlutterUpdate(filepath.Join(wd, build.BuildPath), currentTag)
+			}
 		}
 
 	} else {
