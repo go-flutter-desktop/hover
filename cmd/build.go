@@ -461,17 +461,17 @@ func buildGoBinary(targetOS string, vmArguments []string) {
 }
 
 func buildEnv(targetOS string, engineCachePath string) []string {
-	var cgoLdflags string
-	var cgoCflags string
+	var cgoLdflags string = os.Getenv("CGO_LDFLAGS")
+	var cgoCflags string = os.Getenv("CGO_CFLAGS")
 
 	outputDirPath := build.OutputDirectoryPath(targetOS)
 
 	switch targetOS {
 	case "darwin":
-		cgoLdflags = fmt.Sprintf("-F%s -Wl,-rpath,@executable_path", engineCachePath)
+		cgoLdflags += fmt.Sprintf(" -F%s -Wl,-rpath,@executable_path", engineCachePath)
 		cgoLdflags += fmt.Sprintf(" -F%s -L%s", outputDirPath, outputDirPath)
 		cgoLdflags += " -mmacosx-version-min=10.10"
-		cgoCflags = "-mmacosx-version-min=10.10"
+		cgoCflags += " -mmacosx-version-min=10.10"
 	case "linux":
 		cgoLdflags = fmt.Sprintf("-L%s -L%s", engineCachePath, outputDirPath)
 	case "windows":
