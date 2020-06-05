@@ -473,9 +473,9 @@ func buildEnv(targetOS string, engineCachePath string) []string {
 		cgoLdflags += " -mmacosx-version-min=10.10"
 		cgoCflags += " -mmacosx-version-min=10.10"
 	case "linux":
-		cgoLdflags = fmt.Sprintf("-L%s -L%s", engineCachePath, outputDirPath)
+		cgoLdflags += fmt.Sprintf(" -L%s -L%s", engineCachePath, outputDirPath)
 	case "windows":
-		cgoLdflags = fmt.Sprintf("-L%s -L%s", engineCachePath, outputDirPath)
+		cgoLdflags += fmt.Sprintf(" -L%s -L%s", engineCachePath, outputDirPath)
 	default:
 		log.Errorf("Target platform %s is not supported, cgo_ldflags not implemented.", targetOS)
 		os.Exit(1)
