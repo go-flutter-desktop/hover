@@ -8,6 +8,7 @@ import (
 )
 
 func init() {
+	EnableColoredConsoleOutput()
 	log.SetFlags(0)
 }
 
