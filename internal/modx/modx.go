@@ -12,6 +12,10 @@ import (
 
 // Open the go.mod file in the given directory
 func Open(dir string) (m *modfile.File, err error) {
+	if dir, err = FindModuleRoot(dir); err != nil {
+		return m, err
+	}
+
 	goModPath := filepath.Join(dir, "go.mod")
 
 	goModBytes, err := ioutil.ReadFile(goModPath)
@@ -100,6 +104,10 @@ func Mutate(dir string, mutation func(*modfile.File) error) (err error) {
 func Replace(dir string, m *modfile.File) (err error) {
 	m.Cleanup()
 
+	if dir, err = FindModuleRoot(dir); err != nil {
+		return err
+	}
+
 	goModPath := filepath.Join(dir, "go.mod")
 
 	out, err := m.Format()
@@ -129,4 +137,33 @@ func Print(m *modfile.File) (s string, err error) {
 	}
 
 	return string(out), nil
+}
+
+// FindModuleRoot pulled from: https://github.com/golang/go/blob/88e564edb13f1596c12ad16d5fd3c7ac7deac855/src/cmd/dist/build.go#L1595
+func FindModuleRoot(dir string) (cleaned string, err error) {
+	if dir == "" {
+		return "", errors.New("cannot located go.mod from a blank directory path")
+	}
+
+	if cleaned, err = filepath.Abs(filepath.Clean(dir)); err != nil {
+		return "", errors.Wrap(err, "failed to determined absolute path to directory")
+	}
+
+	// Look for enclosing go.mod.
+	for {
+		gomod := filepath.Join(cleaned, "go.mod")
+		if fi, err := os.Stat(gomod); err == nil && !fi.IsDir() {
+			return cleaned, nil
+		}
+
+		d := filepath.Dir(cleaned)
+
+		if d == cleaned {
+			break
+		}
+
+		cleaned = d
+	}
+
+	return "", errors.Errorf("go.mod not found: %s", dir)
 }
