@@ -22,6 +22,16 @@ var DarwinDmgTask = &packagingTask{
 		if err != nil {
 			return "", err
 		}
+		appFileOriginalPath := fmt.Sprintf("dmgdir/%s %s.app", applicationName, version)
+		appFileFinalPath := fmt.Sprintf("dmgdir/%s.app", applicationName)
+		cmdRenameApp := exec.Command("mv", appFileOriginalPath, appFileFinalPath)
+		cmdRenameApp.Dir = tmpPath
+		cmdRenameApp.Stdout = os.Stdout
+		cmdRenameApp.Stderr = os.Stderr
+		err = cmdRenameApp.Run()
+		if err != nil {
+			return "", err
+		}
 		cmdGenisoimage := exec.Command("genisoimage", "-V", packageName, "-D", "-R", "-apple", "-no-pad", "-o", outputFileName, "dmgdir")
 		cmdGenisoimage.Dir = tmpPath
 		cmdGenisoimage.Stdout = os.Stdout

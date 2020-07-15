@@ -67,7 +67,7 @@ func init() {
 		Filename:    "packaging/darwin-bundle/Info.plist.tmpl",
 		FileModTime: time.Unix(1588579782, 0),
 
-		Content: string("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!DOCTYPE plist PUBLIC \"-//Apple Computer//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n<plist version=\"1.0\">\n    <dict>\n        <key>CFBundleDevelopmentRegion</key>\n        <string>English</string>\n        <key>CFBundleExecutable</key>\n        <string>{{.executableName}}</string>\n        <key>CFBundleGetInfoString</key>\n        <string>{{.description}}</string>\n        <key>CFBundleIconFile</key>\n        <string>icon.icns</string>\n        <key>CFBundleIdentifier</key>\n        <string>{{.organizationName}}</string>\n        <key>CFBundleInfoDictionaryVersion</key>\n        <string>6.0</string>\n        <key>CFBundleLongVersionString</key>\n        <string>{{.version}}</string>\n        <key>CFBundleName</key>\n        <string>{{.applicationName}}</string>\n        <key>CFBundlePackageType</key>\n        <string>APPL</string>\n        <key>CFBundleShortVersionString</key>\n        <string>{{.version}}</string>\n        <key>CFBundleSignature</key>\n        <string>{{.organizationName}}.{{.packageName}}</string>\n        <key>CFBundleVersion</key>\n        <string>{{.version}}</string>\n        <key>CSResourcesFileMapped</key>\n        <true/>\n        <key>NSHumanReadableCopyright</key>\n        <string></string>\n    </dict>\n</plist>\n"),
+		Content: string("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!DOCTYPE plist PUBLIC \"-//Apple Computer//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n<plist version=\"1.0\">\n    <dict>\n        <key>CFBundleDevelopmentRegion</key>\n        <string>English</string>\n        <key>CFBundleExecutable</key>\n        <string>{{.executableName}}</string>\n        <key>CFBundleGetInfoString</key>\n        <string>{{.description}}</string>\n        <key>CFBundleIconFile</key>\n        <string>icon.icns</string>\n        <key>CFBundleIdentifier</key>\n        <string>{{.organizationName}}.{{.packageName}}</string>\n        <key>CFBundleInfoDictionaryVersion</key>\n        <string>6.0</string>\n        <key>CFBundleLongVersionString</key>\n        <string>{{.version}}</string>\n        <key>CFBundleName</key>\n        <string>{{.applicationName}}</string>\n        <key>CFBundlePackageType</key>\n        <string>APPL</string>\n        <key>CFBundleShortVersionString</key>\n        <string>{{.version}}</string>\n        <key>CFBundleSignature</key>\n        <string>{{.organizationName}}.{{.packageName}}</string>\n        <key>CFBundleVersion</key>\n        <string>{{.version}}</string>\n        <key>CSResourcesFileMapped</key>\n        <true/>\n        <key>NSHumanReadableCopyright</key>\n        <string></string>\n    </dict>\n</plist>\n"),
 	}
 	fileg := &embedded.EmbeddedFile{
 		Filename:    "packaging/darwin-pkg/Distribution.tmpl",
@@ -322,15 +322,15 @@ func init() {
 			"plugin":                   dirx,
 		},
 		Files: map[string]*embedded.EmbeddedFile{
-			"README.md":                                file2,
-			"app/gitignore":                            file4,
-			"app/go.mod":                               file5,
-			"app/hover.yaml.tmpl":                      file6,
-			"app/icon.png":                             file7,
-			"app/main.go":                              file8,
-			"app/main_desktop.dart":                    file9,
-			"app/options.go":                           filea,
-			"packaging/README.md":                      filec,
+			"README.md":             file2,
+			"app/gitignore":         file4,
+			"app/go.mod":            file5,
+			"app/hover.yaml.tmpl":   file6,
+			"app/icon.png":          file7,
+			"app/main.go":           file8,
+			"app/main_desktop.dart": file9,
+			"app/options.go":        filea,
+			"packaging/README.md":   filec,
 			"packaging/darwin-bundle/Info.plist.tmpl":  filee,
 			"packaging/darwin-pkg/Distribution.tmpl":   fileg,
 			"packaging/darwin-pkg/PackageInfo.tmpl":    fileh,

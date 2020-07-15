@@ -19,7 +19,7 @@ var LinuxPkgTask = &packagingTask{
 		"src/usr/share/applications/{{.executableName}}.desktop",
 	},
 	linuxDesktopFileExecutablePath: "/usr/lib/{{.packageName}}/{{.executableName}}",
-	linuxDesktopFileIconPath:       "/usr/lib/{{.packageName}}/assets/icon",
+	linuxDesktopFileIconPath:       "/usr/lib/{{.packageName}}/assets/icon.png",
 	flutterBuildOutputDirectory:    "src/usr/lib/{{.packageName}}",
 	packagingFunction: func(tmpPath, applicationName, packageName, executableName, version, release string) (string, error) {
 		cmdMakepkg := exec.Command("makepkg")
