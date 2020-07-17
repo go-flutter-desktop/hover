@@ -27,6 +27,13 @@ var DarwinPkgTask = &packagingTask{
 			return "", err
 		}
 
+		appBundleOriginalPath := fmt.Sprintf("flat/root/Applications/%s %s.app", applicationName, version)
+		appBundleFinalPath := fmt.Sprintf("flat/root/Applications/%s.app", applicationName)
+		err = os.Rename(appBundleOriginalPath, appBundleFinalPath)
+		if err != nil {
+			return "", err
+		}
+
 		cmdFind := exec.Command("find", ".")
 		cmdFind.Dir = filepath.Join(tmpPath, "flat", "root")
 		cmdCpio := exec.Command("cpio", "-o", "--format", "odc", "--owner", "0:80")

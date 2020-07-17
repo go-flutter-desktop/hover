@@ -22,13 +22,9 @@ var DarwinDmgTask = &packagingTask{
 		if err != nil {
 			return "", err
 		}
-		appFileOriginalPath := fmt.Sprintf("dmgdir/%s %s.app", applicationName, version)
-		appFileFinalPath := fmt.Sprintf("dmgdir/%s.app", applicationName)
-		cmdRenameApp := exec.Command("mv", appFileOriginalPath, appFileFinalPath)
-		cmdRenameApp.Dir = tmpPath
-		cmdRenameApp.Stdout = os.Stdout
-		cmdRenameApp.Stderr = os.Stderr
-		err = cmdRenameApp.Run()
+		appBundleOriginalPath := fmt.Sprintf("dmgdir/%s %s.app", applicationName, version)
+		appBundleFinalPath := fmt.Sprintf("dmgdir/%s.app", applicationName)
+		err = os.Rename(appBundleOriginalPath, appBundleFinalPath)
 		if err != nil {
 			return "", err
 		}
