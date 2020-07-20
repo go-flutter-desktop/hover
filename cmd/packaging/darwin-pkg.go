@@ -27,8 +27,8 @@ var DarwinPkgTask = &packagingTask{
 			return "", err
 		}
 
-		appBundleOriginalPath := fmt.Sprintf("flat/root/Applications/%s %s.app", applicationName, version)
-		appBundleFinalPath := fmt.Sprintf("flat/root/Applications/%s.app", applicationName)
+		appBundleOriginalPath := filepath.Join(tmpPath, "flat", "root", "Applications", fmt.Sprintf("%s %s.app", applicationName, version))
+		appBundleFinalPath := filepath.Join(tmpPath, "flat", "root", "Applications", fmt.Sprintf("%s.app", applicationName))
 		err = os.Rename(appBundleOriginalPath, appBundleFinalPath)
 		if err != nil {
 			return "", err
