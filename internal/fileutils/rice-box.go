@@ -85,7 +85,7 @@ func init() {
 		Filename:    "packaging/linux/app.desktop.tmpl",
 		FileModTime: time.Unix(1588579782, 0),
 
-		Content: string("[Desktop Entry]\nVersion=1.0\nType=Application\nTerminal=false\nCategories=\nName={{.applicationName}}\nIcon={{.iconPath}}\nExec={{.executablePath}}\n"),
+		Content: string("[Desktop Entry]\nVersion=1.0\nType=Application\nTerminal=false\nCategories=\nComment={{.description}}\nName={{.applicationName}}\nIcon={{.iconPath}}\nExec={{.executablePath}}\n"),
 	}
 	filek := &embedded.EmbeddedFile{
 		Filename:    "packaging/linux/bin.tmpl",
