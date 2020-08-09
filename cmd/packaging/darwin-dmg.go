@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"path/filepath"
 )
 
 // DarwinDmgTask packaging for darwin as dmg
@@ -19,6 +20,12 @@ var DarwinDmgTask = &packagingTask{
 		cmdLn.Stdout = os.Stdout
 		cmdLn.Stderr = os.Stderr
 		err := cmdLn.Run()
+		if err != nil {
+			return "", err
+		}
+		appBundleOriginalPath := filepath.Join(tmpPath, "dmgdir", fmt.Sprintf("%s %s.app", applicationName, version))
+		appBundleFinalPath := filepath.Join(tmpPath, "dmgdir", fmt.Sprintf("%s.app", applicationName))
+		err = os.Rename(appBundleOriginalPath, appBundleFinalPath)
 		if err != nil {
 			return "", err
 		}
