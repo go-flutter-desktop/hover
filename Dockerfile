@@ -41,7 +41,7 @@ RUN cd /opt \
 	&& ./appimagetool-x86_64.AppImage --appimage-extract \
 	&& mv squashfs-root appimagetool
 
-FROM dockercore/golang-cross:1.13.14 AS hover
+FROM dockercore/golang-cross:1.13.15 AS hover
 
 # Install dependencies via apt
 RUN apt-get update \
