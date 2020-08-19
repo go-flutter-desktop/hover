@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 
 	"github.com/pkg/errors"
 )
@@ -77,6 +78,9 @@ var DarwinPkgTask = &packagingTask{
 		}
 
 		cmdMkbom := exec.Command("mkbom", "-u", "0", "-g", "80", filepath.Join("flat", "root"), filepath.Join("flat", "base.pkg", "Payload"))
+		if runtime.GOOS == "darwin" {
+			cmdMkbom = exec.Command("mkbom", filepath.Join("flat", "root"), filepath.Join("flat", "base.pkg", "Payload"))
+		}
 		cmdMkbom.Dir = tmpPath
 		cmdMkbom.Stdout = os.Stdout
 		cmdMkbom.Stderr = os.Stderr
@@ -109,6 +113,7 @@ var DarwinPkgTask = &packagingTask{
 		return outputFileName, nil
 	},
 	requiredTools: map[string][]string{
-		"linux": {"find", "cpio", "gzip", "mkbom", "xar"},
+		"linux":  {"find", "cpio", "gzip", "mkbom", "xar"},
+		"darwin": {"find", "cpio", "gzip", "mkbom", "xar"},
 	},
 }

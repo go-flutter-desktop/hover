@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 )
 
 // DarwinBundleTask packaging for darwin as bundle
@@ -22,6 +23,9 @@ var DarwinBundleTask = &packagingTask{
 			return "", err
 		}
 		cmdPng2icns := exec.Command("png2icns", filepath.Join(outputFileName, "Contents", "Resources", "icon.icns"), filepath.Join(outputFileName, "Contents", "MacOS", "assets", "icon.png"))
+		if runtime.GOOS == "darwin" {
+			cmdPng2icns = exec.Command("png2icons", filepath.Join(outputFileName, "Contents", "MacOS", "assets", "icon.png"), filepath.Join(outputFileName, "Contents", "Resources", "icon"), "-icns")
+		}
 		cmdPng2icns.Dir = tmpPath
 		cmdPng2icns.Stdout = os.Stdout
 		cmdPng2icns.Stderr = os.Stderr
@@ -32,6 +36,7 @@ var DarwinBundleTask = &packagingTask{
 		return outputFileName, nil
 	},
 	requiredTools: map[string][]string{
-		"linux": {"png2icns"},
+		"linux":  {"png2icons"},
+		"darwin": {"png2icons"},
 	},
 }

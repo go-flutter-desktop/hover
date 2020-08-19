@@ -5,6 +5,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 )
 
 // DarwinDmgTask packaging for darwin as dmg
@@ -30,6 +31,9 @@ var DarwinDmgTask = &packagingTask{
 			return "", err
 		}
 		cmdGenisoimage := exec.Command("genisoimage", "-V", packageName, "-D", "-R", "-apple", "-no-pad", "-o", outputFileName, "dmgdir")
+		if runtime.GOOS == "darwin" {
+			cmdGenisoimage = exec.Command("hdiutil", "create", "-volname", packageName, "-srcfolder", "dmgdir", "-ov", "-format", "UDBZ", outputFileName)
+		}
 		cmdGenisoimage.Dir = tmpPath
 		cmdGenisoimage.Stdout = os.Stdout
 		cmdGenisoimage.Stderr = os.Stderr
@@ -41,6 +45,7 @@ var DarwinDmgTask = &packagingTask{
 	},
 	skipAssertInitialized: true,
 	requiredTools: map[string][]string{
-		"linux": {"ln", "genisoimage"},
+		"linux":  {"ln", "genisoimage"},
+		"darwin": {"ln", "hdiutil"},
 	},
 }
