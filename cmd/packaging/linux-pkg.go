@@ -22,15 +22,17 @@ var LinuxPkgTask = &packagingTask{
 	linuxDesktopFileIconPath:       "/usr/lib/{{.packageName}}/assets/icon.png",
 	flutterBuildOutputDirectory:    "src/usr/lib/{{.packageName}}",
 	packagingFunction: func(tmpPath, applicationName, packageName, executableName, version, release string) (string, error) {
+		extension := ".pkg.tar.xz"
 		cmdMakepkg := exec.Command("makepkg")
 		cmdMakepkg.Dir = tmpPath
 		cmdMakepkg.Stdout = os.Stdout
 		cmdMakepkg.Stderr = os.Stderr
+		cmdMakepkg.Env = append(os.Environ(), fmt.Sprintf("PKGEXT=%s", extension))
 		err := cmdMakepkg.Run()
 		if err != nil {
 			return "", err
 		}
-		return fmt.Sprintf("%s-%s-%s-x86_64.pkg.tar.xz", packageName, version, release), nil
+		return fmt.Sprintf("%s-%s-%s-x86_64%s", packageName, version, release, extension), nil
 	},
 	requiredTools: map[string][]string{
 		"linux": {"makepkg"},
