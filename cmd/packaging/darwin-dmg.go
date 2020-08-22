@@ -30,9 +30,13 @@ var DarwinDmgTask = &packagingTask{
 		if err != nil {
 			return "", err
 		}
-		cmdGenisoimage := exec.Command("genisoimage", "-V", packageName, "-D", "-R", "-apple", "-no-pad", "-o", outputFileName, "dmgdir")
-		if runtime.GOOS == "darwin" {
+
+		var cmdGenisoimage *exec.Cmd
+		switch os := runtime.GOOS; os {
+		case "darwin":
 			cmdGenisoimage = exec.Command("hdiutil", "create", "-volname", packageName, "-srcfolder", "dmgdir", "-ov", "-format", "UDBZ", outputFileName)
+		case "linux":
+			cmdGenisoimage = exec.Command("genisoimage", "-V", packageName, "-D", "-R", "-apple", "-no-pad", "-o", outputFileName, "dmgdir")
 		}
 		cmdGenisoimage.Dir = tmpPath
 		cmdGenisoimage.Stdout = os.Stdout

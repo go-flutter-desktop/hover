@@ -77,9 +77,12 @@ var DarwinPkgTask = &packagingTask{
 			return "", err
 		}
 
-		cmdMkbom := exec.Command("mkbom", "-u", "0", "-g", "80", filepath.Join("flat", "root"), filepath.Join("flat", "base.pkg", "Payload"))
-		if runtime.GOOS == "darwin" {
+		var cmdMkbom *exec.Cmd
+		switch os := runtime.GOOS; os {
+		case "darwin":
 			cmdMkbom = exec.Command("mkbom", filepath.Join("flat", "root"), filepath.Join("flat", "base.pkg", "Payload"))
+		case "linux":
+			cmdMkbom = exec.Command("mkbom", "-u", "0", "-g", "80", filepath.Join("flat", "root"), filepath.Join("flat", "base.pkg", "Payload"))
 		}
 		cmdMkbom.Dir = tmpPath
 		cmdMkbom.Stdout = os.Stdout

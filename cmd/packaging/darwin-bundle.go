@@ -22,9 +22,12 @@ var DarwinBundleTask = &packagingTask{
 		if err != nil {
 			return "", err
 		}
-		cmdPng2icns := exec.Command("png2icns", filepath.Join(outputFileName, "Contents", "Resources", "icon.icns"), filepath.Join(outputFileName, "Contents", "MacOS", "assets", "icon.png"))
-		if runtime.GOOS == "darwin" {
+		var cmdPng2icns *exec.Cmd
+		switch os := runtime.GOOS; os {
+		case "darwin":
 			cmdPng2icns = exec.Command("png2icons", filepath.Join(outputFileName, "Contents", "MacOS", "assets", "icon.png"), filepath.Join(outputFileName, "Contents", "Resources", "icon"), "-icns")
+		case "linux":
+			cmdPng2icns = exec.Command("png2icns", filepath.Join(outputFileName, "Contents", "Resources", "icon.icns"), filepath.Join(outputFileName, "Contents", "MacOS", "assets", "icon.png"))
 		}
 		cmdPng2icns.Dir = tmpPath
 		cmdPng2icns.Stdout = os.Stdout
@@ -36,7 +39,7 @@ var DarwinBundleTask = &packagingTask{
 		return outputFileName, nil
 	},
 	requiredTools: map[string][]string{
-		"linux":  {"png2icons"},
+		"linux":  {"png2icns"},
 		"darwin": {"png2icons"},
 	},
 }
