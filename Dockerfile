@@ -41,6 +41,18 @@ RUN cd /opt \
 	&& ./appimagetool-x86_64.AppImage --appimage-extract \
 	&& mv squashfs-root appimagetool
 
+# bionic ships with a too old meson version
+FROM ubuntu:focal AS pacmanbuilder
+ENV DEBIAN_FRONTEND=noninteractive
+RUN apt-get update \
+    && apt-get install -y \
+        git meson python3 python3-pip python3-setuptools python3-wheel ninja-build gcc pkg-config m4 libarchive-dev libssl-dev
+RUN cd /tmp \
+    && git clone https://git.archlinux.org/pacman.git --depth=1 --branch=v5.2.2 2>&1  \
+    && cd pacman \
+    && meson setup builddir \
+    && meson install -C builddir
+
 FROM dockercore/golang-cross:1.13.15 AS hover
 
 # Install dependencies via apt
@@ -56,6 +68,8 @@ RUN apt-get update \
 		cpio git \
 		# dependencies for linux-rpm
 		rpm \
+		# dependencies for linux-pkg
+		fakeroot bsdtar \
 		# dependencies for windows-msi
 		wixl imagemagick \
 	&& rm -rf /var/lib/apt/lists/*
@@ -75,7 +89,19 @@ COPY --from=bomutilsbuilder /usr/bin/mkbom /usr/bin/mkbom
 COPY --from=appimagebuilder /opt/appimagetool /opt/appimagetool
 ENV PATH=/opt/appimagetool/usr/bin:$PATH
 
-# TODO: Add pacman pkg packaging
+COPY --from=pacmanbuilder /usr/bin/makepkg /usr/bin/makepkg
+COPY --from=pacmanbuilder /usr/bin/pacman /usr/bin/pacman
+COPY --from=pacmanbuilder /etc/makepkg.conf /etc/makepkg.conf
+COPY --from=pacmanbuilder /etc/pacman.conf /etc/pacman.conf
+COPY --from=pacmanbuilder /usr/share/makepkg /usr/share/makepkg
+COPY --from=pacmanbuilder /usr/share/pacman /usr/share/pacman
+COPY --from=pacmanbuilder /var/lib/pacman /var/lib/pacman
+COPY --from=pacmanbuilder /usr/lib/x86_64-linux-gnu/libalpm.so.12 /usr/lib/x86_64-linux-gnu/libalpm.so.12
+RUN ln -sf /bin/bash /usr/bin/bash
+RUN sed -i "s/OPTIONS=(strip /OPTIONS=(/g" /etc/makepkg.conf
+RUN sed -i "s/#XferCommand/XferCommand/g" /etc/pacman.conf
+# This makes makepkg believe we are not root. Bypassing the root check is ok, because we are in a container
+ENV EUID=1
 
 COPY --from=flutterbuilder /opt/flutter /opt/flutter
 RUN ln -sf /opt/flutter/bin/flutter /usr/bin/flutter
