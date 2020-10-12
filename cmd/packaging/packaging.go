@@ -128,7 +128,7 @@ func (t *packagingTask) init(ignoreAlreadyExists bool) {
 	}
 }
 
-func (t *packagingTask) Pack(fullVersion string) {
+func (t *packagingTask) Pack(fullVersion string, mode build.Mode) {
 	projectName := pubspec.GetPubSpec().Name
 	version := strings.Split(fullVersion, "+")[0]
 	var release string
@@ -137,7 +137,7 @@ func (t *packagingTask) Pack(fullVersion string) {
 	} else {
 		release = strings.ReplaceAll(fullVersion, ".", "")
 	}
-	description := pubspec.GetPubSpec().Description
+	description := pubspec.GetPubSpec().GetDescription()
 	organizationName := androidmanifest.AndroidOrganizationName()
 	author := pubspec.GetPubSpec().GetAuthor()
 	applicationName := config.GetConfig().GetApplicationName(projectName)
@@ -158,17 +158,17 @@ func (t *packagingTask) Pack(fullVersion string) {
 	}
 	templateData["iconPath"] = executeStringTemplate(t.linuxDesktopFileIconPath, templateData)
 	templateData["executablePath"] = executeStringTemplate(t.linuxDesktopFileExecutablePath, templateData)
-	t.pack(templateData, packageName, projectName, applicationName, executableName, version, release)
+	t.pack(templateData, packageName, projectName, applicationName, executableName, version, release, mode)
 }
 
-func (t *packagingTask) pack(templateData map[string]string, packageName, projectName, applicationName, executableName, version, release string) {
+func (t *packagingTask) pack(templateData map[string]string, packageName, projectName, applicationName, executableName, version, release string, mode build.Mode) {
 	if t.extraTemplateData != nil {
 		for key, value := range t.extraTemplateData(packageName, packagingFormatPath(t.packagingFormatName)) {
 			templateData[key] = value
 		}
 	}
 	for task := range t.dependsOn {
-		task.pack(templateData, packageName, projectName, applicationName, executableName, version, release)
+		task.pack(templateData, packageName, projectName, applicationName, executableName, version, release, mode)
 	}
 	tmpPath := getTemporaryBuildDirectory(projectName, t.packagingFormatName)
 	defer func() {
@@ -181,14 +181,14 @@ func (t *packagingTask) pack(templateData map[string]string, packageName, projec
 	log.Infof("Packaging %s in %s", strings.Split(t.packagingFormatName, "-")[1], tmpPath)
 
 	if t.flutterBuildOutputDirectory != "" {
-		err := copy.Copy(build.OutputDirectoryPath(strings.Split(t.packagingFormatName, "-")[0]), executeStringTemplate(filepath.Join(tmpPath, t.flutterBuildOutputDirectory), templateData))
+		err := copy.Copy(build.OutputDirectoryPath(strings.Split(t.packagingFormatName, "-")[0], mode), executeStringTemplate(filepath.Join(tmpPath, t.flutterBuildOutputDirectory), templateData))
 		if err != nil {
 			log.Errorf("Could not copy build folder: %v", err)
 			os.Exit(1)
 		}
 	}
 	for task, destination := range t.dependsOn {
-		err := copy.Copy(build.OutputDirectoryPath(task.packagingFormatName), filepath.Join(tmpPath, destination))
+		err := copy.Copy(build.OutputDirectoryPath(task.packagingFormatName, mode), filepath.Join(tmpPath, destination))
 		if err != nil {
 			log.Errorf("Could not copy build folder of %s: %v", task.packagingFormatName, err)
 			os.Exit(1)
@@ -208,10 +208,10 @@ func (t *packagingTask) pack(templateData map[string]string, packageName, projec
 		}
 	}
 
-	err := os.RemoveAll(build.OutputDirectoryPath(t.packagingFormatName))
+	err := os.RemoveAll(build.OutputDirectoryPath(t.packagingFormatName, mode))
 	log.Printf("Cleaning the build directory")
 	if err != nil {
-		log.Errorf("Failed to clean output directory %s: %v", build.OutputDirectoryPath(t.packagingFormatName), err)
+		log.Errorf("Failed to clean output directory %s: %v", build.OutputDirectoryPath(t.packagingFormatName, mode), err)
 		os.Exit(1)
 	}
 
@@ -225,7 +225,7 @@ func (t *packagingTask) pack(templateData map[string]string, packageName, projec
 		os.Exit(1)
 	}
 	outputFileName := filepath.Base(relativeOutputFilePath)
-	outputFilePath := filepath.Join(build.OutputDirectoryPath(t.packagingFormatName), outputFileName)
+	outputFilePath := filepath.Join(build.OutputDirectoryPath(t.packagingFormatName, mode), outputFileName)
 	err = copy.Copy(filepath.Join(tmpPath, relativeOutputFilePath), outputFilePath)
 	if err != nil {
 		log.Errorf("Could not move %s file: %v", outputFileName, err)

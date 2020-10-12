@@ -36,7 +36,7 @@ var upgradeCmd = &cobra.Command{
 }
 
 func upgrade(targetOS string) (err error) {
-	enginecache.ValidateOrUpdateEngine(targetOS, buildOrRunCachePath, "")
+	enginecache.ValidateOrUpdateEngine(targetOS, buildOrRunCachePath, "", build.DebugMode)
 	return upgradeGoFlutter(targetOS)
 }
 
