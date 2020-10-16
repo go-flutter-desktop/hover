@@ -115,8 +115,20 @@ var DarwinPkgTask = &packagingTask{
 		}
 		return outputFileName, nil
 	},
-	requiredTools: map[string][]string{
-		"linux":  {"find", "cpio", "gzip", "mkbom", "xar"},
-		"darwin": {"find", "cpio", "gzip", "mkbom", "xar"},
+	requiredTools: map[string]map[string]string{
+		"linux": {
+			"find":  "Install find from your package manager",
+			"cpio":  "Install cpio from your package manager",
+			"gzip":  "Install gzip from your package manager",
+			"mkbom": "Install bomutils from your package manager or from https://github.com/hogliux/bomutils",
+			"xar":   "Install xar from your package manager or from https://github.com/mackyle/xar",
+		},
+		"darwin": {
+			"find":  "Install find from your package manager",
+			"cpio":  "Install cpio from your package manager",
+			"gzip":  "Install gzip from your package manager",
+			"mkbom": "Install bomutils from your package manager or from https://github.com/hogliux/bomutils",
+			"xar":   "Install xar from your package manager or from https://github.com/mackyle/xar",
+		},
 	},
 }

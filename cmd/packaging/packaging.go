@@ -66,20 +66,28 @@ type packagingTask struct {
 	flutterBuildOutputDirectory    string                                                                                               // Path to copy the build output of the app to. Operates in the temporary directory
 	packagingFunction              func(tmpPath, applicationName, packageName, executableName, version, release string) (string, error) // Function that actually packages the app. Needs to check for OS specific tools etc. . Returns the path of the packaged file
 	skipAssertInitialized          bool                                                                                                 // Set to true when a task doesn't need to be initialized.
-	requiredTools                  map[string][]string                                                                                  // Map of list of tools required to package per OS
+	requiredTools                  map[string]map[string]string                                                                         // Map of list of tools required to package per OS
 }
 
 func (t *packagingTask) AssertSupported() {
+	if !t.IsSupported() {
+		os.Exit(1)
+	}
+}
+
+func (t *packagingTask) IsSupported() bool {
 	for task := range t.dependsOn {
-		task.AssertSupported()
+		if !task.IsSupported() {
+			return false
+		}
 	}
 	if _, osIsSupported := t.requiredTools[runtime.GOOS]; !osIsSupported {
 		log.Errorf("Packaging %s is not supported on %s", t.packagingFormatName, runtime.GOOS)
 		log.Errorf("To still package %s on %s you need to run hover with the `--docker` flag.", t.packagingFormatName, runtime.GOOS)
-		os.Exit(1)
+		return false
 	}
 	var unavailableTools []string
-	for _, tool := range t.requiredTools[runtime.GOOS] {
+	for tool := range t.requiredTools[runtime.GOOS] {
 		_, err := exec.LookPath(tool)
 		if err != nil {
 			unavailableTools = append(unavailableTools, tool)
@@ -87,13 +95,20 @@ func (t *packagingTask) AssertSupported() {
 	}
 	if len(unavailableTools) > 0 {
 		log.Errorf("To package %s these tools are required: %s", t.packagingFormatName, strings.Join(unavailableTools, ","))
-		log.Errorf("To still package %s without the required tools installed you need to run hover with the `--docker` flag.", t.packagingFormatName)
-		os.Exit(1)
+		for _, tool := range unavailableTools {
+			text := t.requiredTools[runtime.GOOS][tool]
+			if len(text) > 0 {
+				log.Infof(text)
+			}
+		}
+		log.Infof("To still package %s without the required tools installed you need to run hover with the `--docker` flag.", t.packagingFormatName)
+		return false
 	}
+	return true
 }
 
 func (t *packagingTask) Name() string {
-	return strings.SplitN(t.packagingFormatName, "-", 2)[1]
+	return t.packagingFormatName
 }
 
 func (t *packagingTask) Init() {

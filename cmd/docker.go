@@ -91,7 +91,7 @@ func dockerHoverBuild(targetOS string, packagingTask packaging.Task, buildFlags 
 	dockerArgs = append(dockerArgs, dockerImage)
 	targetOSAndPackaging := targetOS
 	if packName := packagingTask.Name(); packName != "" {
-		targetOSAndPackaging += "-" + packName
+		targetOSAndPackaging = packName
 	}
 	hoverCommand := []string{"hover-safe.sh", "build", targetOSAndPackaging}
 	hoverCommand = append(hoverCommand, buildFlags...)

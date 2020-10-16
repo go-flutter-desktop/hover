@@ -33,7 +33,9 @@ var LinuxDebTask = &packagingTask{
 		}
 		return outputFileName, nil
 	},
-	requiredTools: map[string][]string{
-		"linux": {"dpkg-deb"},
+	requiredTools: map[string]map[string]string{
+		"linux": {
+			"makepkg": "You need to be on Debian, Ubuntu or another distro that uses apt/dpkg as package manager to use this. Installing dpkg on other distros is hard and dangerous.",
+		},
 	},
 }

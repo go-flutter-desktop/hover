@@ -10,5 +10,6 @@ type Task interface {
 	IsInitialized() bool
 	AssertInitialized()
 	Pack(buildVersion string, mode build.Mode)
+	IsSupported() bool
 	AssertSupported()
 }

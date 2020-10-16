@@ -13,6 +13,7 @@ import (
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
 
+	"github.com/go-flutter-desktop/hover/cmd/packaging"
 	"github.com/go-flutter-desktop/hover/internal/build"
 	"github.com/go-flutter-desktop/hover/internal/config"
 	"github.com/go-flutter-desktop/hover/internal/flutterversion"
@@ -37,6 +38,24 @@ var doctorCmd = &cobra.Command{
 
 		version := hoverVersion()
 		log.Infof("Hover version %s running on %s", version, runtime.GOOS)
+
+		log.Infof("Sharing packaging tools")
+		for _, task := range []packaging.Task{
+			packaging.DarwinBundleTask,
+			packaging.DarwinDmgTask,
+			packaging.DarwinPkgTask,
+			packaging.LinuxAppImageTask,
+			packaging.LinuxDebTask,
+			packaging.LinuxPkgTask,
+			packaging.LinuxRpmTask,
+			packaging.LinuxSnapTask,
+			packaging.WindowsMsiTask,
+		} {
+			if task.IsSupported() {
+				log.Infof("%s is supported", task.Name())
+			}
+		}
+		log.Printf("")
 
 		log.Infof("Sharing flutter version")
 		cmdFlutterVersion := exec.Command(build.FlutterBin(), "--version")
