@@ -582,7 +582,7 @@ func buildGoBinary(targetOS string, vmArguments []string) {
 		log.Warnf("The '--opengl=none' flag makes go-flutter incompatible with texture plugins!")
 	}
 
-	if targetOS == "darwin" {
+	if targetOS == "darwin" && buildOrRunMode != build.DebugMode {
 		darwinDyldHack(filepath.Join(build.OutputDirectoryPath(targetOS, buildOrRunMode), build.EngineFiles(targetOS, buildOrRunMode)[0]))
 	}
 
@@ -603,7 +603,7 @@ func buildGoBinary(targetOS string, vmArguments []string) {
 		os.Exit(1)
 	}
 	log.Infof("Successfully compiled executable binary for %s", targetOS)
-	if targetOS == "darwin" {
+	if targetOS == "darwin" && buildOrRunMode != build.DebugMode {
 		darwinDyldHack(build.OutputBinaryPath(config.GetConfig().GetExecutableName(pubspec.GetPubSpec().Name), targetOS, buildOrRunMode))
 	}
 }
@@ -638,8 +638,13 @@ func buildEnv(targetOS string, engineCachePath string) []string {
 
 	switch targetOS {
 	case "darwin":
-		cgoLdflags += fmt.Sprintf(" -L%s -L%s", engineCachePath, outputDirPath)
-		cgoLdflags += fmt.Sprintf(" -lflutter_engine -Wl,-rpath,.")
+		if buildOrRunMode == build.DebugMode {
+			cgoLdflags += fmt.Sprintf(" -F%s -Wl,-rpath,@executable_path", engineCachePath)
+			cgoLdflags += fmt.Sprintf(" -F%s -L%s -framework FlutterEmbedder", outputDirPath, outputDirPath)
+		} else {
+			cgoLdflags += fmt.Sprintf(" -L%s -L%s", engineCachePath, outputDirPath)
+			cgoLdflags += " -lflutter_engine -Wl,-rpath,."
+		}
 		cgoLdflags += " -mmacosx-version-min=10.10"
 		cgoCflags += " -mmacosx-version-min=10.10"
 	case "linux":

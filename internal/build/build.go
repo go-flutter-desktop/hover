@@ -95,7 +95,11 @@ func ExecutableExtension(targetOS string) string {
 func EngineFiles(targetOS string, mode Mode) []string {
 	switch targetOS {
 	case "darwin":
-		return []string{"libflutter_engine.dylib"}
+		if mode.IsAot {
+			return []string{"libflutter_engine.dylib"}
+		} else {
+			return []string{"FlutterEmbedder.framework"}
+		}
 	case "linux":
 		return []string{"libflutter_engine.so"}
 	case "windows":

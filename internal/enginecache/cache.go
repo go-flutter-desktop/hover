@@ -241,29 +241,87 @@ func ValidateOrUpdateEngine(targetOS, cachePath, requiredEngineVersion string, m
 
 	log.Printf("Downloading engine for platform %s at version %s...", EngineConfig(targetOS, mode), requiredEngineVersion)
 
-	file := ""
-	switch targetOS {
-	case "linux":
-		file += "linux"
-	case "darwin":
-		file += "macosx"
-	case "windows":
-		file += "windows"
-	}
-	file += fmt.Sprintf("_x64-host_%s.zip", mode.Name)
-	engineDownloadURL := fmt.Sprintf("https://github.com/flutter-rs/engine-builds/releases/download/f-%s/%s", requiredEngineVersion, file)
+	if mode == build.DebugMode {
+		targetedDomain := "https://storage.googleapis.com"
+		envURLFlutter := os.Getenv("FLUTTER_STORAGE_BASE_URL")
+		if envURLFlutter != "" {
+			targetedDomain = envURLFlutter
+		}
+		var engineDownloadURL = fmt.Sprintf(targetedDomain+"/flutter_infra/flutter/%s/%s-x64/", requiredEngineVersion, targetOS)
+		switch targetOS {
+		case "darwin":
+			engineDownloadURL += "FlutterEmbedder.framework.zip"
+		case "linux":
+			engineDownloadURL += targetOS + "-x64-embedder"
+		case "windows":
+			engineDownloadURL += targetOS + "-x64-embedder.zip"
+		default:
+			log.Errorf("Cannot run on %s, download engine not implemented.", targetOS)
+			os.Exit(1)
+		}
 
-	err = downloadFile(engineZipPath, engineDownloadURL)
-	if err != nil {
-		log.Errorf("Failed to download engine: %v", err)
-		log.Errorf("Engine builds are a bit delayed after they are published in flutter.")
-		log.Errorf("You can either try again later or switch the flutter channel to beta, because these engines are more likely to be already built.")
-		log.Errorf("To dig into the already built engines look at https://github.com/flutter-rs/engine-builds/releases and https://github.com/flutter-rs/engine-builds/actions")
-		os.Exit(1)
-	}
-	_, err = unzip(engineZipPath, engineExtractPath)
-	if err != nil {
-		log.Warnf("%v", err)
+		artifactsZipPath := filepath.Join(dir, "artifacts.zip")
+		artifactsDownloadURL := fmt.Sprintf(targetedDomain+"/flutter_infra/flutter/%s/%s-x64/artifacts.zip", requiredEngineVersion, targetOS)
+
+		err = downloadFile(engineZipPath, engineDownloadURL)
+		if err != nil {
+			log.Errorf("Failed to download engine: %v", err)
+			os.Exit(1)
+		}
+		_, err = unzip(engineZipPath, engineExtractPath)
+		if err != nil {
+			log.Warnf("%v", err)
+		}
+
+		err = downloadFile(artifactsZipPath, artifactsDownloadURL)
+		if err != nil {
+			log.Errorf("Failed to download artifacts: %v", err)
+			os.Exit(1)
+		}
+		_, err = unzip(artifactsZipPath, engineExtractPath)
+		if err != nil {
+			log.Warnf("%v", err)
+		}
+		if targetOS == "darwin" {
+			frameworkZipPath := filepath.Join(engineExtractPath, "FlutterEmbedder.framework.zip")
+			frameworkDestPath := filepath.Join(engineExtractPath, "FlutterEmbedder.framework")
+			_, err = unzip(frameworkZipPath, frameworkDestPath)
+			if err != nil {
+				log.Errorf("Failed to unzip engine framework: %v", err)
+				os.Exit(1)
+			}
+			createSymLink("A", frameworkDestPath+"/Versions/Current")
+			createSymLink("Versions/Current/FlutterEmbedder", frameworkDestPath+"/FlutterEmbedder")
+			createSymLink("Versions/Current/Headers", frameworkDestPath+"/Headers")
+			createSymLink("Versions/Current/Modules", frameworkDestPath+"/Modules")
+			createSymLink("Versions/Current/Resources", frameworkDestPath+"/Resources")
+		}
+	} else {
+		file := ""
+		switch targetOS {
+		case "linux":
+			file += "linux"
+		case "darwin":
+			file += "macosx"
+		case "windows":
+			file += "windows"
+		}
+		file += fmt.Sprintf("_x64-host_%s.zip", mode.Name)
+		engineDownloadURL := fmt.Sprintf("https://github.com/flutter-rs/engine-builds/releases/download/f-%s/%s", requiredEngineVersion, file)
+
+		err = downloadFile(engineZipPath, engineDownloadURL)
+		if err != nil {
+			log.Errorf("Failed to download engine: %v", err)
+			log.Errorf("Engine builds are a bit delayed after they are published in flutter.")
+			log.Errorf("You can either try again later or switch the flutter channel to beta, because these engines are more likely to be already built.")
+			log.Errorf("To dig into the already built engines look at https://github.com/flutter-rs/engine-builds/releases and https://github.com/flutter-rs/engine-builds/actions")
+			os.Exit(1)
+		}
+		_, err = unzip(engineZipPath, engineExtractPath)
+		if err != nil {
+			log.Warnf("%v", err)
+		}
+
 	}
 
 	for _, engineFile := range build.EngineFiles(targetOS, mode) {
@@ -288,11 +346,16 @@ func ValidateOrUpdateEngine(targetOS, cachePath, requiredEngineVersion string, m
 	}
 
 	files := []string{
-		"dart" + build.ExecutableExtension(targetOS),
-		"gen_snapshot" + build.ExecutableExtension(targetOS),
 		"icudtl.dat",
-		"gen",
-		"flutter_patched_sdk",
+	}
+	if mode != build.DebugMode {
+		files = append(
+			files,
+			"dart"+build.ExecutableExtension(targetOS),
+			"gen_snapshot"+build.ExecutableExtension(targetOS),
+			"gen",
+			"flutter_patched_sdk",
+		)
 	}
 	for _, file := range files {
 		err = copy.Copy(
