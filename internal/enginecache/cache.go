@@ -17,8 +17,8 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/go-flutter-desktop/hover/internal/build"
-	"github.com/go-flutter-desktop/hover/internal/flutterversion"
 	"github.com/go-flutter-desktop/hover/internal/log"
+	"github.com/go-flutter-desktop/hover/internal/version"
 )
 
 func createSymLink(oldname, newname string) error {
@@ -173,7 +173,11 @@ func EngineConfig(targetOS string, mode build.Mode) string {
 
 //noinspection GoNameStartsWithPackageName
 func EngineCachePath(targetOS, cachePath string, mode build.Mode) string {
-	return filepath.Join(cachePath, "hover", "engine", EngineConfig(targetOS, mode))
+	return filepath.Join(BaseEngineCachePath(cachePath), EngineConfig(targetOS, mode))
+}
+
+func BaseEngineCachePath(cachePath string) string {
+	return filepath.Join(cachePath, "hover", "engine")
 }
 
 // ValidateOrUpdateEngine validates the engine we have cached matches the
@@ -198,10 +202,10 @@ func ValidateOrUpdateEngine(targetOS, cachePath, requiredEngineVersion string, m
 	}
 	cachedEngineVersion := string(cachedEngineVersionBytes)
 	if len(requiredEngineVersion) == 0 {
-		requiredEngineVersion = flutterversion.FlutterRequiredEngineVersion()
+		requiredEngineVersion = version.FlutterRequiredEngineVersion()
 	}
 
-	if cachedEngineVersion == requiredEngineVersion {
+	if cachedEngineVersion == fmt.Sprintf("%s-%s", requiredEngineVersion, version.HoverVersion()) {
 		log.Printf("Using engine from cache")
 		return
 	} else {
@@ -301,7 +305,7 @@ func ValidateOrUpdateEngine(targetOS, cachePath, requiredEngineVersion string, m
 		}
 	}
 
-	err = ioutil.WriteFile(cachedEngineVersionPath, []byte(requiredEngineVersion), 0664)
+	err = ioutil.WriteFile(cachedEngineVersionPath, []byte(fmt.Sprintf("%s-%s", requiredEngineVersion, version.HoverVersion())), 0664)
 	if err != nil {
 		log.Errorf("Failed to write version file: %v", err)
 		os.Exit(1)

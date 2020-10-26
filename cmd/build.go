@@ -8,8 +8,6 @@ import (
 	"runtime"
 	"strings"
 
-	"github.com/go-flutter-desktop/hover/internal/enginecache"
-
 	"github.com/hashicorp/go-version"
 	"github.com/otiai10/copy"
 	"github.com/spf13/cobra"
@@ -18,9 +16,11 @@ import (
 	"github.com/go-flutter-desktop/hover/internal/androidmanifest"
 	"github.com/go-flutter-desktop/hover/internal/build"
 	"github.com/go-flutter-desktop/hover/internal/config"
+	"github.com/go-flutter-desktop/hover/internal/enginecache"
 	"github.com/go-flutter-desktop/hover/internal/fileutils"
 	"github.com/go-flutter-desktop/hover/internal/log"
 	"github.com/go-flutter-desktop/hover/internal/pubspec"
+	internalVersion "github.com/go-flutter-desktop/hover/internal/version"
 	"github.com/go-flutter-desktop/hover/internal/versioncheck"
 )
 
@@ -576,7 +576,7 @@ func buildGoBinary(targetOS string, vmArguments []string) {
 		}
 	}
 
-	versioncheck.CheckForHoverUpdate(hoverVersion())
+	versioncheck.CheckForHoverUpdate(internalVersion.HoverVersion())
 
 	if buildOrRunOpenGlVersion == "none" {
 		log.Warnf("The '--opengl=none' flag makes go-flutter incompatible with texture plugins!")

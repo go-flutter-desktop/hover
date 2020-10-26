@@ -1,10 +1,12 @@
-package flutterversion
+package version
 
 import (
 	"bytes"
 	"encoding/json"
 	"os"
 	"os/exec"
+	"runtime/debug"
+	"sync"
 
 	"github.com/go-flutter-desktop/hover/internal/build"
 	"github.com/go-flutter-desktop/hover/internal/log"
@@ -55,4 +57,21 @@ func readFlutterVersion() flutterVersionResponse {
 type flutterVersionResponse struct {
 	Channel        string
 	EngineRevision string
+}
+
+var (
+	hoverVersionValue string
+	hoverVersionOnce  sync.Once
+)
+
+func HoverVersion() string {
+	hoverVersionOnce.Do(func() {
+		buildInfo, ok := debug.ReadBuildInfo()
+		if !ok {
+			log.Errorf("Cannot obtain version information from hover build. To resolve this, please go-get hover using Go 1.13 or newer.")
+			os.Exit(1)
+		}
+		hoverVersionValue = buildInfo.Main.Version
+	})
+	return hoverVersionValue
 }
