@@ -13,6 +13,7 @@ import (
 	"github.com/go-flutter-desktop/hover/internal/build"
 	"github.com/go-flutter-desktop/hover/internal/log"
 	"github.com/go-flutter-desktop/hover/internal/logstreamer"
+	"github.com/go-flutter-desktop/hover/internal/version"
 )
 
 func dockerHoverBuild(targetOS string, packagingTask packaging.Task, buildFlags []string, vmArguments []string) {
@@ -83,11 +84,11 @@ func dockerHoverBuild(targetOS string, packagingTask packaging.Task, buildFlags 
 		dockerArgs = append(dockerArgs, "--env", "HOVER_IN_DOCKER_BUILD_VMARGS="+strings.Join(vmArguments, ","))
 	}
 
-	version := hoverVersion()
-	if version == "(devel)" {
-		version = "latest"
+	hoverVersion := version.HoverVersion()
+	if hoverVersion == "(devel)" {
+		hoverVersion = "latest"
 	}
-	dockerImage := "goflutter/hover:" + version
+	dockerImage := "goflutter/hover:" + hoverVersion
 	dockerArgs = append(dockerArgs, dockerImage)
 	targetOSAndPackaging := targetOS
 	if packName := packagingTask.Name(); packName != "" {

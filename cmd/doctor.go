@@ -15,8 +15,8 @@ import (
 
 	"github.com/go-flutter-desktop/hover/internal/build"
 	"github.com/go-flutter-desktop/hover/internal/config"
-	"github.com/go-flutter-desktop/hover/internal/flutterversion"
 	"github.com/go-flutter-desktop/hover/internal/log"
+	"github.com/go-flutter-desktop/hover/internal/version"
 )
 
 func init() {
@@ -35,8 +35,8 @@ var doctorCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		assertInFlutterProject()
 
-		version := hoverVersion()
-		log.Infof("Hover version %s running on %s", version, runtime.GOOS)
+		hoverVersion := version.HoverVersion()
+		log.Infof("Hover version %s running on %s", hoverVersion, runtime.GOOS)
 
 		log.Infof("Sharing flutter version")
 		cmdFlutterVersion := exec.Command(build.FlutterBin(), "--version")
@@ -47,7 +47,7 @@ var doctorCmd = &cobra.Command{
 			log.Errorf("Flutter --version failed: %v", err)
 		}
 
-		engineCommitHash := flutterversion.FlutterRequiredEngineVersion()
+		engineCommitHash := version.FlutterRequiredEngineVersion()
 		log.Infof("Flutter engine commit: %s", log.Au().Magenta("https://github.com/flutter/engine/commit/"+engineCommitHash))
 
 		checkFlutterChannel()
