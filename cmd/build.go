@@ -245,9 +245,9 @@ func subcommandBuild(targetOS string, packagingTask packaging.Task, vmArguments 
 			buildGoBinary(targetOS, vmArguments)
 		}
 		if packagingTask != packaging.NoopTask {
-			log.Infof("Packaging app for %s-%s", targetOS, packagingTask.Name())
+			log.Infof("Packaging app for %s", packagingTask.Name())
 			packagingTask.Pack(buildVersionNumber, buildOrRunMode)
-			log.Infof("Successfully packaged app for %s-%s", targetOS, packagingTask.Name())
+			log.Infof("Successfully packaged app for %s", packagingTask.Name())
 		}
 	}
 }

@@ -48,7 +48,7 @@ var DarwinBundleTask = &packagingTask{
 
 		return outputFileName, nil
 	},
-	requiredTools: map[string][]string{
+	requiredTools: map[string]map[string]string{
 		"linux":   {},
 		"darwin":  {},
 		"windows": {},

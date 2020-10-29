@@ -27,7 +27,9 @@ var LinuxSnapTask = &packagingTask{
 		}
 		return fmt.Sprintf("%s_%s_amd64.snap", packageName, version), nil
 	},
-	requiredTools: map[string][]string{
-		"linux": {"snapcraft"},
+	requiredTools: map[string]map[string]string{
+		"linux": {
+			"snapcraft": "Install snapd from your package manager or from https://snapcraft.io/docs/installing-snapd",
+		},
 	},
 }

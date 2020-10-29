@@ -34,7 +34,9 @@ var LinuxPkgTask = &packagingTask{
 		}
 		return fmt.Sprintf("%s-%s-%s-x86_64%s", packageName, version, release, extension), nil
 	},
-	requiredTools: map[string][]string{
-		"linux": {"makepkg"},
+	requiredTools: map[string]map[string]string{
+		"linux": {
+			"makepkg": "You need to be on Arch Linux or another distro that uses pacman as package manager to use this. Installing makepkg on other distros is hard and dangerous.",
+		},
 	},
 }

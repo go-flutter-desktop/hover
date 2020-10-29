@@ -61,7 +61,9 @@ var LinuxAppImageTask = &packagingTask{
 		}
 		return fmt.Sprintf("%s-%s-x86_64.AppImage", strings.ReplaceAll(applicationName, " ", "_"), version), nil
 	},
-	requiredTools: map[string][]string{
-		"linux": {"appimagetool"},
+	requiredTools: map[string]map[string]string{
+		"linux": {
+			"appimagetool": "Install appimagetool from your package manager or from https://github.com/AppImage/AppImageKit#appimagetool-usage",
+		},
 	},
 }

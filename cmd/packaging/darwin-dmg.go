@@ -31,25 +31,31 @@ var DarwinDmgTask = &packagingTask{
 			return "", err
 		}
 
-		var cmdGenisoimage *exec.Cmd
+		var cmdCreateBundle *exec.Cmd
 		switch os := runtime.GOOS; os {
 		case "darwin":
-			cmdGenisoimage = exec.Command("hdiutil", "create", "-volname", packageName, "-srcfolder", "dmgdir", "-ov", "-format", "UDBZ", outputFileName)
+			cmdCreateBundle = exec.Command("hdiutil", "create", "-volname", packageName, "-srcfolder", "dmgdir", "-ov", "-format", "UDBZ", outputFileName)
 		case "linux":
-			cmdGenisoimage = exec.Command("genisoimage", "-V", packageName, "-D", "-R", "-apple", "-no-pad", "-o", outputFileName, "dmgdir")
+			cmdCreateBundle = exec.Command("mkisofs", "-V", packageName, "-D", "-R", "-apple", "-no-pad", "-o", outputFileName, "dmgdir")
 		}
-		cmdGenisoimage.Dir = tmpPath
-		cmdGenisoimage.Stdout = os.Stdout
-		cmdGenisoimage.Stderr = os.Stderr
-		err = cmdGenisoimage.Run()
+		cmdCreateBundle.Dir = tmpPath
+		cmdCreateBundle.Stdout = os.Stdout
+		cmdCreateBundle.Stderr = os.Stderr
+		err = cmdCreateBundle.Run()
 		if err != nil {
 			return "", err
 		}
 		return outputFileName, nil
 	},
 	skipAssertInitialized: true,
-	requiredTools: map[string][]string{
-		"linux":  {"ln", "genisoimage"},
-		"darwin": {"ln", "hdiutil"},
+	requiredTools: map[string]map[string]string{
+		"linux": {
+			"ln":      "Install ln from your package manager",
+			"mkisofs": "Install mkisofs from your package manager. Some distros ship genisoimage which is a fork of mkisofs. Create a symlink for it like this: ln -s $(which genisoimage) /usr/bin/mkisofs",
+		},
+		"darwin": {
+			"ln":      "Install ln from your package manager",
+			"hdiutil": "Install hdiutil from your package manager",
+		},
 	},
 }

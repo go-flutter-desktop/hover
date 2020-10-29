@@ -32,7 +32,9 @@ var LinuxRpmTask = &packagingTask{
 		}
 		return fmt.Sprintf("RPMS/x86_64/%s-%s-%s.x86_64.rpm", packageName, version, release), nil
 	},
-	requiredTools: map[string][]string{
-		"linux": {"rpmbuild"},
+	requiredTools: map[string]map[string]string{
+		"linux": {
+			"rpmbuild": "You need to be on Red Hat Linux or another distro that uses rpm as package manager to use this. Installing rpmbuild on other distros is hard and dangerous.",
+		},
 	},
 }

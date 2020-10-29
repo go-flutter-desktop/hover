@@ -101,6 +101,9 @@ RUN sed -i "s/#XferCommand/XferCommand/g" /etc/pacman.conf
 # This makes makepkg believe we are not root. Bypassing the root check is ok, because we are in a container
 ENV EUID=1
 
+# Create symlink for darwin-dmg
+RUN ln -s $(which genisoimage) /usr/bin/mkisofs
+
 COPY --from=flutterbuilder /opt/flutter /opt/flutter
 RUN ln -sf /opt/flutter/bin/flutter /usr/bin/flutter
 

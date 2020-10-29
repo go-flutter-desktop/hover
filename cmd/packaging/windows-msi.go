@@ -93,9 +93,13 @@ var WindowsMsiTask = &packagingTask{
 		}
 		return outputFileName, nil
 	},
-	requiredTools: map[string][]string{
-		"windows": {"candle", "light"},
-		"linux":   {"wixl"},
+	requiredTools: map[string]map[string]string{
+		"windows": {
+			"candle": "Install the WiX Toolset from https://wixtoolset.org/releases/", // Only for one tool, because displaying the message twice makes no sense
+		},
+		"linux": {
+			"wixl": "Install msitools from your package manager or from https://wiki.gnome.org/msitools/",
+		},
 	},
 	generateInitFiles: func(packageName, path string) {
 		b := make([]byte, 16)
