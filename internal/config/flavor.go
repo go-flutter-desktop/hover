@@ -1,8 +1,10 @@
 package config
 
 import (
+	"github.com/go-flutter-desktop/hover/internal/build"
 	"github.com/go-flutter-desktop/hover/internal/log"
 	"os"
+	"path/filepath"
 )
 
 var hoverYaml string
@@ -26,7 +28,7 @@ func SetHoverFlavor(flavor string) {
 
 // assertYamlFileExists checks to see if the user defined yaml file exists
 func assertYamlFileExists(yamlFile string) {
-	_, err := os.Stat(yamlFile)
+	_, err := os.Stat(filepath.Join(build.BuildPath, yamlFile))
 	if os.IsNotExist(err) {
 		log.Warnf("Hover Yaml file \"%s\" not found.", yamlFile)
 		os.Exit(1)
