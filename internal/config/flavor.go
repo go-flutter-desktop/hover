@@ -36,7 +36,7 @@ func assertYamlFileExists(yamlFile string) {
 		os.Exit(1)
 	}
 	if err != nil {
-		log.Errorf("Failed to stat hover.yaml: %v\n", err)
+		log.Errorf("Failed to stat %s: %v\n", yamlFile, err)
 		os.Exit(1)
 	}
 }
