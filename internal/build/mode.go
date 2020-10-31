@@ -10,6 +10,12 @@ var DebugMode = Mode{
 	IsAot: false,
 }
 
+// JitReleaseMode is the same debug build, but disables the terminal windows on Windows
+var JitReleaseMode = Mode{
+	Name:  "debug_unopt",
+	IsAot: false,
+}
+
 var ReleaseMode = Mode{
 	Name:  "release",
 	IsAot: true,
