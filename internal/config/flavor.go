@@ -1,6 +1,7 @@
 package config
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -23,7 +24,7 @@ func SetDefaultHoverYamlFile() {
 // SetHoverFlavor sets the user defined hover flavor.
 // eg. hover-develop.yaml, hover-staging.yaml, etc.
 func SetHoverFlavor(flavor string) {
-	hoverYaml = "hover-" + flavor + ".yaml"
+	hoverYaml = fmt.Sprintf("hover-%s.yaml", flavor)
 	assertYamlFileExists(hoverYaml)
 }
 
