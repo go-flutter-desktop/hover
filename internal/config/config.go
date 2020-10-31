@@ -73,7 +73,8 @@ var (
 func GetConfig() Config {
 	configLoadOnce.Do(func() {
 		var err error
-		config, err = ReadConfigFile(filepath.Join(build.BuildPath, "hover.yaml"))
+		hoverYaml := GetHoverFlavorYaml()
+		config, err = ReadConfigFile(filepath.Join(build.BuildPath, hoverYaml))
 		if err != nil {
 			if os.IsNotExist(errors.Cause(err)) {
 				// TODO: Add a solution for the user. Perhaps we can let `hover
