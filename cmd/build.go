@@ -33,6 +33,7 @@ var (
 	buildOrRunCachePath       string
 	buildOrRunOpenGlVersion   string
 	buildOrRunEngineVersion   string
+	buildOrRunHoverFlavor     string
 	buildOrRunDocker          bool
 	buildOrRunDebug           bool
 	buildOrRunRelease         bool
@@ -48,6 +49,7 @@ func initCompileFlags(cmd *cobra.Command) {
 	cmd.PersistentFlags().StringVar(&buildOrRunCachePath, "cache-path", enginecache.DefaultCachePath(), "The path that hover uses to cache dependencies such as the Flutter engine .so/.dll")
 	cmd.PersistentFlags().StringVar(&buildOrRunOpenGlVersion, "opengl", config.BuildOpenGlVersionDefault, "The OpenGL version specified here is only relevant for external texture plugin (i.e. video_plugin).\nIf 'none' is provided, texture won't be supported. Note: the Flutter Engine still needs a OpenGL compatible context.")
 	cmd.PersistentFlags().StringVar(&buildOrRunEngineVersion, "engine-version", config.BuildEngineDefault, "The flutter engine version to use.")
+	cmd.PersistentFlags().StringVar(&buildOrRunHoverFlavor, "flavor", "", "The flavor to use, defaults to 'hover.yaml'.")
 	cmd.PersistentFlags().BoolVar(&buildOrRunDocker, "docker", false, "Execute the go build and packaging in a docker container. The Flutter build is always run locally")
 	cmd.PersistentFlags().BoolVar(&buildOrRunDebug, "debug", false, "Build a debug version of the app.")
 	cmd.PersistentFlags().BoolVar(&buildOrRunRelease, "release", false, "Build a release version of the app. Currently very experimental")
@@ -259,6 +261,12 @@ func initBuildParameters(targetOS string, defaultBuildOrRunMode build.Mode) {
 	if buildOrRunCachePath == "" {
 		log.Errorf("Missing cache path, cannot continue. Please see previous warning.")
 		os.Exit(1)
+	}
+
+	if buildOrRunHoverFlavor == "" {
+		config.SetDefaultFlavorFile()
+	} else {
+		config.SetHoverFlavor(buildOrRunHoverFlavor)
 	}
 
 	if buildOrRunEngineVersion == config.BuildEngineDefault && config.GetConfig().Engine != "" {

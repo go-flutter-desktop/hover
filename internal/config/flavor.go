@@ -7,19 +7,24 @@ import (
 
 var hoverYaml string
 
+// GetHoverFlavorYaml returns the Hover yaml file
 func GetHoverFlavorYaml() string {
 	return hoverYaml
 }
 
+// SetDefaultFlavorFile sets the default hover.yaml
 func SetDefaultFlavorFile() {
 	hoverYaml = "hover.yaml"
 }
 
+// SetHoverFlavor sets the user defined hover flavor.
+// eg. hover-develop.yaml, hover-staging.yaml, etc.
 func SetHoverFlavor(flavor string) {
 	hoverYaml = "hover-" + flavor + ".yaml"
 	assertYamlFileExists(hoverYaml)
 }
 
+// assertYamlFileExists checks to see if the user defined yaml file exists
 func assertYamlFileExists(yamlFile string) {
 	_, err := os.Stat(yamlFile)
 	if os.IsNotExist(err) {
