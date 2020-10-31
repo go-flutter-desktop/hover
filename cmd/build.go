@@ -264,7 +264,7 @@ func initBuildParameters(targetOS string, defaultBuildOrRunMode build.Mode) {
 	}
 
 	if buildOrRunHoverFlavor == "" {
-		config.SetDefaultFlavorFile()
+		config.SetDefaultHoverYamlFile()
 	} else {
 		config.SetHoverFlavor(buildOrRunHoverFlavor)
 	}

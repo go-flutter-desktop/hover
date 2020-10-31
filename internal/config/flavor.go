@@ -15,7 +15,7 @@ func GetHoverFlavorYaml() string {
 }
 
 // SetDefaultFlavorFile sets the default hover.yaml
-func SetDefaultFlavorFile() {
+func SetDefaultHoverYamlFile() {
 	hoverYaml = "hover.yaml"
 }
 
