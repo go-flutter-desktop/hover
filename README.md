@@ -124,6 +124,19 @@ To get a list of all available packaging formats run:
 hover build --help
 ```
 
+### Flavors
+
+Hover supports different application flavors via `--flavor MY_FLAVOR` command.
+If you wish to create a new flavor for you application, 
+simply copy `go/hover.yaml` into `go/hover-MY_FLAVOR.yaml` and modify contents as needed.
+If no flavor is specified, Hover will always default to `hover.yaml`
+
+```
+hover run --flavor develop || hover build --flavor develop
+// hover-develop.yaml
+```
+
+
 ## Issues
 
 Please report issues at the [go-flutter issue tracker](https://github.com/go-flutter-desktop/go-flutter/issues/).
