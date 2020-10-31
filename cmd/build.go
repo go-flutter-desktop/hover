@@ -263,6 +263,7 @@ func initBuildParameters(targetOS string, defaultBuildOrRunMode build.Mode) {
 		os.Exit(1)
 	}
 
+	// hover.yaml file needs to be set before accessing config.GetConfig()
 	if buildOrRunHoverFlavor == "" {
 		config.SetDefaultHoverYamlFile()
 	} else {
@@ -333,6 +334,9 @@ func commonFlags() []string {
 	}
 	if buildOrRunOpenGlVersion != config.BuildOpenGlVersionDefault {
 		f = append(f, "--opengl", buildOrRunOpenGlVersion)
+	}
+	if buildOrRunHoverFlavor != "" {
+		f = append(f, "--flavor", buildOrRunHoverFlavor)
 	}
 	return f
 }
