@@ -1,10 +1,11 @@
 package config
 
 import (
-	"github.com/go-flutter-desktop/hover/internal/build"
-	"github.com/go-flutter-desktop/hover/internal/log"
 	"os"
 	"path/filepath"
+
+	"github.com/go-flutter-desktop/hover/internal/build"
+	"github.com/go-flutter-desktop/hover/internal/log"
 )
 
 var hoverYaml string
