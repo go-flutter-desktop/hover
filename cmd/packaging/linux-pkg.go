@@ -1,5 +1,11 @@
 package packaging
 
+import (
+	"fmt"
+	"os"
+	"os/exec"
+)
+
 // LinuxPkgTask packaging for linux as pacman pkg
 var LinuxPkgTask = &packagingTask{
 	packagingFormatName: "linux-pkg",
@@ -14,9 +20,23 @@ var LinuxPkgTask = &packagingTask{
 	},
 	linuxDesktopFileExecutablePath: "/usr/lib/{{.packageName}}/{{.executableName}}",
 	linuxDesktopFileIconPath:       "/usr/lib/{{.packageName}}/assets/icon.png",
-	buildOutputDirectory:           "src/usr/lib/{{.packageName}}",
-	packagingScriptTemplate:        "makepkg && mv -n {{.packageName}}-{{.version}}-{{.release}}-x86_64.pkg.tar.xz {{.packageName}}-{{.version}}.pkg.tar.xz",
-	outputFileExtension:            "pkg.tar.xz",
-	outputFileContainsVersion:      true,
-	outputFileUsesApplicationName:  false,
+	flutterBuildOutputDirectory:    "src/usr/lib/{{.packageName}}",
+	packagingFunction: func(tmpPath, applicationName, packageName, executableName, version, release string) (string, error) {
+		extension := ".pkg.tar.xz"
+		cmdMakepkg := exec.Command("makepkg")
+		cmdMakepkg.Dir = tmpPath
+		cmdMakepkg.Stdout = os.Stdout
+		cmdMakepkg.Stderr = os.Stderr
+		cmdMakepkg.Env = append(os.Environ(), fmt.Sprintf("PKGEXT=%s", extension))
+		err := cmdMakepkg.Run()
+		if err != nil {
+			return "", err
+		}
+		return fmt.Sprintf("%s-%s-%s-x86_64%s", packageName, version, release, extension), nil
+	},
+	requiredTools: map[string]map[string]string{
+		"linux": {
+			"makepkg": "You need to be on Arch Linux or another distro that uses pacman as package manager to use this. Installing makepkg on other distros is hard and dangerous.",
+		},
+	},
 }

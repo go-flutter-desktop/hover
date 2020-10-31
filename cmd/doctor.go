@@ -13,10 +13,11 @@ import (
 	"github.com/spf13/cobra"
 	"gopkg.in/yaml.v2"
 
+	"github.com/go-flutter-desktop/hover/cmd/packaging"
 	"github.com/go-flutter-desktop/hover/internal/build"
 	"github.com/go-flutter-desktop/hover/internal/config"
-	"github.com/go-flutter-desktop/hover/internal/flutterversion"
 	"github.com/go-flutter-desktop/hover/internal/log"
+	"github.com/go-flutter-desktop/hover/internal/version"
 )
 
 func init() {
@@ -35,8 +36,26 @@ var doctorCmd = &cobra.Command{
 	Run: func(cmd *cobra.Command, args []string) {
 		assertInFlutterProject()
 
-		version := hoverVersion()
-		log.Infof("Hover version %s running on %s", version, runtime.GOOS)
+		hoverVersion := version.HoverVersion()
+		log.Infof("Hover version %s running on %s", hoverVersion, runtime.GOOS)
+
+		log.Infof("Sharing packaging tools")
+		for _, task := range []packaging.Task{
+			packaging.DarwinBundleTask,
+			packaging.DarwinDmgTask,
+			packaging.DarwinPkgTask,
+			packaging.LinuxAppImageTask,
+			packaging.LinuxDebTask,
+			packaging.LinuxPkgTask,
+			packaging.LinuxRpmTask,
+			packaging.LinuxSnapTask,
+			packaging.WindowsMsiTask,
+		} {
+			if task.IsSupported() {
+				log.Infof("%s is supported", task.Name())
+			}
+		}
+		log.Printf("")
 
 		log.Infof("Sharing flutter version")
 		cmdFlutterVersion := exec.Command(build.FlutterBin(), "--version")
@@ -47,7 +66,7 @@ var doctorCmd = &cobra.Command{
 			log.Errorf("Flutter --version failed: %v", err)
 		}
 
-		engineCommitHash := flutterversion.FlutterRequiredEngineVersion()
+		engineCommitHash := version.FlutterRequiredEngineVersion()
 		log.Infof("Flutter engine commit: %s", log.Au().Magenta("https://github.com/flutter/engine/commit/"+engineCommitHash))
 
 		checkFlutterChannel()

@@ -2,7 +2,9 @@ package pubspec
 
 import (
 	"fmt"
+	"github.com/go-flutter-desktop/hover/internal/config"
 	"os"
+	"os/user"
 
 	"gopkg.in/yaml.v2"
 
@@ -18,6 +20,35 @@ type PubSpec struct {
 	Author       string
 	Dependencies map[string]interface{}
 	Flutter      map[string]interface{}
+}
+
+func (p PubSpec) GetDescription() string {
+	if len(p.Description) == 0 {
+		p.Description = "A flutter app made with go-flutter"
+		config.PrintMissingField("description", "pubspec.yaml", p.Description)
+	}
+	return p.Description
+}
+
+func (p PubSpec) GetVersion() string {
+	if len(p.Version) == 0 {
+		p.Version = "0.0.1"
+		config.PrintMissingField("version", "pubspec.yaml", p.Version)
+	}
+	return p.Version
+}
+
+func (p PubSpec) GetAuthor() string {
+	if len(p.Author) == 0 {
+		u, err := user.Current()
+		if err != nil {
+			log.Errorf("Couldn't get current user: %v", err)
+			os.Exit(1)
+		}
+		p.Author = u.Username
+		config.PrintMissingField("author", "pubspec.yaml", p.Author)
+	}
+	return p.Author
 }
 
 var pubspec = PubSpec{}

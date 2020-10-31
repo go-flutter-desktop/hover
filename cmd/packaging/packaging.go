@@ -3,23 +3,22 @@ package packaging
 import (
 	"bytes"
 	"fmt"
+	"github.com/go-flutter-desktop/hover/internal/androidmanifest"
+	"github.com/go-flutter-desktop/hover/internal/pubspec"
 	"io/ioutil"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"runtime"
 	"strings"
-	"sync"
 	"text/template"
 
 	"github.com/otiai10/copy"
 
-	"github.com/go-flutter-desktop/hover/internal/androidmanifest"
 	"github.com/go-flutter-desktop/hover/internal/build"
 	"github.com/go-flutter-desktop/hover/internal/config"
 	"github.com/go-flutter-desktop/hover/internal/fileutils"
 	"github.com/go-flutter-desktop/hover/internal/log"
-	"github.com/go-flutter-desktop/hover/internal/pubspec"
 )
 
 var packagingPath = filepath.Join(build.BuildPath, "packaging")
@@ -54,72 +53,62 @@ func getTemporaryBuildDirectory(projectName string, packagingFormat string) stri
 	return tmpPath
 }
 
-func runPackaging(path string, command string) {
-	bashCmd := exec.Command("bash", "-c", command)
-	bashCmd.Stderr = os.Stderr
-	bashCmd.Stdout = os.Stdout
-	bashCmd.Dir = path
-	err := bashCmd.Run()
-	if err != nil {
-		log.Warnf("Packaging is very experimental and has only been tested on Linux.")
-		log.Infof("To help us debuging this error, please zip the content of:\n       \"%s\"\n       %s",
-			log.Au().Blue(path),
-			log.Au().Green("and try to package on another OS. You can also share this zip with the go-flutter team."))
-		log.Infof("You can package the app without hover by running:")
-		log.Infof("  `%s`", log.Au().Magenta("cd "+path))
-		log.Infof("  executed command: `%s`", log.Au().Magenta(bashCmd.String()))
+type packagingTask struct {
+	packagingFormatName            string                                                                                               // Name of the packaging format: OS-TYPE
+	dependsOn                      map[*packagingTask]string                                                                            // Packaging tasks this task depends on
+	templateFiles                  map[string]string                                                                                    // Template files to copy over on init
+	executableFiles                []string                                                                                             // Files that should be executable
+	linuxDesktopFileExecutablePath string                                                                                               // Path of the executable for linux .desktop file (only set on linux)
+	linuxDesktopFileIconPath       string                                                                                               // Path of the icon for linux .desktop file (only set on linux)
+	generateBuildFiles             func(packageName, path string)                                                                       // Generate dynamic build files. Operates in the temporary directory
+	generateInitFiles              func(packageName, path string)                                                                       // Generate dynamic init files
+	extraTemplateData              func(packageName, path string) map[string]string                                                     // Update the template data on build. This is used for inserting values that are generated on init
+	flutterBuildOutputDirectory    string                                                                                               // Path to copy the build output of the app to. Operates in the temporary directory
+	packagingFunction              func(tmpPath, applicationName, packageName, executableName, version, release string) (string, error) // Function that actually packages the app. Needs to check for OS specific tools etc. . Returns the path of the packaged file
+	skipAssertInitialized          bool                                                                                                 // Set to true when a task doesn't need to be initialized.
+	requiredTools                  map[string]map[string]string                                                                         // Map of list of tools required to package per OS
+}
+
+func (t *packagingTask) AssertSupported() {
+	if !t.IsSupported() {
 		os.Exit(1)
 	}
 }
 
-var templateData map[string]string
-var once sync.Once
-
-func (t *packagingTask) getTemplateData(projectName, buildVersion string) map[string]string {
-	once.Do(func() {
-		templateData = map[string]string{
-			"projectName":      projectName,
-			"version":          buildVersion,
-			"release":          strings.Split(buildVersion, ".")[0],
-			"arch":             runtime.GOARCH,
-			"description":      pubspec.GetPubSpec().Description,
-			"organizationName": androidmanifest.AndroidOrganizationName(),
-			"author":           config.GetConfig().Author(),
-			"applicationName":  config.GetConfig().ApplicationName(projectName),
-			"executableName":   config.GetConfig().ExecutableName(projectName),
-			"packageName":      config.GetConfig().PackageName(projectName),
-			"license":          config.GetConfig().License(),
+func (t *packagingTask) IsSupported() bool {
+	for task := range t.dependsOn {
+		if !task.IsSupported() {
+			return false
 		}
-		templateData["iconPath"] = executeStringTemplate(t.linuxDesktopFileIconPath, templateData)
-		templateData["executablePath"] = executeStringTemplate(t.linuxDesktopFileExecutablePath, templateData)
-	})
-	return templateData
-}
-
-type packagingTask struct {
-	packagingFormatName            string                         // Name of the packaging format: OS-TYPE
-	dependsOn                      map[*packagingTask]string      // Packaging tasks this task depends on
-	templateFiles                  map[string]string              // Template files to copy over on init
-	executableFiles                []string                       // Files that should be executable
-	linuxDesktopFileExecutablePath string                         // Path of the executable for linux .desktop file (only set on linux)
-	linuxDesktopFileIconPath       string                         // Path of the icon for linux .desktop file (only set on linux)
-	generateBuildFiles             func(packageName, path string) // Generate dynamic build files. Operates in the temporary directory
-	buildOutputDirectory           string                         // Path to copy the build output of the app to. Operates in the temporary directory
-	packagingScriptTemplate        string                         // Template for the command that actually packages the app
-	outputFileExtension            string                         // File extension of the packaged app
-	// NOTE: outputFileContainsVersion is currently always true, we could
-	// consider adding a flag for it to let users disable it.
-	outputFileContainsVersion bool // Whether the output file name contains the version
-	// NOTE: outputFileUsesApplicationName is always true for darwin-* and
-	// windows-*, and always false for linux-*. We could consider adding a flag
-	// for it to enable and disable at will (defaulting to how it's currently
-	// configured).
-	outputFileUsesApplicationName bool // Uses the application name instead of the package name
-	skipAssertInitialized         bool // Set to true when a task doesn't need to be initialized.
+	}
+	if _, osIsSupported := t.requiredTools[runtime.GOOS]; !osIsSupported {
+		log.Errorf("Packaging %s is not supported on %s", t.packagingFormatName, runtime.GOOS)
+		log.Errorf("To still package %s on %s you need to run hover with the `--docker` flag.", t.packagingFormatName, runtime.GOOS)
+		return false
+	}
+	var unavailableTools []string
+	for tool := range t.requiredTools[runtime.GOOS] {
+		_, err := exec.LookPath(tool)
+		if err != nil {
+			unavailableTools = append(unavailableTools, tool)
+		}
+	}
+	if len(unavailableTools) > 0 {
+		log.Errorf("To package %s these tools are required: %s", t.packagingFormatName, strings.Join(unavailableTools, ","))
+		for _, tool := range unavailableTools {
+			text := t.requiredTools[runtime.GOOS][tool]
+			if len(text) > 0 {
+				log.Infof(text)
+			}
+		}
+		log.Infof("To still package %s without the required tools installed you need to run hover with the `--docker` flag.", t.packagingFormatName)
+		return false
+	}
+	return true
 }
 
 func (t *packagingTask) Name() string {
-	return strings.SplitN(t.packagingFormatName, "-", 2)[1]
+	return t.packagingFormatName
 }
 
 func (t *packagingTask) Init() {
@@ -142,6 +131,10 @@ func (t *packagingTask) init(ignoreAlreadyExists bool) {
 			}
 			fileutils.CopyAsset(fmt.Sprintf("packaging/%s", sourceFile), destinationFile, fileutils.AssetsBox())
 		}
+		if t.generateInitFiles != nil {
+			log.Infof("Generating dynamic init files")
+			t.generateInitFiles(config.GetConfig().GetPackageName(pubspec.GetPubSpec().Name), dir)
+		}
 		log.Infof("go/packaging/%s has been created. You can modify the configuration files and add it to git.", t.packagingFormatName)
 		log.Infof(fmt.Sprintf("You now can package the %s using `%s`", strings.Split(t.packagingFormatName, "-")[0], log.Au().Magenta("hover build "+t.packagingFormatName)))
 	} else if !ignoreAlreadyExists {
@@ -150,11 +143,48 @@ func (t *packagingTask) init(ignoreAlreadyExists bool) {
 	}
 }
 
-func (t *packagingTask) Pack(buildVersion string) {
-	for task := range t.dependsOn {
-		task.Pack(buildVersion)
-	}
+func (t *packagingTask) Pack(fullVersion string, mode build.Mode) {
 	projectName := pubspec.GetPubSpec().Name
+	version := strings.Split(fullVersion, "+")[0]
+	var release string
+	if strings.Contains(fullVersion, "+") {
+		release = strings.Split(fullVersion, "+")[1]
+	} else {
+		release = strings.ReplaceAll(fullVersion, ".", "")
+	}
+	description := pubspec.GetPubSpec().GetDescription()
+	organizationName := androidmanifest.AndroidOrganizationName()
+	author := pubspec.GetPubSpec().GetAuthor()
+	applicationName := config.GetConfig().GetApplicationName(projectName)
+	executableName := config.GetConfig().GetExecutableName(projectName)
+	packageName := config.GetConfig().GetPackageName(projectName)
+	license := config.GetConfig().GetLicense()
+	templateData := map[string]string{
+		"projectName":      projectName,
+		"version":          version,
+		"release":          release,
+		"description":      description,
+		"organizationName": organizationName,
+		"author":           author,
+		"applicationName":  applicationName,
+		"executableName":   executableName,
+		"packageName":      packageName,
+		"license":          license,
+	}
+	templateData["iconPath"] = executeStringTemplate(t.linuxDesktopFileIconPath, templateData)
+	templateData["executablePath"] = executeStringTemplate(t.linuxDesktopFileExecutablePath, templateData)
+	t.pack(templateData, packageName, projectName, applicationName, executableName, version, release, mode)
+}
+
+func (t *packagingTask) pack(templateData map[string]string, packageName, projectName, applicationName, executableName, version, release string, mode build.Mode) {
+	if t.extraTemplateData != nil {
+		for key, value := range t.extraTemplateData(packageName, packagingFormatPath(t.packagingFormatName)) {
+			templateData[key] = value
+		}
+	}
+	for task := range t.dependsOn {
+		task.pack(templateData, packageName, projectName, applicationName, executableName, version, release, mode)
+	}
 	tmpPath := getTemporaryBuildDirectory(projectName, t.packagingFormatName)
 	defer func() {
 		err := os.RemoveAll(tmpPath)
@@ -165,62 +195,60 @@ func (t *packagingTask) Pack(buildVersion string) {
 	}()
 	log.Infof("Packaging %s in %s", strings.Split(t.packagingFormatName, "-")[1], tmpPath)
 
-	if t.buildOutputDirectory != "" {
-		err := copy.Copy(build.OutputDirectoryPath(strings.Split(t.packagingFormatName, "-")[0]), executeStringTemplate(filepath.Join(tmpPath, t.buildOutputDirectory), t.getTemplateData(projectName, buildVersion)))
+	if t.flutterBuildOutputDirectory != "" {
+		err := copy.Copy(build.OutputDirectoryPath(strings.Split(t.packagingFormatName, "-")[0], mode), executeStringTemplate(filepath.Join(tmpPath, t.flutterBuildOutputDirectory), templateData))
 		if err != nil {
 			log.Errorf("Could not copy build folder: %v", err)
 			os.Exit(1)
 		}
 	}
 	for task, destination := range t.dependsOn {
-		err := copy.Copy(build.OutputDirectoryPath(task.packagingFormatName), filepath.Join(tmpPath, destination))
+		err := copy.Copy(build.OutputDirectoryPath(task.packagingFormatName, mode), filepath.Join(tmpPath, destination))
 		if err != nil {
 			log.Errorf("Could not copy build folder of %s: %v", task.packagingFormatName, err)
 			os.Exit(1)
 		}
 	}
-	fileutils.CopyTemplateDir(packagingFormatPath(t.packagingFormatName), filepath.Join(tmpPath), t.getTemplateData(projectName, buildVersion))
+	fileutils.CopyTemplateDir(packagingFormatPath(t.packagingFormatName), filepath.Join(tmpPath), templateData)
 	if t.generateBuildFiles != nil {
 		log.Infof("Generating dynamic build files")
-		t.generateBuildFiles(config.GetConfig().PackageName(projectName), tmpPath)
+		t.generateBuildFiles(packageName, tmpPath)
 	}
 
 	for _, file := range t.executableFiles {
-		err := os.Chmod(executeStringTemplate(filepath.Join(tmpPath, file), t.getTemplateData(projectName, buildVersion)), 0777)
+		err := os.Chmod(executeStringTemplate(filepath.Join(tmpPath, file), templateData), 0777)
 		if err != nil {
 			log.Errorf("Failed to change file permissions for %s file: %v", file, err)
 			os.Exit(1)
 		}
 	}
 
-	err := os.RemoveAll(build.OutputDirectoryPath(t.packagingFormatName))
+	err := os.RemoveAll(build.OutputDirectoryPath(t.packagingFormatName, mode))
 	log.Printf("Cleaning the build directory")
 	if err != nil {
-		log.Errorf("Failed to clean output directory %s: %v", build.OutputDirectoryPath(t.packagingFormatName), err)
+		log.Errorf("Failed to clean output directory %s: %v", build.OutputDirectoryPath(t.packagingFormatName, mode), err)
 		os.Exit(1)
 	}
 
-	packagingScript := executeStringTemplate(t.packagingScriptTemplate, t.getTemplateData(projectName, buildVersion))
-	runPackaging(tmpPath, packagingScript)
-	var outputFileName string
-	if t.outputFileUsesApplicationName {
-		outputFileName += config.GetConfig().ApplicationName(projectName)
-	} else {
-		outputFileName += config.GetConfig().PackageName(projectName)
+	relativeOutputFilePath, err := t.packagingFunction(tmpPath, applicationName, packageName, executableName, version, release)
+	if err != nil {
+		log.Errorf("%v", err)
+		log.Warnf("Packaging is very experimental and has mostly been tested on Linux.")
+		log.Infof("Please open an issue at https://github.com/go-flutter-desktop/go-flutter/issues/new?template=BUG.md")
+		log.Infof("with the log and a reproducible example if possible. You may also zip your app code")
+		log.Infof("if you are comfortable with it (closed source etc.) and attach it to the issue.")
+		os.Exit(1)
 	}
-	if t.outputFileContainsVersion {
-		if t.outputFileUsesApplicationName {
-			outputFileName += " "
-		} else {
-			outputFileName += "-"
-		}
-		outputFileName += buildVersion
-	}
-	outputFileName += "." + t.outputFileExtension
-	outputFilePath := executeStringTemplate(filepath.Join(build.OutputDirectoryPath(t.packagingFormatName), outputFileName), t.getTemplateData(projectName, buildVersion))
-	err = copy.Copy(filepath.Join(tmpPath, outputFileName), outputFilePath)
+	outputFileName := filepath.Base(relativeOutputFilePath)
+	outputFilePath := filepath.Join(build.OutputDirectoryPath(t.packagingFormatName, mode), outputFileName)
+	err = copy.Copy(filepath.Join(tmpPath, relativeOutputFilePath), outputFilePath)
 	if err != nil {
 		log.Errorf("Could not move %s file: %v", outputFileName, err)
+		os.Exit(1)
+	}
+	err = os.Chmod(outputFilePath, 0755)
+	if err != nil {
+		log.Errorf("Could not change file permissions for %s: %v", outputFileName, err)
 		os.Exit(1)
 	}
 }

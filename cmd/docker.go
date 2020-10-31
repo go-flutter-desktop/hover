@@ -13,14 +13,14 @@ import (
 	"github.com/go-flutter-desktop/hover/internal/build"
 	"github.com/go-flutter-desktop/hover/internal/log"
 	"github.com/go-flutter-desktop/hover/internal/logstreamer"
+	"github.com/go-flutter-desktop/hover/internal/version"
 )
 
 func dockerHoverBuild(targetOS string, packagingTask packaging.Task, buildFlags []string, vmArguments []string) {
-	initBuildParameters(targetOS)
 	var err error
 	dockerBin := build.DockerBin()
 
-	hoverCacheDir := filepath.Join(buildCachePath, "hover")
+	hoverCacheDir := filepath.Join(buildOrRunCachePath, "hover")
 
 	engineCacheDir := filepath.Join(hoverCacheDir, "engine")
 	err = os.MkdirAll(engineCacheDir, 0755)
@@ -60,11 +60,19 @@ func dockerHoverBuild(targetOS string, packagingTask packaging.Task, buildFlags 
 		dockerArgs = append(dockerArgs, "--env", "HOVER_SAFE_CHOWN_UID="+currentUser.Uid)
 		dockerArgs = append(dockerArgs, "--env", "HOVER_SAFE_CHOWN_GID="+currentUser.Gid)
 	}
-	if goproxy := os.Getenv("GOPROXY"); goproxy != "" {
-		dockerArgs = append(dockerArgs, "--env", "GOPROXY="+goproxy)
+	goproxy, err := exec.Command("go", "env", "GOPROXY").Output()
+	if err != nil {
+		log.Errorf("Failed to get GOPROXY: %v", err)
 	}
-	if goprivate := os.Getenv("GOPRIVATE"); goprivate != "" {
-		dockerArgs = append(dockerArgs, "--env", "GOPRIVATE="+goprivate)
+	if string(goproxy) != "" {
+		dockerArgs = append(dockerArgs, "--env", "GOPROXY="+string(goproxy))
+	}
+	goprivate, err := exec.Command("go", "env", "GOPRIVATE").Output()
+	if err != nil {
+		log.Errorf("Failed to get GOPRIVATE: %v", err)
+	}
+	if string(goprivate) != "" {
+		dockerArgs = append(dockerArgs, "--env", "GOPRIVATE="+string(goprivate))
 	}
 	if len(vmArguments) > 0 {
 		// I (GeertJohan) am not too happy with this, it make the hover inside
@@ -76,15 +84,15 @@ func dockerHoverBuild(targetOS string, packagingTask packaging.Task, buildFlags 
 		dockerArgs = append(dockerArgs, "--env", "HOVER_IN_DOCKER_BUILD_VMARGS="+strings.Join(vmArguments, ","))
 	}
 
-	version := hoverVersion()
-	if version == "(devel)" {
-		version = "latest"
+	hoverVersion := version.HoverVersion()
+	if hoverVersion == "(devel)" {
+		hoverVersion = "latest"
 	}
-	dockerImage := "goflutter/hover:" + version
+	dockerImage := "goflutter/hover:" + hoverVersion
 	dockerArgs = append(dockerArgs, dockerImage)
 	targetOSAndPackaging := targetOS
 	if packName := packagingTask.Name(); packName != "" {
-		targetOSAndPackaging += "-" + packName
+		targetOSAndPackaging = packName
 	}
 	hoverCommand := []string{"hover-safe.sh", "build", targetOSAndPackaging}
 	hoverCommand = append(hoverCommand, buildFlags...)

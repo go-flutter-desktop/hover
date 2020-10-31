@@ -14,9 +14,9 @@ import (
 	"github.com/pkg/errors"
 
 	"github.com/go-flutter-desktop/hover/internal/build"
-	"github.com/go-flutter-desktop/hover/internal/flutterversion"
 	"github.com/go-flutter-desktop/hover/internal/log"
 	"github.com/go-flutter-desktop/hover/internal/pubspec"
+	"github.com/go-flutter-desktop/hover/internal/version"
 )
 
 // assertInFlutterProject asserts this command is executed in a flutter project
@@ -48,7 +48,7 @@ func assertHoverInitialized() {
 }
 
 func checkFlutterChannel() {
-	channel := flutterversion.FlutterChannel()
+	channel := version.FlutterChannel()
 	ignoreWarning := os.Getenv("HOVER_IGNORE_CHANNEL_WARNING")
 	if channel != "beta" && ignoreWarning != "true" {
 		log.Warnf("⚠ The go-flutter project tries to stay compatible with the beta channel of Flutter.")

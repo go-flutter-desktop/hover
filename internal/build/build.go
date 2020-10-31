@@ -1,6 +1,7 @@
 package build
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -13,8 +14,8 @@ const BuildPath = "go"
 
 // buildDirectoryPath returns the path in `BuildPath`/build.
 // If needed, the directory is create at the returned path.
-func buildDirectoryPath(targetOS, path string) string {
-	outputDirectoryPath, err := filepath.Abs(filepath.Join(BuildPath, "build", path, targetOS))
+func buildDirectoryPath(targetOS string, mode Mode, path string) string {
+	outputDirectoryPath, err := filepath.Abs(filepath.Join(BuildPath, "build", path, fmt.Sprintf("%s-%s", targetOS, mode.Name)))
 	if err != nil {
 		log.Errorf("Failed to resolve absolute path for output directory: %v", err)
 		os.Exit(1)
@@ -32,8 +33,8 @@ func buildDirectoryPath(targetOS, path string) string {
 // OutputDirectoryPath returns the path where the go-flutter binary and flutter
 // binaries blobs will be stored for a particular platform.
 // If needed, the directory is create at the returned path.
-func OutputDirectoryPath(targetOS string) string {
-	return buildDirectoryPath(targetOS, "outputs")
+func OutputDirectoryPath(targetOS string, mode Mode) string {
+	return buildDirectoryPath(targetOS, mode, "outputs")
 }
 
 // IntermediatesDirectoryPath returns the path where the intermediates stored.
@@ -42,8 +43,8 @@ func OutputDirectoryPath(targetOS string) string {
 // Those intermediates include the dynamic library dependencies of go-flutter plugins.
 // hover copies these intermediates from flutter plugins folder when `hover plugins get`, and
 // copies to go-flutter's binary output folder before build.
-func IntermediatesDirectoryPath(targetOS string) string {
-	return buildDirectoryPath(targetOS, "intermediates")
+func IntermediatesDirectoryPath(targetOS string, mode Mode) string {
+	return buildDirectoryPath(targetOS, mode, "intermediates")
 }
 
 // OutputBinary returns the string of the executable used to launch the
@@ -66,24 +67,46 @@ func OutputBinary(executableName, targetOS string) string {
 
 // OutputBinaryPath returns the path to the go-flutter Application for a
 // specified platform.
-func OutputBinaryPath(executableName, targetOS string) string {
-	outputBinaryPath := filepath.Join(OutputDirectoryPath(targetOS), OutputBinary(executableName, targetOS))
+func OutputBinaryPath(executableName, targetOS string, mode Mode) string {
+	outputBinaryPath := filepath.Join(OutputDirectoryPath(targetOS, mode), OutputBinary(executableName, targetOS))
 	return outputBinaryPath
 }
 
-// EngineFilename returns the name of the engine file from flutter for the
-// specified platform.
-func EngineFilename(targetOS string) string {
+// ExecutableExtension returns the extension of binary files on a given platform
+func ExecutableExtension(targetOS string) string {
 	switch targetOS {
 	case "darwin":
-		return "FlutterEmbedder.framework"
+		// no special filename
+		return ""
 	case "linux":
-		return "libflutter_engine.so"
+		// no special filename
+		return ""
 	case "windows":
-		return "flutter_engine.dll"
+		return ".exe"
+	default:
+		log.Errorf("Target platform %s is not supported.", targetOS)
+		os.Exit(1)
+		return ""
+	}
+}
+
+// EngineFiles returns the names of the engine files from flutter for the
+// specified platform and build mode.
+func EngineFiles(targetOS string, mode Mode) []string {
+	switch targetOS {
+	case "darwin":
+		return []string{"libflutter_engine.dylib"}
+	case "linux":
+		return []string{"libflutter_engine.so"}
+	case "windows":
+		if mode.IsAot {
+			return []string{"flutter_engine.dll", "flutter_engine.exp", "flutter_engine.lib", "flutter_engine.pdb"}
+		} else {
+			return []string{"flutter_engine.dll"}
+		}
 	default:
 		log.Errorf("%s has no implemented engine file", targetOS)
 		os.Exit(1)
-		return ""
+		return []string{}
 	}
 }

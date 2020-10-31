@@ -2,23 +2,19 @@ package config
 
 import (
 	"os"
-	"os/user"
 	"path/filepath"
 	"strings"
+	"sync"
 
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
 
 	"github.com/go-flutter-desktop/hover/internal/build"
 	"github.com/go-flutter-desktop/hover/internal/log"
-	"github.com/go-flutter-desktop/hover/internal/pubspec"
 )
 
 // BuildTargetDefault Default build target file
 const BuildTargetDefault = "lib/main_desktop.dart"
-
-// BuildBranchDefault Default go-flutter branch
-const BuildBranchDefault = ""
 
 // BuildEngineDefault Default go-flutter engine version
 const BuildEngineDefault = ""
@@ -28,96 +24,100 @@ const BuildOpenGlVersionDefault = "3.3"
 
 // Config contains the parsed contents of hover.yaml
 type Config struct {
-	loaded          bool
-	applicationName string `yaml:"application-name"`
-	executableName  string `yaml:"executable-name"`
-	packageName     string `yaml:"package-name"`
-	license         string
-	Target          string
-	Branch          string
-	CachePath       string `yaml:"cache-path"`
-	OpenGL          string
-	Engine          string `yaml:"engine-version"`
+	ApplicationName  string `yaml:"application-name"`
+	ExecutableName   string `yaml:"executable-name"`
+	PackageName      string `yaml:"package-name"`
+	License          string
+	Target           string
+	BranchREMOVED    string `yaml:"branch"`
+	CachePathREMOVED string `yaml:"cache-path"`
+	OpenGL           string
+	Engine           string `yaml:"engine-version"`
 }
 
-func (c Config) ApplicationName(projectName string) string {
-	if c.applicationName == "" {
+func (c Config) GetApplicationName(projectName string) string {
+	if c.ApplicationName == "" {
 		return projectName
 	}
-	return c.applicationName
+	return c.ApplicationName
 }
 
-func (c Config) ExecutableName(projectName string) string {
-	if c.executableName == "" {
+func (c Config) GetExecutableName(projectName string) string {
+	if c.ExecutableName == "" {
 		return strings.ReplaceAll(projectName, " ", "")
 	}
-	return c.executableName
+	return c.ExecutableName
 }
 
-func (c Config) PackageName(projectName string) string {
-	if c.packageName == "" {
+func (c Config) GetPackageName(projectName string) string {
+	if c.PackageName == "" {
 		return strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(projectName, "-", ""), "_", ""), " ", "")
 	}
-	return c.packageName
+	return c.PackageName
 }
 
-func (c Config) License() string {
-	if c.license == "" {
-		log.Warnf("Missing/Empty `license` field in go/hover.yaml.")
-		log.Warnf("Please add it otherwise you may publish your app with a wrong license.")
-		log.Warnf("Continuing with `NOASSERTION` as a placeholder license.")
-		return "NOASSERTION"
+func (c Config) GetLicense() string {
+	if len(c.License) == 0 {
+		c.License = "NOASSERTION"
+		PrintMissingField("license", "go/hover.yaml", c.License)
 	}
-	return c.license
+	return c.License
 }
 
-func (c Config) Author() string {
-	author := pubspec.GetPubSpec().Author
-	if author == "" {
-		log.Warnf("Missing author field in pubspec.yaml")
-		log.Warnf("Please add the `author` field to your pubspec.yaml")
-		u, err := user.Current()
-		if err != nil {
-			log.Errorf("Couldn't get current user: %v", err)
-			os.Exit(1)
-		}
-		author = u.Username
-		log.Printf("Using this username from system instead: %s", author)
-	}
-	return author
-}
-
-var config = Config{}
+var (
+	config         Config
+	configLoadOnce sync.Once
+)
 
 // GetConfig returns the working directory hover.yaml as a Config
 func GetConfig() Config {
-	if !config.loaded {
-		c, err := ReadConfigFile(filepath.Join(build.BuildPath, "hover.yaml"))
+	configLoadOnce.Do(func() {
+		var err error
+		config, err = ReadConfigFile(filepath.Join(build.BuildPath, "hover.yaml"))
 		if err != nil {
-			return config
+			if os.IsNotExist(errors.Cause(err)) {
+				// TODO: Add a solution for the user. Perhaps we can let `hover
+				// init` write missing files when ran on an existing project.
+				// https://github.com/go-flutter-desktop/hover/pull/121#pullrequestreview-408680348
+				log.Warnf("Missing config: %v", err)
+				return
+			}
+			log.Errorf("Failed to load config: %v", err)
+			os.Exit(1)
 		}
-		config = *c
-		config.loaded = true
-	}
+
+		if config.CachePathREMOVED != "" {
+			log.Errorf("The hover.yaml field 'cache-path' is not used anymore. Remove it from your hover.yaml and use --cache-path instead.")
+			os.Exit(1)
+		}
+		if config.BranchREMOVED != "" {
+			log.Errorf("The hover.yaml field 'branch' is not used anymore. Remove it from your hover.yaml and use --branch instead.")
+			os.Exit(1)
+		}
+	})
 	return config
 }
 
-// ReadConfigFile reads a .yaml file at a path and return a correspond
-// Config struct
-func ReadConfigFile(configPath string) (*Config, error) {
+// ReadConfigFile reads a .yaml file at a path and return a correspond Config
+// struct
+func ReadConfigFile(configPath string) (Config, error) {
 	file, err := os.Open(configPath)
 	if err != nil {
 		if os.IsNotExist(err) {
-			return nil, errors.Wrap(err, "Warning: No hover.yaml file found")
+			return Config{}, errors.Wrap(err, "file hover.yaml not found")
 		}
-		return nil, errors.Wrap(err, "Failed to open hover.yaml")
+		return Config{}, errors.Wrap(err, "failed to open hover.yaml")
 	}
 	defer file.Close()
 
 	var config Config
 	err = yaml.NewDecoder(file).Decode(&config)
 	if err != nil {
-		return nil, errors.Wrap(err, "Failed to decode hover.yaml")
+		return Config{}, errors.Wrap(err, "failed to decode hover.yaml")
 	}
-	return &config, nil
+	return config, nil
+}
+
+func PrintMissingField(name, file, def string) {
+	log.Warnf("Missing/Empty `%s` field in %s. Please add it or otherwise you may publish your app with a wrong %s. Continuing with `%s` as a placeholder %s.", name, file, name, def, name)
 }

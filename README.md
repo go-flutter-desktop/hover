@@ -17,6 +17,7 @@ Then install hover by running this in your home directory:
 ```bash
 GO111MODULE=on go get -u -a github.com/go-flutter-desktop/hover
 ```
+Make sure the hover binary is on your `PATH`
 
 Run the same command to update when a newer version becomes available.
 
@@ -50,15 +51,6 @@ hover init github.com/my-organization/simpleApplication
 ```
 
 This creates the directory `go` and adds boilerplate files such as Go code and a default logo.
-
-Make sure you have the following
-[main_desktop.dart](https://github.com/go-flutter-desktop/examples/blob/5508a59ff4916fca9c05dfde4929d8848fd2a947/pointer_demo/lib/main_desktop.dart)
-in the root librairie of your application.  
-It's the following code before `runApp(..)` that makes Flutter run on other platforms:
-
-```dart
-debugDefaultTargetPlatformOverride = TargetPlatform.fuchsia;
-```
 
 Optionally, you may add [plugins](https://github.com/go-flutter-desktop/plugins) to `go/cmd/options.go`  
 Optionally, change the logo in `go/assets/logo.png`, which is used as icon for the window.
@@ -131,10 +123,6 @@ To get a list of all available packaging formats run:
 ```bash
 hover build --help
 ```
-
-## Fonts
-
-No text visible? Make sure to use fonts that are included in the flutter assets/fonts system. The default font for `MaterialApp`, Roboto, is not installed on all machines.
 
 ## Issues
 

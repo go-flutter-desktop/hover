@@ -1,7 +1,6 @@
 package cmd
 
 import (
-	"fmt"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -16,8 +15,8 @@ import (
 )
 
 func init() {
-	upgradeCmd.Flags().StringVarP(&buildCachePath, "cache-path", "", "", "The path that hover uses to cache dependencies such as the Flutter engine .so/.dll (defaults to the standard user cache directory)")
-	upgradeCmd.Flags().MarkHidden("branch")
+	upgradeCmd.Flags().StringVarP(&buildOrRunCachePath, "cache-path", "", enginecache.DefaultCachePath(), "The path that hover uses to cache dependencies such as the Flutter engine .so/.dll (defaults to the standard user cache directory)")
+	upgradeCmd.Flags().StringVarP(&buildOrRunGoFlutterBranch, "branch", "b", "", "The 'go-flutter' version to use. (@master or @v0.20.0 for example)")
 	rootCmd.AddCommand(upgradeCmd)
 }
 
@@ -37,46 +36,26 @@ var upgradeCmd = &cobra.Command{
 }
 
 func upgrade(targetOS string) (err error) {
-	var engineCachePath string
-	if buildCachePath != "" {
-		engineCachePath = enginecache.ValidateOrUpdateEngineAtPath(targetOS, buildCachePath, "")
-	} else {
-		engineCachePath = enginecache.ValidateOrUpdateEngine(targetOS, "")
-	}
-	engineCachePath = enginecache.ValidateOrUpdateEngine(targetOS, buildCachePath)
-	return upgradeGoFlutter(targetOS, engineCachePath)
+	enginecache.ValidateOrUpdateEngine(targetOS, buildOrRunCachePath, "", build.DebugMode)
+	return upgradeGoFlutter(targetOS)
 }
 
-func upgradeGoFlutter(targetOS string, engineCachePath string) (err error) {
+func upgradeGoFlutter(targetOS string) (err error) {
 	wd, err := os.Getwd()
 	if err != nil {
 		log.Errorf("Failed to get working dir: %v", err)
 		return
 	}
 
-	var cgoLdflags string
-	switch targetOS {
-	case "darwin":
-		cgoLdflags = fmt.Sprintf("-F%s -Wl,-rpath,@executable_path", engineCachePath)
-	case "linux":
-		cgoLdflags = fmt.Sprintf("-L%s", engineCachePath)
-	case "windows":
-		cgoLdflags = fmt.Sprintf("-L%s", engineCachePath)
-	default:
-		log.Errorf("Target platform %s is not supported, cgo_ldflags not implemented.", targetOS)
-		return
+	if buildOrRunGoFlutterBranch == "" {
+		buildOrRunGoFlutterBranch = "@latest"
 	}
 
-	if buildGoFlutterBranch == "" {
-		buildGoFlutterBranch = "@latest"
-	}
-
-	cmdGoGetU := exec.Command(build.GoBin(), "get", "-u", "github.com/go-flutter-desktop/go-flutter"+buildGoFlutterBranch)
+	cmdGoGetU := exec.Command(build.GoBin(), "get", "-u", "-d", "github.com/go-flutter-desktop/go-flutter"+buildOrRunGoFlutterBranch)
 	cmdGoGetU.Dir = filepath.Join(wd, build.BuildPath)
 	cmdGoGetU.Env = append(os.Environ(),
 		"GOPROXY=direct", // github.com/golang/go/issues/32955 (allows '/' in branch name)
 		"GO111MODULE=on",
-		"CGO_LDFLAGS="+cgoLdflags,
 	)
 	cmdGoGetU.Stderr = os.Stderr
 	cmdGoGetU.Stdout = os.Stdout
@@ -84,7 +63,7 @@ func upgradeGoFlutter(targetOS string, engineCachePath string) (err error) {
 	err = cmdGoGetU.Run()
 	// When cross-compiling the command fails, but that is not an error
 	if err != nil {
-		log.Errorf("Updating go-flutter to %s version failed: %v", buildGoFlutterBranch, err)
+		log.Errorf("Updating go-flutter to %s version failed: %v", buildOrRunGoFlutterBranch, err)
 		return
 	}
 
