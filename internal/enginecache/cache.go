@@ -13,10 +13,11 @@ import (
 	"strings"
 	"time"
 
-	copy "github.com/otiai10/copy"
+	"github.com/otiai10/copy"
 	"github.com/pkg/errors"
 
 	"github.com/go-flutter-desktop/hover/internal/build"
+	"github.com/go-flutter-desktop/hover/internal/darwinhacks"
 	"github.com/go-flutter-desktop/hover/internal/log"
 	"github.com/go-flutter-desktop/hover/internal/version"
 )
@@ -343,6 +344,10 @@ func ValidateOrUpdateEngine(targetOS, cachePath, requiredEngineVersion string, m
 			log.Errorf("Failed to strip %s: %v", unstrippedEngineFile, err)
 			os.Exit(1)
 		}
+	}
+
+	if targetOS == "darwin" && mode != build.DebugMode {
+		darwinhacks.DyldHack(filepath.Join(engineCachePath, build.EngineFiles(targetOS, mode)[0]))
 	}
 
 	files := []string{

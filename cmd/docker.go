@@ -41,7 +41,7 @@ func dockerHoverBuild(targetOS string, packagingTask packaging.Task, buildFlags 
 		log.Errorf("Cannot get the path for current directory %s", err)
 		os.Exit(1)
 	}
-	log.Infof("Compiling go binary using docker container")
+	log.Infof("Building using docker container")
 
 	dockerArgs := []string{
 		"run",
