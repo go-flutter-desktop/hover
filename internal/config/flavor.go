@@ -13,12 +13,10 @@ var hoverYaml string
 
 // GetHoverFlavorYaml returns the Hover yaml file
 func GetHoverFlavorYaml() string {
+	if len(hoverYaml) == 0 {
+		hoverYaml = "hover.yaml"
+	}
 	return hoverYaml
-}
-
-// SetDefaultFlavorFile sets the default hover.yaml
-func SetDefaultHoverYamlFile() {
-	hoverYaml = "hover.yaml"
 }
 
 // SetHoverFlavor sets the user defined hover flavor.
