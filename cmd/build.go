@@ -264,9 +264,7 @@ func initBuildParameters(targetOS string, defaultBuildOrRunMode build.Mode) {
 	}
 
 	// hover.yaml file needs to be set before accessing config.GetConfig()
-	if buildOrRunHoverFlavor == "" {
-		config.SetDefaultHoverYamlFile()
-	} else {
+	if buildOrRunHoverFlavor != "" {
 		config.SetHoverFlavor(buildOrRunHoverFlavor)
 	}
 
