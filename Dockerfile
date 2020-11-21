@@ -60,6 +60,8 @@ RUN apt-get update \
 	&& apt-get install -y \
 	    # dependencies for compiling linux
 		libgl1-mesa-dev xorg-dev \
+		# dependencies for compiling windows
+		wine \
 		# dependencies for darwin-dmg
 		genisoimage \
 		# dependencies for darwin-pkg
