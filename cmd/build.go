@@ -16,6 +16,7 @@ import (
 	"github.com/go-flutter-desktop/hover/internal/androidmanifest"
 	"github.com/go-flutter-desktop/hover/internal/build"
 	"github.com/go-flutter-desktop/hover/internal/config"
+	"github.com/go-flutter-desktop/hover/internal/darwinhacks"
 	"github.com/go-flutter-desktop/hover/internal/enginecache"
 	"github.com/go-flutter-desktop/hover/internal/fileutils"
 	"github.com/go-flutter-desktop/hover/internal/log"
@@ -216,16 +217,14 @@ func subcommandBuild(targetOS string, packagingTask packaging.Task, vmArguments 
 	if !buildOrRunDocker {
 		packagingTask.AssertSupported()
 	}
-
-	if !buildOrRunSkipFlutter {
-		cleanBuildOutputsDir(targetOS)
-		buildFlutterBundle(targetOS)
-	}
 	if buildOrRunDocker {
+		removeBrokenBundleFilesForDocker()
 		var buildFlags []string
 		buildFlags = append(buildFlags, commonFlags()...)
-		buildFlags = append(buildFlags, "--skip-flutter")
 		buildFlags = append(buildFlags, "--skip-engine-download")
+		if buildOrRunSkipFlutter {
+			buildFlags = append(buildFlags, "--skip-flutter")
+		}
 		if buildOrRunSkipEmbedder {
 			buildFlags = append(buildFlags, "--skip-embedder")
 		}
@@ -242,7 +241,12 @@ func subcommandBuild(targetOS string, packagingTask packaging.Task, vmArguments 
 			buildFlags = append(buildFlags, "--profile")
 		}
 		dockerHoverBuild(targetOS, packagingTask, buildFlags, nil)
+		removeBrokenBundleFilesForDocker()
 	} else {
+		if !buildOrRunSkipFlutter {
+			cleanBuildOutputsDir(targetOS)
+			buildFlutterBundle(targetOS)
+		}
 		if !buildOrRunSkipEmbedder {
 			buildGoBinary(targetOS, vmArguments)
 		}
@@ -250,6 +254,19 @@ func subcommandBuild(targetOS string, packagingTask packaging.Task, vmArguments 
 			log.Infof("Packaging app for %s", packagingTask.Name())
 			packagingTask.Pack(buildVersionNumber, buildOrRunMode)
 			log.Infof("Successfully packaged app for %s", packagingTask.Name())
+		}
+	}
+}
+
+// removeBrokenBundleFilesForDocker removes some files, because they don't work in the container or after something ran in the container
+func removeBrokenBundleFilesForDocker() {
+	for _, file := range []string{".packages", ".dart_tool"} {
+		if _, err := os.Stat(file); err == nil || os.IsExist(err) {
+			err := os.RemoveAll(file)
+			if err != nil {
+				log.Errorf("Failed to remove %s: %v", file, err)
+				os.Exit(1)
+			}
 		}
 	}
 }
@@ -311,14 +328,36 @@ func initBuildParameters(targetOS string, defaultBuildOrRunMode build.Mode) {
 		buildOrRunMode = build.ProfileMode
 	}
 
-	if buildOrRunMode.IsAot && targetOS != runtime.GOOS && !buildIgnoreHostOS {
-		log.Errorf("AOT builds currently only work on their host OS")
-		os.Exit(1)
-	}
+	validateBuildParameters(targetOS)
 
 	engineCachePath = enginecache.EngineCachePath(targetOS, buildOrRunCachePath, buildOrRunMode)
 	if !buildSkipEngineDownload {
 		enginecache.ValidateOrUpdateEngine(targetOS, buildOrRunCachePath, buildOrRunEngineVersion, buildOrRunMode)
+	}
+}
+
+func validateBuildParameters(targetOS string) {
+	if buildOrRunMode.IsAot && targetOS != runtime.GOOS && !buildIgnoreHostOS {
+		if targetOS == "windows" && runtime.GOOS != targetOS {
+			if path, err := exec.LookPath("wine"); (err != nil || len(path) == 0) && !buildOrRunDocker {
+				// Skip checking for wine if using docker, but still being on host system
+				log.Errorf("To cross-compile AOT apps for windows on %s install wine from your package manager or https://www.winehq.org/ or use the `--docker` flag", runtime.GOOS)
+				os.Exit(1)
+			}
+		} else if targetOS == "darwin" && runtime.GOOS == "linux" {
+			if buildOrRunDocker {
+				// Darling doesn't work in a docker container so it should fail when trying to use docker
+				log.Errorf("It is not possible to cross-compile AOT apps for darwin using docker")
+				log.Errorf("To cross-compile AOT apps for darwin on %s install darling from your package manager or https://www.darlinghq.org/", runtime.GOOS)
+				os.Exit(1)
+			} else if path, err := exec.LookPath("darling"); err != nil || len(path) == 0 {
+				log.Errorf("To cross-compile AOT apps for darwin on %s install darling from your package manager or https://www.darlinghq.org/", runtime.GOOS)
+				os.Exit(1)
+			}
+		} else {
+			log.Errorf("AOT builds currently only work on their host OS")
+			os.Exit(1)
+		}
 	}
 }
 
@@ -432,52 +471,82 @@ func buildFlutterBundle(targetOS string) {
 			log.Errorf("Failed to remove unused kernel_blob.bin: %v", err)
 			os.Exit(1)
 		}
+
+		useWine := targetOS == "windows" && runtime.GOOS != targetOS
+		useDarling := targetOS == "darwin" && runtime.GOOS != targetOS
+
+		if useDarling {
+			darwinhacks.ChangePackagesFilePath(true)
+		}
+
 		dart := filepath.Join(engineCachePath, "dart"+build.ExecutableExtension(targetOS))
 		genSnapshot := filepath.Join(engineCachePath, "gen_snapshot"+build.ExecutableExtension(targetOS))
 		kernelSnapshot := filepath.Join(build.OutputDirectoryPath(targetOS, buildOrRunMode), "kernel_snapshot.dill")
 		elfSnapshot := filepath.Join(build.OutputDirectoryPath(targetOS, buildOrRunMode), "libapp.so")
-		cmdGenerateKernelSnapshot := exec.Command(
-			dart,
-			filepath.Join(engineCachePath, "gen", "frontend_server.dart.snapshot"),
-			"--sdk-root="+filepath.Join(engineCachePath, "flutter_patched_sdk"),
+		frontendServerSnapshot := filepath.Join(engineCachePath, "gen", "frontend_server.dart.snapshot")
+		flutterPatchedSdk := filepath.Join(engineCachePath, "flutter_patched_sdk")
+		generateKernelSnapshotCommand := []string{
+			darwinhacks.RewriteDarlingPath(useDarling, dart),
+			darwinhacks.RewriteDarlingPath(useDarling, frontendServerSnapshot),
+			"--sdk-root=" + darwinhacks.RewriteDarlingPath(useDarling, flutterPatchedSdk),
 			"--target=flutter",
 			"--aot",
 			"--tfa",
 			"-Ddart.vm.product=true",
 			"--packages=.packages",
-			"--output-dill="+kernelSnapshot,
+			"--output-dill=" + darwinhacks.RewriteDarlingPath(useDarling, kernelSnapshot),
 			buildOrRunFlutterTarget,
+		}
+		if useWine {
+			generateKernelSnapshotCommand = append([]string{"wine"}, generateKernelSnapshotCommand...)
+		}
+		if useDarling {
+			generateKernelSnapshotCommand = append([]string{"darling", "shell"}, generateKernelSnapshotCommand...)
+		}
+		cmdGenerateKernelSnapshot := exec.Command(
+			generateKernelSnapshotCommand[0],
+			generateKernelSnapshotCommand[1:]...,
 		)
+		cmdGenerateKernelSnapshot.Stdout = os.Stdout
 		cmdGenerateKernelSnapshot.Stderr = os.Stderr
 		log.Infof("Generating kernel snapshot")
-		output, err := cmdGenerateKernelSnapshot.Output()
+		err = cmdGenerateKernelSnapshot.Run()
+		if useDarling {
+			// Change back paths even if the command failed
+			darwinhacks.ChangePackagesFilePath(false)
+		}
 		if err != nil {
 			log.Errorf("Generating kernel snapshot failed: %v", err)
-			log.Errorf(string(output))
 			os.Exit(1)
 		}
 		generateAotSnapshotCommand := []string{
-			genSnapshot,
+			darwinhacks.RewriteDarlingPath(useDarling, genSnapshot),
 			"--no-causal-async-stacks",
 			"--lazy-async-stacks",
 			"--deterministic",
 			"--snapshot_kind=app-aot-elf",
-			"--elf=" + elfSnapshot,
+			"--elf=" + darwinhacks.RewriteDarlingPath(useDarling, elfSnapshot),
+		}
+		if useWine {
+			generateAotSnapshotCommand = append([]string{"wine"}, generateAotSnapshotCommand...)
+		}
+		if useDarling {
+			generateAotSnapshotCommand = append([]string{"darling", "shell"}, generateAotSnapshotCommand...)
 		}
 		if buildOrRunMode == build.ReleaseMode {
 			generateAotSnapshotCommand = append(generateAotSnapshotCommand, "--strip")
 		}
-		generateAotSnapshotCommand = append(generateAotSnapshotCommand, kernelSnapshot)
+		generateAotSnapshotCommand = append(generateAotSnapshotCommand, darwinhacks.RewriteDarlingPath(useDarling, kernelSnapshot))
 		cmdGenerateAotSnapshot := exec.Command(
 			generateAotSnapshotCommand[0],
 			generateAotSnapshotCommand[1:]...,
 		)
+		cmdGenerateAotSnapshot.Stdout = os.Stdout
 		cmdGenerateAotSnapshot.Stderr = os.Stderr
 		log.Infof("Generating ELF snapshot")
-		output, err = cmdGenerateAotSnapshot.Output()
+		err = cmdGenerateAotSnapshot.Run()
 		if err != nil {
 			log.Errorf("Generating AOT snapshot failed: %v", err)
-			log.Errorf(string(output))
 			os.Exit(1)
 		}
 		err = os.Remove(kernelSnapshot)
@@ -592,10 +661,6 @@ func buildGoBinary(targetOS string, vmArguments []string) {
 		log.Warnf("The '--opengl=none' flag makes go-flutter incompatible with texture plugins!")
 	}
 
-	if targetOS == "darwin" && buildOrRunMode != build.DebugMode {
-		darwinDyldHack(filepath.Join(build.OutputDirectoryPath(targetOS, buildOrRunMode), build.EngineFiles(targetOS, buildOrRunMode)[0]))
-	}
-
 	buildCommandString := buildCommand(targetOS, vmArguments, build.OutputBinaryPath(config.GetConfig().GetExecutableName(pubspec.GetPubSpec().Name), targetOS, buildOrRunMode))
 	cmdGoBuild := exec.Command(buildCommandString[0], buildCommandString[1:]...)
 	cmdGoBuild.Dir = filepath.Join(wd, build.BuildPath)
@@ -614,29 +679,7 @@ func buildGoBinary(targetOS string, vmArguments []string) {
 	}
 	log.Infof("Successfully compiled executable binary for %s", targetOS)
 	if targetOS == "darwin" && buildOrRunMode != build.DebugMode {
-		darwinDyldHack(build.OutputBinaryPath(config.GetConfig().GetExecutableName(pubspec.GetPubSpec().Name), targetOS, buildOrRunMode))
-	}
-}
-
-// darwinDyldHack is a nasty hack to get the linking working. After fiddling a lot of hours with CGO linking
-// this was the only solution I could come up with and it works. I guess something would need to be changed in the engine
-// builds to make this obsolete, but this hack does it for now.
-func darwinDyldHack(path string) {
-	cmdInstallNameTool := exec.Command(
-		"install_name_tool",
-		"-change",
-		"./libflutter_engine.dylib",
-		"@executable_path/libflutter_engine.dylib",
-		"-id",
-		"@executable_path/libflutter_engine.dylib",
-		path,
-	)
-	cmdInstallNameTool.Stderr = os.Stderr
-	output, err := cmdInstallNameTool.Output()
-	if err != nil {
-		log.Errorf("install_name_tool failed: %v", err)
-		log.Errorf(string(output))
-		os.Exit(1)
+		darwinhacks.DyldHack(build.OutputBinaryPath(config.GetConfig().GetExecutableName(pubspec.GetPubSpec().Name), targetOS, buildOrRunMode))
 	}
 }
 

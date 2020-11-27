@@ -67,8 +67,9 @@ func init() {
 	filee := &embedded.EmbeddedFile{
 		Filename:    "packaging/darwin-bundle/Info.plist.tmpl",
 		FileModTime: time.Unix(1603991796, 0),
-
 		Content: string("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!DOCTYPE plist PUBLIC \"-//Apple Computer//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n<plist version=\"1.0\">\n    <dict>\n        <key>CFBundleDevelopmentRegion</key>\n        <string>English</string>\n        <key>CFBundleExecutable</key>\n        <string>{{.executableName}}</string>\n        <key>CFBundleGetInfoString</key>\n        <string>{{.description}}</string>\n        <key>CFBundleIconFile</key>\n        <string>icon.icns</string>\n        <key>NSHighResolutionCapable</key>\n        <true/>\n        <key>CFBundleIdentifier</key>\n        <string>{{.organizationName}}.{{.packageName}}</string>\n        <key>CFBundleInfoDictionaryVersion</key>\n        <string>6.0</string>\n        <key>CFBundleLongVersionString</key>\n        <string>{{.version}}</string>\n        <key>CFBundleName</key>\n        <string>{{.applicationName}}</string>\n        <key>CFBundlePackageType</key>\n        <string>APPL</string>\n        <key>CFBundleShortVersionString</key>\n        <string>{{.version}}</string>\n        <key>CFBundleSignature</key>\n        <string>{{.organizationName}}.{{.packageName}}</string>\n        <key>CFBundleVersion</key>\n        <string>{{.version}}</string>\n        <key>CSResourcesFileMapped</key>\n        <true/>\n        <key>NSHumanReadableCopyright</key>\n        <string></string>\n    </dict>\n</plist>\n"),
+
+
 	}
 	fileg := &embedded.EmbeddedFile{
 		Filename:    "packaging/darwin-pkg/Distribution.tmpl",
@@ -127,6 +128,7 @@ func init() {
 	filew := &embedded.EmbeddedFile{
 		Filename:    "packaging/windows-msi/app.wxs.tmpl",
 		FileModTime: time.Unix(1604486762, 0),
+
 
 		Content: string("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Wix xmlns=\"http://schemas.microsoft.com/wix/2006/wi\">\n    <Product Id=\"*\" UpgradeCode=\"{{.upgradeCode}}\" Version=\"{{.version}}\" Language=\"1033\" Name=\"{{.applicationName}}\" Manufacturer=\"{{.author}}\">\n        <Package InstallerVersion=\"300\" Compressed=\"yes\"/>\n        <Media Id=\"1\" Cabinet=\"{{.packageName}}.cab\" EmbedCab=\"yes\" />\n        <Directory Id=\"TARGETDIR\" Name=\"SourceDir\">\n            <Directory Id=\"ProgramFilesFolder\">\n                <Directory Id=\"APPLICATIONROOTDIRECTORY\" Name=\"{{.applicationName}}\">\n                    <?include directories.wxi ?>\n                </Directory>\n            </Directory>\n            <Directory Id=\"ProgramMenuFolder\">\n                <Directory Id=\"ApplicationProgramsFolder\" Name=\"{{.applicationName}}\"/>\n            </Directory>\n        </Directory>\n        <Icon Id=\"ShortcutIcon\" SourceFile=\"build{{.pathSeparator}}assets{{.pathSeparator}}icon.ico\"/>\n        <Property Id=\"ARPPRODUCTICON\" Value=\"ShortcutIcon\"/>\n        <?include directory_refs.wxi ?>\n        <DirectoryRef Id=\"ApplicationProgramsFolder\">\n            <Component Id=\"ApplicationShortcut\" Guid=\"*\">\n                <Shortcut Id=\"ApplicationStartMenuShortcut\"\n                          Name=\"{{.applicationName}}\"\n                          Description=\"{{.description}}\"\n                          Target=\"[#{{.executableName}}.exe]\"\n                          WorkingDirectory=\"APPLICATIONROOTDIRECTORY\"\n                          Icon=\"ShortcutIcon\"/>\n                <RemoveFolder Id=\"CleanUpShortCut\" On=\"uninstall\"/>\n                <RegistryValue Root=\"HKCU\" Key=\"Software\\{{.author}}\\{{.packageName}}\" Name=\"installed\" Type=\"integer\" Value=\"1\" KeyPath=\"yes\"/>\n            </Component>\n        </DirectoryRef>\n        <Feature Id=\"MainApplication\" Title=\"{{.applicationName}}\" Level=\"1\">\n            <ComponentRef Id=\"ApplicationShortcut\"/>\n            <?include component_refs.wxi ?>\n        </Feature>\n    </Product>\n</Wix>\n"),
 	}
@@ -189,6 +191,7 @@ func init() {
 	dird := &embedded.EmbeddedDir{
 		Filename:   "packaging/darwin-bundle",
 		DirModTime: time.Unix(1603991796, 0),
+
 		ChildFiles: []*embedded.EmbeddedFile{
 			filee, // "packaging/darwin-bundle/Info.plist.tmpl"
 
