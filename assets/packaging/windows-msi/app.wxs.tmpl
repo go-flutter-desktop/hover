@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
-    <Product Id="*" UpgradeCode="{{.upgradeCode}}" Version="{{.version}}" Language="1033" Name="{{.applicationName}}" Manufacturer="{{.author}}">
+    <Product Codepage="utf-8" Id="*" UpgradeCode="{{.upgradeCode}}" Version="{{.version}}" Language="1033" Name="{{.applicationName}}" Manufacturer="{{.author}}">
         <Package InstallerVersion="300" Compressed="yes"/>
         <Media Id="1" Cabinet="{{.packageName}}.cab" EmbedCab="yes" />
         <Directory Id="TARGETDIR" Name="SourceDir">
@@ -27,6 +27,9 @@
             </Component>
             <Component Id="icudtl.dat" Guid="*">
                 <File Id="icudtl.dat" Source="build{{.pathSeparator}}icudtl.dat" KeyPath="yes"/>
+            </Component>
+            <Component Id="libapp.so" Guid="*">
+                <File Id="libapp.so" Source="build{{.pathSeparator}}libapp.so" KeyPath="yes"/>
             </Component>
         </DirectoryRef>
         <DirectoryRef Id="ASSETSDIRECTORY">
