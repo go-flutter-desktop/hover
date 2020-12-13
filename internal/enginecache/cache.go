@@ -9,6 +9,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"runtime"
 	"strconv"
 	"strings"
 	"time"
@@ -337,7 +338,7 @@ func ValidateOrUpdateEngine(targetOS, cachePath, requiredEngineVersion string, m
 	}
 
 	// Strip linux engine after download and not at every build
-	if targetOS == "linux" {
+	if targetOS == "linux" && targetOS == runtime.GOOS {
 		unstrippedEngineFile := filepath.Join(engineCachePath, build.EngineFiles(targetOS, mode)[0])
 		err = exec.Command("strip", "-s", unstrippedEngineFile).Run()
 		if err != nil {
