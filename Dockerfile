@@ -1,7 +1,7 @@
 FROM snapcore/snapcraft AS snapcraft
 # Using multi-stage dockerfile to obtain snapcraft binary
 
-FROM ubuntu:bionic AS flutterbuilder
+FROM ubuntu:groovy AS flutterbuilder
 RUN apt-get update \
     && apt-get install -y \
         git curl unzip
@@ -9,18 +9,20 @@ RUN apt-get update \
 RUN git clone --single-branch --depth=1 --branch beta https://github.com/flutter/flutter /opt/flutter 2>&1 \
     && /opt/flutter/bin/flutter doctor -v
 
-FROM ubuntu:bionic AS xarbuilder
+FROM ubuntu:groovy AS xarbuilder
 RUN apt-get update \
 	&& apt-get install -y \
-		git libssl1.0-dev libxml2-dev make g++ autoconf
+		git libssl-dev libxml2-dev make g++ autoconf zlib1g-dev
+# Needed to patch configure.ac per https://github.com/mackyle/xar/issues/18
 RUN git clone --single-branch --depth=1 --branch xar-1.6.1 https://github.com/mackyle/xar 2>&1 \
 	&& cd xar/xar \
+	&& sed -i "s/AC_CHECK_LIB(\[crypto\], \[OpenSSL_add_all_ciphers\], , \[have_libcrypto=\"0\"\])/AC_CHECK_LIB(\[crypto\], \[OPENSSL_init_crypto\], , \[have_libcrypto=\"0\"\])/" configure.ac \
 	&& ./autogen.sh --noconfigure \
 	&& ./configure 2>&1 \
 	&& make 2>&1 \
 	&& make install 2>&1
 
-FROM ubuntu:bionic AS bomutilsbuilder
+FROM ubuntu:groovy AS bomutilsbuilder
 RUN apt-get update \
 	&& apt-get install -y \
 	    git make g++
@@ -30,7 +32,7 @@ RUN git clone --single-branch --depth=1 --branch 0.2 https://github.com/hogliux/
 	&& make install 2>&1
 
 # Fixed using https://github.com/AppImage/AppImageKit/issues/828
-FROM ubuntu:bionic as appimagebuilder
+FROM ubuntu:groovy as appimagebuilder
 RUN apt-get update \
 	&& apt-get install -y \
 	    curl
@@ -41,8 +43,8 @@ RUN cd /opt \
 	&& ./appimagetool-x86_64.AppImage --appimage-extract \
 	&& mv squashfs-root appimagetool
 
-# bionic ships with a too old meson version
-FROM ubuntu:focal AS pacmanbuilder
+# groovy ships with a too old meson version
+FROM ubuntu:groovy AS pacmanbuilder
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update \
     && apt-get install -y \
@@ -82,9 +84,11 @@ ENV SNAP_ARCH="amd64"
 
 COPY --from=xarbuilder /usr/local/bin/xar /usr/local/bin/xar
 COPY --from=xarbuilder /usr/local/lib/libxar.so.1 /usr/local/lib/libxar.so.1
-COPY --from=xarbuilder /usr/lib/x86_64-linux-gnu/libcrypto.so.1.0.0 /usr/lib/x86_64-linux-gnu/libcrypto.so.1.0.0
+COPY --from=xarbuilder /usr/lib/x86_64-linux-gnu/libcrypto.so.1.1 /usr/lib/x86_64-linux-gnu/libcrypto.so.1.1
 
 COPY --from=bomutilsbuilder /usr/bin/mkbom /usr/bin/mkbom
+# Probably shouldn't do that, but it works and nothing breaks
+COPY --from=bomutilsbuilder /usr/lib/x86_64-linux-gnu/libstdc++.so.6 /usr/lib/x86_64-linux-gnu/libstdc++.so.6
 
 COPY --from=appimagebuilder /opt/appimagetool /opt/appimagetool
 ENV PATH=/opt/appimagetool/usr/bin:$PATH
