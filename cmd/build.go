@@ -356,6 +356,11 @@ func validateBuildParameters(targetOS string) {
 				log.Errorf("To cross-compile AOT apps for darwin on %s install darling from your package manager or https://www.darlinghq.org/", runtime.GOOS)
 				os.Exit(1)
 			}
+		} else if targetOS == "linux" {
+			if !buildOrRunDocker {
+				log.Errorf("To cross-compile AOT apps for linux on %s use the `--docker` flag", runtime.GOOS)
+				os.Exit(1)
+			}
 		} else {
 			log.Errorf("AOT builds currently only work on their host OS")
 			os.Exit(1)
