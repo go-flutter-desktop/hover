@@ -1,7 +1,6 @@
 package packaging
 
 import (
-	"crypto/rand"
 	"crypto/sha1"
 	"encoding/hex"
 	"fmt"
@@ -14,6 +13,7 @@ import (
 	"strings"
 
 	ico "github.com/Kodeworks/golang-image-ico"
+	"github.com/google/uuid"
 
 	"github.com/go-flutter-desktop/hover/internal/log"
 )
@@ -102,14 +102,11 @@ var WindowsMsiTask = &packagingTask{
 		},
 	},
 	generateInitFiles: func(packageName, path string) {
-		b := make([]byte, 16)
-		_, err := rand.Read(b)
-		if err != nil {
-			log.Errorf("Failed to generate GUID: %v", err)
-			os.Exit(1)
-		}
-		upgradeCode := strings.ToUpper(fmt.Sprintf("%x-%x-%x-%x-%x", b[0:4], b[4:6], b[6:8], b[8:10], b[10:]))
-		err = ioutil.WriteFile(filepath.Join(path, "upgrade-code.txt"), []byte(fmt.Sprintf("%s\n# This GUID is your upgrade code and ensures that you can properly update your app.\n# Don't change it.", upgradeCode)), 0755)
+		err := ioutil.WriteFile(
+			filepath.Join(path, "upgrade-code.txt"),
+			[]byte(fmt.Sprintf("%s\n# This GUID is your upgrade code and ensures that you can properly update your app.\n# Don't change it.", uuid.New())),
+			0755,
+		)
 		if err != nil {
 			log.Errorf("Failed to create `upgrade-code.txt` file: %v", err)
 			os.Exit(1)
@@ -165,7 +162,7 @@ var WindowsMsiTask = &packagingTask{
 		directoriesFileContent = append(directoriesFileContent, "<Include>")
 		directoryRefsFileContent = append(directoryRefsFileContent, "<Include>")
 		componentRefsFileContent = append(componentRefsFileContent, "<Include>")
-		windowsMsiProcessFiles(filepath.Join(tmpPath, "build", "flutter_assets"))
+		windowsMsiProcessFiles(filepath.Join(tmpPath, "build"))
 		directoriesFileContent = append(directoriesFileContent, "</Include>")
 		directoryRefsFileContent = append(directoryRefsFileContent, "</Include>")
 		componentRefsFileContent = append(componentRefsFileContent, "</Include>")
@@ -216,11 +213,11 @@ func windowsMsiProcessFiles(path string) {
 
 	for _, f := range files {
 		p := filepath.Join(path, f.Name())
-		relativePath := strings.Split(strings.Split(p, "flutter_assets"+pathSeparator)[1], pathSeparator)
+		relativePath := strings.Split(strings.Split(p, "build"+pathSeparator)[1], pathSeparator)
 		id := hashSha1(strings.Join(relativePath, ""))
 		if f.IsDir() {
 			directoriesFileContent = append(directoriesFileContent,
-				fmt.Sprintf(`<Directory Id="FLUTTERASSETSDIRECTORY_%s" Name="%s">`, id, f.Name()),
+				fmt.Sprintf(`<Directory Id="APPLICATIONROOTDIRECTORY_%s" Name="%s">`, id, f.Name()),
 			)
 			windowsMsiProcessFiles(p)
 			directoriesFileContent = append(directoriesFileContent,
@@ -229,22 +226,22 @@ func windowsMsiProcessFiles(path string) {
 		} else {
 			if len(relativePath) > 1 {
 				directoryRefsFileContent = append(directoryRefsFileContent,
-					fmt.Sprintf(`<DirectoryRef Id="FLUTTERASSETSDIRECTORY_%s">`, hashSha1(strings.Join(relativePath[:len(relativePath)-1], ""))),
+					fmt.Sprintf(`<DirectoryRef Id="APPLICATIONROOTDIRECTORY_%s">`, hashSha1(strings.Join(relativePath[:len(relativePath)-1], ""))),
 				)
 			} else {
 				directoryRefsFileContent = append(directoryRefsFileContent,
-					`<DirectoryRef Id="FLUTTERASSETSDIRECTORY">`,
+					`<DirectoryRef Id="APPLICATIONROOTDIRECTORY">`,
 				)
 			}
-			fileSource := filepath.Join("build", "flutter_assets", strings.Join(relativePath, pathSeparator))
+			fileSource := filepath.Join("build", strings.Join(relativePath, pathSeparator))
 			directoryRefsFileContent = append(directoryRefsFileContent,
-				fmt.Sprintf(`<Component Id="flutter_assets_%s" Guid="*">`, id),
-				fmt.Sprintf(`<File Id="flutter_assets_%s" Source="%s" KeyPath="yes"/>`, id, fileSource),
+				fmt.Sprintf(`<Component Id="build_%s" Guid="%s">`, id, uuid.New()),
+				fmt.Sprintf(`<File Id="build_%s" Source="%s" KeyPath="yes"/>`, id, fileSource),
 				"</Component>",
 				"</DirectoryRef>",
 			)
 			componentRefsFileContent = append(componentRefsFileContent,
-				fmt.Sprintf(`<ComponentRef Id="flutter_assets_%s"/>`, id),
+				fmt.Sprintf(`<ComponentRef Id="build_%s"/>`, id),
 			)
 		}
 	}
