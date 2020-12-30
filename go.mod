@@ -9,7 +9,7 @@ require (
 	github.com/daaku/go.zipexe v1.0.1 // indirect
 	github.com/google/go-github v17.0.0+incompatible // indirect
 	github.com/google/go-querystring v1.0.0 // indirect
-	github.com/google/uuid v1.1.2
+	github.com/google/uuid v1.1.3
 	github.com/hashicorp/go-version v1.2.1
 	github.com/logrusorgru/aurora v2.0.3+incompatible
 	github.com/nfnt/resize v0.0.0-20180221191011-83c6a9932646 // indirect
