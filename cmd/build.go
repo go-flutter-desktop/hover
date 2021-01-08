@@ -712,8 +712,8 @@ func buildEnv(targetOS string, engineCachePath string) []string {
 			cgoLdflags += fmt.Sprintf(" -L%s -L%s", engineCachePath, outputDirPath)
 			cgoLdflags += " -lflutter_engine -Wl,-rpath,."
 		}
-		cgoLdflags += " -mmacosx-version-min=10.10"
-		cgoCflags += " -mmacosx-version-min=10.10"
+		cgoLdflags += " -mmacosx-version-min=10.11"
+		cgoCflags += " -mmacosx-version-min=10.11"
 	case "linux":
 		cgoLdflags += fmt.Sprintf(" -L%s -L%s", engineCachePath, outputDirPath)
 		cgoLdflags += fmt.Sprintf(" -lflutter_engine -Wl,-rpath,$ORIGIN")
