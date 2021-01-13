@@ -16,7 +16,7 @@ require (
 	github.com/otiai10/copy v1.4.2
 	github.com/pkg/errors v0.9.1
 	github.com/spf13/cobra v1.1.1
-	github.com/stretchr/testify v1.6.1
+	github.com/stretchr/testify v1.7.0
 	github.com/tcnksm/go-latest v0.0.0-20170313132115-e3007ae9052e
 	golang.org/x/mod v0.4.0
 	golang.org/x/net v0.0.0-20201010224723-4f7140c49acb // indirect
