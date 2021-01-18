@@ -17,6 +17,10 @@ Then install hover by running this in your home directory:
 ```bash
 GO111MODULE=on go get -u -a github.com/go-flutter-desktop/hover
 ```
+Or for powershell:
+```powershell
+$env:GO111MODULE="on"; go get -u -a github.com/go-flutter-desktop/hover
+```
 Make sure the hover binary is on your `PATH`
 
 Run the same command to update when a newer version becomes available.
