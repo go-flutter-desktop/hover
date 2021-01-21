@@ -26,7 +26,7 @@ Or for powershell:
 ```powershell
 $env:GO111MODULE="on"; go get -u -a github.com/go-flutter-desktop/hover
 ```
-Make sure the hover binary is on your `PATH`
+Make sure the hover binary is on your `PATH` (defaults are `$GOPATH/bin` or `$HOME/go/bin`)
 
 Run the same command to update when a newer version becomes available.
 
