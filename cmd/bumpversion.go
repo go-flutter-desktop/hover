@@ -52,6 +52,9 @@ func upgradeGoFlutter(targetOS string) (err error) {
 	}
 
 	cmdGoGetU := exec.Command(build.GoBin(), "get", "-u", "-d", "github.com/go-flutter-desktop/go-flutter"+buildOrRunGoFlutterBranch)
+	cmdGoGetU.Env = append(os.Environ(),
+		"GO111MODULE=on",
+	)
 	cmdGoGetU.Dir = filepath.Join(wd, build.BuildPath)
 	cmdGoGetU.Stderr = os.Stderr
 	cmdGoGetU.Stdout = os.Stdout
