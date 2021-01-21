@@ -712,8 +712,14 @@ func buildEnv(targetOS string, engineCachePath string) []string {
 			cgoLdflags += fmt.Sprintf(" -L%s -L%s", engineCachePath, outputDirPath)
 			cgoLdflags += " -lflutter_engine -Wl,-rpath,."
 		}
-		cgoLdflags += " -mmacosx-version-min=10.10"
-		cgoCflags += " -mmacosx-version-min=10.10"
+		if runtime.GOOS == targetOS {
+			cgoLdflags += " -mmacosx-version-min=10.11"
+			cgoCflags += " -mmacosx-version-min=10.11"
+		} else {
+			// OSX cross available in golang-cross (Docker) only supports up to 10.10
+			cgoLdflags += " -mmacosx-version-min=10.10"
+			cgoCflags += " -mmacosx-version-min=10.10"
+		}
 	case "linux":
 		cgoLdflags += fmt.Sprintf(" -L%s -L%s", engineCachePath, outputDirPath)
 		cgoLdflags += fmt.Sprintf(" -lflutter_engine -Wl,-rpath,$ORIGIN")
