@@ -52,11 +52,10 @@ func upgradeGoFlutter(targetOS string) (err error) {
 	}
 
 	cmdGoGetU := exec.Command(build.GoBin(), "get", "-u", "-d", "github.com/go-flutter-desktop/go-flutter"+buildOrRunGoFlutterBranch)
-	cmdGoGetU.Dir = filepath.Join(wd, build.BuildPath)
 	cmdGoGetU.Env = append(os.Environ(),
-		"GOPROXY=direct", // github.com/golang/go/issues/32955 (allows '/' in branch name)
 		"GO111MODULE=on",
 	)
+	cmdGoGetU.Dir = filepath.Join(wd, build.BuildPath)
 	cmdGoGetU.Stderr = os.Stderr
 	cmdGoGetU.Stdout = os.Stdout
 
