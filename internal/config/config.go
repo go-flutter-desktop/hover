@@ -9,6 +9,7 @@ import (
 	"github.com/pkg/errors"
 	"gopkg.in/yaml.v2"
 
+	"github.com/go-flutter-desktop/hover/internal/androidmanifest"
 	"github.com/go-flutter-desktop/hover/internal/build"
 	"github.com/go-flutter-desktop/hover/internal/log"
 )
@@ -27,6 +28,7 @@ type Config struct {
 	ApplicationName  string `yaml:"application-name"`
 	ExecutableName   string `yaml:"executable-name"`
 	PackageName      string `yaml:"package-name"`
+	OrganizationName string `yaml:"organization-name"`
 	License          string
 	Target           string
 	BranchREMOVED    string `yaml:"branch"`
@@ -54,6 +56,16 @@ func (c Config) GetPackageName(projectName string) string {
 		return strings.ReplaceAll(strings.ReplaceAll(strings.ReplaceAll(projectName, "-", ""), "_", ""), " ", "")
 	}
 	return c.PackageName
+}
+
+func (c Config) GetOrganizationName() string {
+	if len(c.OrganizationName) == 0 {
+		PrintMissingField("organization-name", "go/hover.yaml", c.OrganizationName)
+		// It would be nicer to not load a value from the AndroidManifest.xml and instead define a default value here,
+		// but then older apps might break so for compatibility reasons it's done this way.
+		c.OrganizationName = androidmanifest.AndroidOrganizationName()
+	}
+	return c.OrganizationName
 }
 
 func (c Config) GetLicense() string {
