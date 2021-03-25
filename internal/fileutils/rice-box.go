@@ -30,9 +30,9 @@ func init() {
 	}
 	file6 := &embedded.EmbeddedFile{
 		Filename:    "app/hover.yaml.tmpl",
-		FileModTime: time.Unix(1590427782, 0),
+		FileModTime: time.Unix(1616671871, 0),
 
-		Content: string("#application-name: \"{{.applicationName}}\" # Uncomment to modify this value.\n#executable-name: \"{{.executableName}}\" # Uncomment to modify this value. Only lowercase a-z, numbers, underscores and no spaces\n#package-name: \"{{.packageName}}\" # Uncomment to modify this value. Only lowercase a-z, numbers and no underscores or spaces\nlicense: \"\" # MANDATORY: Fill in your SPDX license name: https://spdx.org/licenses\ntarget: lib/main_desktop.dart\n# opengl: \"none\" # Uncomment this line if you have trouble with your OpenGL driver (https://github.com/go-flutter-desktop/go-flutter/issues/272)\ndocker: false\nengine-version: \"\" # change to a engine version commit\n"),
+		Content: string("#application-name: \"{{.applicationName}}\" # Uncomment to modify this value.\n#executable-name: \"{{.executableName}}\" # Uncomment to modify this value. Only lowercase a-z, numbers, underscores and no spaces\n#package-name: \"{{.packageName}}\" # Uncomment to modify this value. Only lowercase a-z, numbers and no underscores or spaces\norganization-name: \"com.{{.packageName}}\"\nlicense: \"\" # MANDATORY: Fill in your SPDX license name: https://spdx.org/licenses\ntarget: lib/main_desktop.dart\n# opengl: \"none\" # Uncomment this line if you have trouble with your OpenGL driver (https://github.com/go-flutter-desktop/go-flutter/issues/272)\ndocker: false\nengine-version: \"\" # change to a engine version commit\n"),
 	}
 	file7 := &embedded.EmbeddedFile{
 		Filename:    "app/icon.png",
@@ -66,7 +66,7 @@ func init() {
 	}
 	filee := &embedded.EmbeddedFile{
 		Filename:    "packaging/darwin-bundle/Info.plist.tmpl",
-		FileModTime: time.Unix(1603990914, 0),
+		FileModTime: time.Unix(1606727856, 0),
 
 		Content: string("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<!DOCTYPE plist PUBLIC \"-//Apple Computer//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">\n<plist version=\"1.0\">\n    <dict>\n        <key>CFBundleDevelopmentRegion</key>\n        <string>English</string>\n        <key>CFBundleExecutable</key>\n        <string>{{.executableName}}</string>\n        <key>CFBundleGetInfoString</key>\n        <string>{{.description}}</string>\n        <key>CFBundleIconFile</key>\n        <string>icon.icns</string>\n        <key>NSHighResolutionCapable</key>\n        <true/>\n        <key>CFBundleIdentifier</key>\n        <string>{{.organizationName}}.{{.packageName}}</string>\n        <key>CFBundleInfoDictionaryVersion</key>\n        <string>6.0</string>\n        <key>CFBundleLongVersionString</key>\n        <string>{{.version}}</string>\n        <key>CFBundleName</key>\n        <string>{{.applicationName}}</string>\n        <key>CFBundlePackageType</key>\n        <string>APPL</string>\n        <key>CFBundleShortVersionString</key>\n        <string>{{.version}}</string>\n        <key>CFBundleSignature</key>\n        <string>{{.organizationName}}.{{.packageName}}</string>\n        <key>CFBundleVersion</key>\n        <string>{{.version}}</string>\n        <key>CSResourcesFileMapped</key>\n        <true/>\n        <key>NSHumanReadableCopyright</key>\n        <string></string>\n        <key>NSPrincipalClass</key>\n        <string>NSApplication</string>\n    </dict>\n</plist>\n"),
 	}
@@ -126,7 +126,7 @@ func init() {
 	}
 	filew := &embedded.EmbeddedFile{
 		Filename:    "packaging/windows-msi/app.wxs.tmpl",
-		FileModTime: time.Unix(1589380783, 0),
+		FileModTime: time.Unix(1608104932, 0),
 
 		Content: string("<?xml version=\"1.0\" encoding=\"UTF-8\"?>\n<Wix xmlns=\"http://schemas.microsoft.com/wix/2006/wi\">\n    <Product Id=\"*\" UpgradeCode=\"{{.upgradeCode}}\" Version=\"{{.version}}\" Language=\"1033\" Name=\"{{.applicationName}}\" Manufacturer=\"{{.author}}\">\n        <Package InstallerVersion=\"300\" Compressed=\"yes\"/>\n        <Media Id=\"1\" Cabinet=\"{{.packageName}}.cab\" EmbedCab=\"yes\" />\n        <Directory Id=\"TARGETDIR\" Name=\"SourceDir\">\n            <Directory Id=\"ProgramFilesFolder\">\n                <Directory Id=\"APPLICATIONROOTDIRECTORY\" Name=\"{{.applicationName}}\">\n                    <?include directories.wxi ?>\n                </Directory>\n            </Directory>\n            <Directory Id=\"ProgramMenuFolder\">\n                <Directory Id=\"ApplicationProgramsFolder\" Name=\"{{.applicationName}}\"/>\n            </Directory>\n        </Directory>\n        <Icon Id=\"ShortcutIcon\" SourceFile=\"build{{.pathSeparator}}assets{{.pathSeparator}}icon.ico\"/>\n        <Property Id=\"ARPPRODUCTICON\" Value=\"ShortcutIcon\"/>\n        <?include directory_refs.wxi ?>\n        <DirectoryRef Id=\"ApplicationProgramsFolder\">\n            <Component Id=\"ApplicationShortcut\" Guid=\"*\">\n                <Shortcut Id=\"ApplicationStartMenuShortcut\"\n                          Name=\"{{.applicationName}}\"\n                          Description=\"{{.description}}\"\n                          Target=\"[#{{.executableName}}.exe]\"\n                          WorkingDirectory=\"APPLICATIONROOTDIRECTORY\"\n                          Icon=\"ShortcutIcon\"/>\n                <RemoveFolder Id=\"CleanUpShortCut\" On=\"uninstall\"/>\n                <RegistryValue Root=\"HKCU\" Key=\"Software\\{{.author}}\\{{.packageName}}\" Name=\"installed\" Type=\"integer\" Value=\"1\" KeyPath=\"yes\"/>\n            </Component>\n        </DirectoryRef>\n        <Feature Id=\"MainApplication\" Title=\"{{.applicationName}}\" Level=\"1\">\n            <ComponentRef Id=\"ApplicationShortcut\"/>\n            <?include component_refs.wxi ?>\n        </Feature>\n    </Product>\n</Wix>\n"),
 	}
@@ -166,7 +166,7 @@ func init() {
 	}
 	dir3 := &embedded.EmbeddedDir{
 		Filename:   "app",
-		DirModTime: time.Unix(1590427782, 0),
+		DirModTime: time.Unix(1616671871, 0),
 		ChildFiles: []*embedded.EmbeddedFile{
 			file4, // "app/gitignore"
 			file5, // "app/go.mod"
@@ -188,7 +188,7 @@ func init() {
 	}
 	dird := &embedded.EmbeddedDir{
 		Filename:   "packaging/darwin-bundle",
-		DirModTime: time.Unix(1603990914, 0),
+		DirModTime: time.Unix(1606727856, 0),
 		ChildFiles: []*embedded.EmbeddedFile{
 			filee, // "packaging/darwin-bundle/Info.plist.tmpl"
 
@@ -254,7 +254,7 @@ func init() {
 	}
 	dirv := &embedded.EmbeddedDir{
 		Filename:   "packaging/windows-msi",
-		DirModTime: time.Unix(1589380783, 0),
+		DirModTime: time.Unix(1608104932, 0),
 		ChildFiles: []*embedded.EmbeddedFile{
 			filew, // "packaging/windows-msi/app.wxs.tmpl"
 
@@ -323,15 +323,15 @@ func init() {
 			"plugin":                   dirx,
 		},
 		Files: map[string]*embedded.EmbeddedFile{
-			"README.md":             file2,
-			"app/gitignore":         file4,
-			"app/go.mod":            file5,
-			"app/hover.yaml.tmpl":   file6,
-			"app/icon.png":          file7,
-			"app/main.go":           file8,
-			"app/main_desktop.dart": file9,
-			"app/options.go":        filea,
-			"packaging/README.md":   filec,
+			"README.md":                                file2,
+			"app/gitignore":                            file4,
+			"app/go.mod":                               file5,
+			"app/hover.yaml.tmpl":                      file6,
+			"app/icon.png":                             file7,
+			"app/main.go":                              file8,
+			"app/main_desktop.dart":                    file9,
+			"app/options.go":                           filea,
+			"packaging/README.md":                      filec,
 			"packaging/darwin-bundle/Info.plist.tmpl":  filee,
 			"packaging/darwin-pkg/Distribution.tmpl":   fileg,
 			"packaging/darwin-pkg/PackageInfo.tmpl":    fileh,

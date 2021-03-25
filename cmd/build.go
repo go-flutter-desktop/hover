@@ -13,7 +13,6 @@ import (
 	"github.com/spf13/cobra"
 
 	"github.com/go-flutter-desktop/hover/cmd/packaging"
-	"github.com/go-flutter-desktop/hover/internal/androidmanifest"
 	"github.com/go-flutter-desktop/hover/internal/build"
 	"github.com/go-flutter-desktop/hover/internal/config"
 	"github.com/go-flutter-desktop/hover/internal/darwinhacks"
@@ -787,7 +786,7 @@ func buildCommand(targetOS string, vmArguments []string, outputBinaryPath string
 		buildVersionNumber,
 		currentTag,
 		config.GetConfig().GetApplicationName(pubspec.GetPubSpec().Name),
-		androidmanifest.AndroidOrganizationName()))
+		config.GetConfig().GetOrganizationName()))
 
 	outputCommand := []string{
 		"go",

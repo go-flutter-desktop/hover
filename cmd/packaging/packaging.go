@@ -3,7 +3,6 @@ package packaging
 import (
 	"bytes"
 	"fmt"
-	"github.com/go-flutter-desktop/hover/internal/androidmanifest"
 	"github.com/go-flutter-desktop/hover/internal/pubspec"
 	"io/ioutil"
 	"os"
@@ -153,8 +152,8 @@ func (t *packagingTask) Pack(fullVersion string, mode build.Mode) {
 		release = strings.ReplaceAll(fullVersion, ".", "")
 	}
 	description := pubspec.GetPubSpec().GetDescription()
-	organizationName := androidmanifest.AndroidOrganizationName()
 	author := pubspec.GetPubSpec().GetAuthor()
+	organizationName := config.GetConfig().GetOrganizationName()
 	applicationName := config.GetConfig().GetApplicationName(projectName)
 	executableName := config.GetConfig().GetExecutableName(projectName)
 	packageName := config.GetConfig().GetPackageName(projectName)
