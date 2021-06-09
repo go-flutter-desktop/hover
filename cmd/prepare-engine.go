@@ -7,18 +7,23 @@ import (
 	"github.com/go-flutter-desktop/hover/internal/log"
 	"github.com/spf13/cobra"
 	"os"
+	"os/exec"
+	"runtime"
 )
 
 var (
-	prepareAllTargetOSes bool
 	prepareCachePath     string
 	prepareEngineVersion string
+	prepareReleaseMode   bool
+	prepareDebugMode     bool
+	prepareBuildModes    []build.Mode
 )
 
 func init() {
-	prepareEngineCmd.PersistentFlags().BoolVar(&prepareAllTargetOSes, "all", false, "Prepare the flutter engine for all target operating systems")
 	prepareEngineCmd.PersistentFlags().StringVar(&prepareCachePath, "cache-path", enginecache.DefaultCachePath(), "The path that hover uses to cache dependencies such as the Flutter engine .so/.dll")
 	prepareEngineCmd.PersistentFlags().StringVar(&prepareEngineVersion, "engine-version", config.BuildEngineDefault, "The flutter engine version to use.")
+	prepareEngineCmd.PersistentFlags().BoolVar(&prepareDebugMode, "debug-mode", true, "Prepare the flutter engine for debug mode")
+	prepareEngineCmd.PersistentFlags().BoolVar(&prepareReleaseMode, "release-mode", false, "Prepare the flutter engine for release mode")
 	prepareEngineCmd.AddCommand(prepareEngineLinuxCmd)
 	prepareEngineCmd.AddCommand(prepareEngineDarwinCmd)
 	prepareEngineCmd.AddCommand(prepareEngineWindowsCmd)
@@ -28,10 +33,6 @@ func init() {
 var prepareEngineCmd = &cobra.Command{
 	Use:   "prepare-engine",
 	Short: "Validates or updates the flutter engine on this machine for a given platform",
-	Run: func(cmd *cobra.Command, args []string) {
-		initPrepareEngineParameters("darwin", "linux", "windows")
-		subcommandPrepare("linux", "windows", "darwin")
-	},
 }
 
 var prepareEngineLinuxCmd = &cobra.Command{
@@ -61,15 +62,27 @@ var prepareEngineWindowsCmd = &cobra.Command{
 	},
 }
 
-func initPrepareEngineParameters(targetOSes ...string) {
-	if len(targetOSes) == 0 && !prepareAllTargetOSes {
-		log.Errorf("missing target OS or --all, cannot continue.")
-		os.Exit(1)
+func initPrepareEngineParameters(targetOS string) {
+	if prepareDebugMode {
+		prepareBuildModes = append(prepareBuildModes, build.DebugMode)
+	}
+	if prepareReleaseMode {
+		prepareBuildModes = append(prepareBuildModes, build.ReleaseMode)
+	}
+	validatePrepareEngineParameters(targetOS)
+}
+
+func validatePrepareEngineParameters(targetOS string) {
+	if targetOS == "darwin" && runtime.GOOS != targetOS && prepareReleaseMode {
+		if path, err := exec.LookPath("darling"); err != nil || len(path) == 0 {
+			log.Errorf("To prepare the release flutter engine for darwin on linux, install darling from your package manager or https://www.darlinghq.org/")
+			os.Exit(1)
+		}
 	}
 }
 
-func subcommandPrepare(targetOSes ...string) {
-	for _, targetOS := range targetOSes {
-		enginecache.ValidateOrUpdateEngine(targetOS, prepareCachePath, prepareEngineVersion, build.DebugMode)
+func subcommandPrepare(targetOS string) {
+	for _, mode := range prepareBuildModes {
+		enginecache.ValidateOrUpdateEngine(targetOS, prepareCachePath, prepareEngineVersion, mode)
 	}
 }
