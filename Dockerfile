@@ -123,6 +123,6 @@ COPY docker/hover-safe.sh /usr/local/bin/hover-safe.sh
 
 # Prepare engines
 RUN hover prepare-engine --all
-ENV CGO_LDFLAGS="-L/.cache/hover/engine/linux-release -L~/.cache/hover/engine/windows-release -L~/.cache/hover/engine/darwin-release"
+ENV CGO_LDFLAGS="-L~/.cache/hover/engine/linux-release -L~/.cache/hover/engine/windows-release -L~/.cache/hover/engine/darwin-release"
 
 WORKDIR /app
