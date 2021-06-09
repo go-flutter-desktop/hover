@@ -70,6 +70,6 @@ func initPrepareEngineParameters(targetOSes ...string) {
 
 func subcommandPrepare(targetOSes ...string) {
 	for _, targetOS := range targetOSes {
-		enginecache.ValidateOrUpdateEngine(targetOS, prepareCachePath, prepareEngineVersion, build.ReleaseMode)
+		enginecache.ValidateOrUpdateEngine(targetOS, prepareCachePath, prepareEngineVersion, build.DebugMode)
 	}
 }
