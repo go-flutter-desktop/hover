@@ -249,7 +249,7 @@ func ValidateOrUpdateEngine(targetOS, cachePath, requiredEngineVersion string, m
 		if envURLFlutter != "" {
 			targetedDomain = envURLFlutter
 		}
-		var engineDownloadURL = fmt.Sprintf(targetedDomain+"/flutter_infra/flutter/%s/%s-x64/", requiredEngineVersion, targetOS)
+		var engineDownloadURL = fmt.Sprintf(targetedDomain+"/flutter_infra_release/flutter/%s/%s-x64/", requiredEngineVersion, targetOS)
 		switch targetOS {
 		case "darwin":
 			engineDownloadURL += "FlutterEmbedder.framework.zip"
@@ -263,7 +263,7 @@ func ValidateOrUpdateEngine(targetOS, cachePath, requiredEngineVersion string, m
 		}
 
 		artifactsZipPath := filepath.Join(dir, "artifacts.zip")
-		artifactsDownloadURL := fmt.Sprintf(targetedDomain+"/flutter_infra/flutter/%s/%s-x64/artifacts.zip", requiredEngineVersion, targetOS)
+		artifactsDownloadURL := fmt.Sprintf(targetedDomain+"/flutter_infra_release/flutter/%s/%s-x64/artifacts.zip", requiredEngineVersion, targetOS)
 
 		err = downloadFile(engineZipPath, engineDownloadURL)
 		if err != nil {
