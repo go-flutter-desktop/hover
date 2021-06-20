@@ -2,7 +2,6 @@ package cmd
 
 import (
 	"os"
-	"os/exec"
 	"runtime"
 
 	"github.com/go-flutter-desktop/hover/internal/build"
@@ -88,10 +87,8 @@ func validatePrepareEngineParameters(targetOS string) {
 		os.Exit(1)
 	}
 	if targetOS == "darwin" && runtime.GOOS != targetOS && prepareReleaseMode {
-		if path, err := exec.LookPath("darling"); err != nil || len(path) == 0 {
-			log.Errorf("To prepare the release flutter engine for darwin on linux, install darling from your package manager or https://www.darlinghq.org/")
-			os.Exit(1)
-		}
+		log.Errorf("It is not possible to prepare the flutter engine in release mode for darwin using docker")
+		os.Exit(1)
 	}
 }
 
