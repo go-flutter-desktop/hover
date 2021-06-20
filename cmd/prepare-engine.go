@@ -78,13 +78,18 @@ func initPrepareEngineParameters(targetOS string) {
 }
 
 func validatePrepareEngineParameters(targetOS string) {
-	if !prepareDebugMode && !prepareReleaseMode && !prepareProfileMode {
-		log.Errorf("No target mode set. Please select exactly one from: debug, profile, release.")
+	numberOfPrepareModeFlagsSet := 0
+	for _, flag := range []bool{prepareProfileMode, prepareProfileMode, prepareDebugMode} {
+		if flag {
+			numberOfPrepareModeFlagsSet++
+		}
+	}
+	if numberOfPrepareModeFlagsSet > 1 {
+		log.Errorf("Only one of --debug, --release or --profile can be set at one time")
 		os.Exit(1)
 	}
-	if (prepareDebugMode && prepareReleaseMode) || (prepareDebugMode && prepareProfileMode) || (prepareReleaseMode && prepareProfileMode) {
-		log.Errorf("Multiple target modes set. Please select exactly one from: debug, profile, release.")
-		os.Exit(1)
+	if numberOfPrepareModeFlagsSet == 0 {
+		prepareDebugMode = true
 	}
 	if targetOS == "darwin" && runtime.GOOS != targetOS && (prepareReleaseMode || prepareProfileMode) {
 		log.Errorf("It is not possible to prepare the flutter engine in release mode for darwin using docker")
