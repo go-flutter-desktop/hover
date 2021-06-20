@@ -86,7 +86,7 @@ func validatePrepareEngineParameters(targetOS string) {
 		log.Errorf("Multiple target modes set. Please select exactly one from: debug, profile, release.")
 		os.Exit(1)
 	}
-	if targetOS == "darwin" && runtime.GOOS != targetOS && prepareReleaseMode {
+	if targetOS == "darwin" && runtime.GOOS != targetOS && (prepareReleaseMode || prepareProfileMode) {
 		log.Errorf("It is not possible to prepare the flutter engine in release mode for darwin using docker")
 		os.Exit(1)
 	}
