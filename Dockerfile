@@ -122,12 +122,12 @@ RUN go install -v ./... 2>&1
 COPY docker/hover-safe.sh /usr/local/bin/hover-safe.sh
 
 # Prepare engines
-ENV CGO_LDFLAGS="-L~/.cache/hover/engine/linux-release"
-ENV CGO_LDFLAGS="$CGO_LDFLAGS -L~/.cache/hover/engine/linux-debug_unopt"
-ENV CGO_LDFLAGS="$CGO_LDFLAGS -L~/.cache/hover/engine/linux-profile"
-ENV CGO_LDFLAGS="$CGO_LDFLAGS -L~/.cache/hover/engine/windows-release"
-ENV CGO_LDFLAGS="$CGO_LDFLAGS -L~/.cache/hover/engine/windows-debug_unopt"
-ENV CGO_LDFLAGS="$CGO_LDFLAGS -L~/.cache/hover/engine/windows-profile"
-ENV CGO_LDFLAGS="$CGO_LDFLAGS -L~/.cache/hover/engine/darwin-debug_unopt"
+ENV CGO_LDFLAGS="-L~/.cache/hover/engine/linux-release/"
+ENV CGO_LDFLAGS="$CGO_LDFLAGS -L~/.cache/hover/engine/linux-debug_unopt/"
+ENV CGO_LDFLAGS="$CGO_LDFLAGS -L~/.cache/hover/engine/linux-profile/"
+ENV CGO_LDFLAGS="$CGO_LDFLAGS -L~/.cache/hover/engine/windows-release/"
+ENV CGO_LDFLAGS="$CGO_LDFLAGS -L~/.cache/hover/engine/windows-debug_unopt/"
+ENV CGO_LDFLAGS="$CGO_LDFLAGS -L~/.cache/hover/engine/windows-profile/"
+ENV CGO_LDFLAGS="$CGO_LDFLAGS -L~/.cache/hover/engine/darwin-debug_unopt/"
 
 WORKDIR /app
