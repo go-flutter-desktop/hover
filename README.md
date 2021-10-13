@@ -16,6 +16,11 @@ Then install hover by running this in your home directory:
 
 ```bash
 GO111MODULE=on go get -u -a github.com/go-flutter-desktop/hover
+
+------
+new method
+GO111MODULE=on go install github.com/go-flutter-desktop/hover@latest
+
 ```
 Or windows:
 ```
