@@ -309,14 +309,14 @@ func ValidateOrUpdateEngine(targetOS, cachePath, requiredEngineVersion string, m
 			file += "windows"
 		}
 		file += fmt.Sprintf("_x64-host_%s.zip", mode.Name)
-		engineDownloadURL := fmt.Sprintf("https://github.com/flutter-rs/engine-builds/releases/download/f-%s/%s", requiredEngineVersion, file)
+		engineDownloadURL := fmt.Sprintf("https://github.com/go-flutter-desktop/engine-builds/releases/download/f-%s/%s", requiredEngineVersion, file)
 
 		err = downloadFile(engineZipPath, engineDownloadURL)
 		if err != nil {
 			log.Errorf("Failed to download engine: %v", err)
 			log.Errorf("Engine builds are a bit delayed after they are published in flutter.")
 			log.Errorf("You can either try again later or switch the flutter channel to beta, because these engines are more likely to be already built.")
-			log.Errorf("To dig into the already built engines look at https://github.com/flutter-rs/engine-builds/releases and https://github.com/flutter-rs/engine-builds/actions")
+			log.Errorf("To dig into the already built engines look at https://github.com/go-flutter-desktop/engine-builds/releases and https://github.com/go-flutter-desktop/engine-builds/actions")
 			os.Exit(1)
 		}
 		_, err = unzip(engineZipPath, engineExtractPath)

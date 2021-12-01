@@ -534,7 +534,6 @@ func buildFlutterBundle(targetOS string) {
 		}
 		generateAotSnapshotCommand := []string{
 			darwinhacks.RewriteDarlingPath(useDarling, genSnapshot),
-			"--no-causal-async-stacks",
 			"--lazy-async-stacks",
 			"--deterministic",
 			"--snapshot_kind=app-aot-elf",
