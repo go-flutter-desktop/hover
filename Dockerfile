@@ -56,7 +56,7 @@ RUN cd /tmp \
     && meson setup builddir \
     && meson install -C builddir
 
-FROM dockercore/golang-cross:1.13.15 AS hover
+FROM symfonycorp/golang-cross:1.16.3 AS hover
 
 # Install dependencies via apt
 RUN apt-get update \
