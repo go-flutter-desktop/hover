@@ -1,7 +1,7 @@
 FROM snapcore/snapcraft AS snapcraft
 # Using multi-stage dockerfile to obtain snapcraft binary
 
-FROM ubuntu:groovy AS flutterbuilder
+FROM ubuntu:focal AS flutterbuilder
 RUN apt-get update \
     && apt-get install -y \
         git curl unzip
@@ -9,7 +9,8 @@ RUN apt-get update \
 RUN git clone --single-branch --depth=1 --branch beta https://github.com/flutter/flutter /opt/flutter 2>&1 \
     && /opt/flutter/bin/flutter doctor -v
 
-FROM ubuntu:groovy AS xarbuilder
+FROM ubuntu:focal AS xarbuilder
+ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update \
 	&& apt-get install -y \
 		git libssl-dev libxml2-dev make g++ autoconf zlib1g-dev
@@ -22,7 +23,7 @@ RUN git clone --single-branch --depth=1 --branch xar-1.6.1 https://github.com/ma
 	&& make 2>&1 \
 	&& make install 2>&1
 
-FROM ubuntu:groovy AS bomutilsbuilder
+FROM ubuntu:focal AS bomutilsbuilder
 RUN apt-get update \
 	&& apt-get install -y \
 	    git make g++
@@ -32,7 +33,7 @@ RUN git clone --single-branch --depth=1 --branch 0.2 https://github.com/hogliux/
 	&& make install 2>&1
 
 # Fixed using https://github.com/AppImage/AppImageKit/issues/828
-FROM ubuntu:groovy as appimagebuilder
+FROM ubuntu:focal as appimagebuilder
 RUN apt-get update \
 	&& apt-get install -y \
 	    curl
@@ -44,7 +45,7 @@ RUN cd /opt \
 	&& mv squashfs-root appimagetool
 
 # groovy ships with a too old meson version
-FROM ubuntu:groovy AS pacmanbuilder
+FROM ubuntu:focal AS pacmanbuilder
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update \
     && apt-get install -y \
@@ -75,6 +76,7 @@ RUN apt-get update \
 		# dependencies for windows-msi
 		wixl imagemagick \
 	&& rm -rf /var/lib/apt/lists/*
+RUN dpkg --add-architecture i386 && apt-get update && apt-get install -y wine32
 
 COPY --from=snapcraft /snap /snap
 ENV PATH="/snap/bin:$PATH"
