@@ -51,7 +51,7 @@ RUN apt-get update \
     && apt-get install -y \
         git meson python3 python3-pip python3-setuptools python3-wheel ninja-build gcc pkg-config m4 libarchive-dev libssl-dev
 RUN cd /tmp \
-    && git clone https://git.archlinux.org/pacman.git --depth=1 --branch=v5.2.2 2>&1  \
+    && git clone https://gitlab.archlinux.org/pacman/pacman.git --depth=1 --branch=v5.2.2 2>&1  \
     && cd pacman \
     && meson setup builddir \
     && meson install -C builddir
