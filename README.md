@@ -20,7 +20,7 @@ GO111MODULE=on go get -u -a github.com/go-flutter-desktop/hover@latest
 Or windows:
 ```
 set GO111MODULE=on
-go get -u -a github.com/go-flutter-desktop/hover@latest
+go install github.com/go-flutter-desktop/hover@latest
 ```
 Or for powershell:
 ```powershell
