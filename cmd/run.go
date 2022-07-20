@@ -70,7 +70,7 @@ func runAndAttach(projectName string, targetOS string) {
 		os.Exit(1)
 	}
 
-	regexObservatory := regexp.MustCompile(`Observatory\slistening\son\s(http:[^:]*:\d*/)`)
+	regexObservatory := regexp.MustCompile(`listening\son\s(http:[^:]*:\d*/)`)
 
 	// asynchronously read the stdout to catch the debug-uri
 	go func(reader io.Reader) {
