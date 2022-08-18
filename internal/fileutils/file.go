@@ -11,8 +11,6 @@ import (
 	"strings"
 	"text/template"
 
-	rice "github.com/GeertJohan/go.rice"
-
 	"github.com/go-flutter-desktop/hover/internal/log"
 )
 
@@ -214,31 +212,24 @@ func ExecuteTemplateFromFile(boxed, to string, templateData interface{}) {
 	executeTemplateFromString(string(templateString), to, templateData)
 }
 
-// ExecuteTemplateFromAssetsBox create file from a template asset
-func ExecuteTemplateFromAssetsBox(boxed, to string, assetsBox *rice.Box, templateData interface{}) {
-	templateString, err := assetsBox.String(boxed)
+// ExecuteTemplateFromAssets create file from a template asset
+func ExecuteTemplateFromAssets(name, to string, templateData interface{}) {
+	data, err := assets.ReadFile(fmt.Sprintf("assets/%s", name))
 	if err != nil {
 		log.Errorf("Failed to find template file: %v\n", err)
 		os.Exit(1)
 	}
-	executeTemplateFromString(templateString, to, templateData)
+	executeTemplateFromString(string(data), to, templateData)
 }
 
 // CopyAsset copies a file from asset
-func CopyAsset(boxed, to string, assetsBox *rice.Box) {
-	file, err := os.Create(to)
+func CopyAsset(name, to string) {
+	data, err := assets.ReadFile(fmt.Sprintf("assets/%s", name))
 	if err != nil {
-		log.Errorf("Failed to create %s: %v", to, err)
+		log.Errorf("Failed to find asset file %s: %v", name, err)
 		os.Exit(1)
 	}
-	defer file.Close()
-	boxedFile, err := assetsBox.Open(boxed)
-	if err != nil {
-		log.Errorf("Failed to find boxed file %s: %v", boxed, err)
-		os.Exit(1)
-	}
-	defer boxedFile.Close()
-	_, err = io.Copy(file, boxedFile)
+	err = os.WriteFile(to, data, 0o600)
 	if err != nil {
 		log.Errorf("Failed to write file %s: %v", to, err)
 		os.Exit(1)

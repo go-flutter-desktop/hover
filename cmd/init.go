@@ -65,11 +65,11 @@ var initCmd = &cobra.Command{
 
 		emptyConfig := config.Config{}
 
-		fileutils.CopyAsset("app/main.go", filepath.Join(desktopCmdPath, "main.go"), fileutils.AssetsBox())
-		fileutils.CopyAsset("app/options.go", filepath.Join(desktopCmdPath, "options.go"), fileutils.AssetsBox())
-		fileutils.CopyAsset("app/icon.png", filepath.Join(desktopAssetsPath, "icon.png"), fileutils.AssetsBox())
-		fileutils.CopyAsset("app/gitignore", filepath.Join(build.BuildPath, ".gitignore"), fileutils.AssetsBox())
-		fileutils.ExecuteTemplateFromAssetsBox("app/hover.yaml.tmpl", filepath.Join(build.BuildPath, "hover.yaml"), fileutils.AssetsBox(), map[string]string{
+		fileutils.CopyAsset("app/main.go.tmpl", filepath.Join(desktopCmdPath, "main.go"))
+		fileutils.CopyAsset("app/options.go.tmpl", filepath.Join(desktopCmdPath, "options.go"))
+		fileutils.CopyAsset("app/icon.png", filepath.Join(desktopAssetsPath, "icon.png"))
+		fileutils.CopyAsset("app/gitignore", filepath.Join(build.BuildPath, ".gitignore"))
+		fileutils.ExecuteTemplateFromAssets("app/hover.yaml.tmpl", filepath.Join(build.BuildPath, "hover.yaml"), map[string]string{
 			"applicationName": emptyConfig.GetApplicationName(projectName),
 			"executableName":  emptyConfig.GetExecutableName(projectName),
 			"packageName":     emptyConfig.GetPackageName(projectName),

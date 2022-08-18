@@ -128,7 +128,7 @@ func (t *packagingTask) init(ignoreAlreadyExists bool) {
 				log.Errorf("Failed to create directory %s: %v", filepath.Dir(destinationFile), err)
 				os.Exit(1)
 			}
-			fileutils.CopyAsset(fmt.Sprintf("packaging/%s", sourceFile), destinationFile, fileutils.AssetsBox())
+			fileutils.CopyAsset(fmt.Sprintf("packaging/%s", sourceFile), destinationFile)
 		}
 		if t.generateInitFiles != nil {
 			log.Infof("Generating dynamic init files")
