@@ -3,7 +3,6 @@ module github.com/go-flutter-desktop/hover
 go 1.18
 
 require (
-	github.com/GeertJohan/go.rice v1.0.2
 	github.com/JackMordaunt/icns v1.0.0
 	github.com/Kodeworks/golang-image-ico v0.0.0-20141118225523-73f0f4cfade9
 	github.com/google/uuid v1.3.0
@@ -20,7 +19,6 @@ require (
 )
 
 require (
-	github.com/daaku/go.zipexe v1.0.1 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/google/go-github v17.0.0+incompatible // indirect
 	github.com/google/go-querystring v1.1.0 // indirect
