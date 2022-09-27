@@ -1,6 +1,6 @@
 module github.com/go-flutter-desktop/hover
 
-go 1.18
+go 1.19
 
 require (
 	github.com/JackMordaunt/icns v1.0.0
