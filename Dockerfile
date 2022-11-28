@@ -1,15 +1,16 @@
 FROM snapcore/snapcraft AS snapcraft
 # Using multi-stage dockerfile to obtain snapcraft binary
 
-FROM ubuntu:groovy AS flutterbuilder
+FROM ubuntu:focal AS flutterbuilder
 RUN apt-get update \
     && apt-get install -y \
         git curl unzip
 # Install Flutter from the beta channel
-RUN git clone --single-branch --depth=1 --branch beta https://github.com/flutter/flutter /opt/flutter 2>&1 \
+RUN git clone --single-branch --depth=1 --branch stable https://github.com/flutter/flutter /opt/flutter 2>&1 \
     && /opt/flutter/bin/flutter doctor -v
 
-FROM ubuntu:groovy AS xarbuilder
+FROM ubuntu:focal AS xarbuilder
+ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update \
 	&& apt-get install -y \
 		git libssl-dev libxml2-dev make g++ autoconf zlib1g-dev
@@ -22,7 +23,7 @@ RUN git clone --single-branch --depth=1 --branch xar-1.6.1 https://github.com/ma
 	&& make 2>&1 \
 	&& make install 2>&1
 
-FROM ubuntu:groovy AS bomutilsbuilder
+FROM ubuntu:focal AS bomutilsbuilder
 RUN apt-get update \
 	&& apt-get install -y \
 	    git make g++
@@ -32,7 +33,7 @@ RUN git clone --single-branch --depth=1 --branch 0.2 https://github.com/hogliux/
 	&& make install 2>&1
 
 # Fixed using https://github.com/AppImage/AppImageKit/issues/828
-FROM ubuntu:groovy as appimagebuilder
+FROM ubuntu:focal as appimagebuilder
 RUN apt-get update \
 	&& apt-get install -y \
 	    curl
@@ -44,23 +45,24 @@ RUN cd /opt \
 	&& mv squashfs-root appimagetool
 
 # groovy ships with a too old meson version
-FROM ubuntu:groovy AS pacmanbuilder
+FROM ubuntu:focal AS pacmanbuilder
 ENV DEBIAN_FRONTEND=noninteractive
 RUN apt-get update \
     && apt-get install -y \
         git meson python3 python3-pip python3-setuptools python3-wheel ninja-build gcc pkg-config m4 libarchive-dev libssl-dev
 RUN cd /tmp \
-    && git clone https://git.archlinux.org/pacman.git --depth=1 --branch=v5.2.2 2>&1  \
+    && git clone https://gitlab.archlinux.org/pacman/pacman.git --depth=1 --branch=v5.2.2 2>&1  \
     && cd pacman \
     && meson setup builddir \
     && meson install -C builddir
 
-FROM dockercore/golang-cross:1.13.15 AS hover
+FROM ghcr.io/gythialy/golang-cross-builder:v1.19.2-0 AS hover
 
 # Install dependencies via apt
+RUN dpkg --add-architecture i386
 RUN apt-get update \
 	&& apt-get install -y \
-	    # dependencies for compiling linux
+		# dependencies for compiling linux
 		libgl1-mesa-dev xorg-dev \
 		# dependencies for compiling windows
 		wine \
@@ -71,9 +73,10 @@ RUN apt-get update \
 		# dependencies for linux-rpm
 		rpm \
 		# dependencies for linux-pkg
-		fakeroot bsdtar \
+		fakeroot libarchive-tools \
 		# dependencies for windows-msi
 		wixl imagemagick \
+		wine32 \
 	&& rm -rf /var/lib/apt/lists/*
 
 COPY --from=snapcraft /snap /snap
@@ -107,8 +110,8 @@ RUN sed -i "s/#XferCommand/XferCommand/g" /etc/pacman.conf
 # This makes makepkg believe we are not root. Bypassing the root check is ok, because we are in a container
 ENV EUID=1
 
-# Create symlink for darwin-dmg
-RUN ln -s $(which genisoimage) /usr/bin/mkisofs
+# # Create symlink for darwin-dmg
+# RUN ln -s $(which genisoimage) /usr/bin/mkisofs
 
 COPY --from=flutterbuilder /opt/flutter /opt/flutter
 RUN ln -sf /opt/flutter/bin/flutter /usr/bin/flutter
