@@ -15,7 +15,7 @@ Run `go version` and make sure that your Go version is 1.13 or higher.
 Then install hover by running this in your home directory:
 
 ```bash
-GO111MODULE=on go get -u -a github.com/go-flutter-desktop/hover@latest
+GO111MODULE=on go install github.com/go-flutter-desktop/hover@latest
 ```
 Or windows:
 ```
