@@ -13,7 +13,7 @@ require (
 	github.com/spf13/cobra v1.7.0
 	github.com/stretchr/testify v1.8.4
 	github.com/tcnksm/go-latest v0.0.0-20170313132115-e3007ae9052e
-	golang.org/x/mod v0.11.0
+	golang.org/x/mod v0.12.0
 	golang.org/x/sys v0.0.0-20220715151400-c0bba94af5f8
 	gopkg.in/yaml.v2 v2.4.0
 )
