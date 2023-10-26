@@ -5,7 +5,7 @@ go 1.19
 require (
 	github.com/JackMordaunt/icns v1.0.0
 	github.com/Kodeworks/golang-image-ico v0.0.0-20141118225523-73f0f4cfade9
-	github.com/google/uuid v1.3.1
+	github.com/google/uuid v1.4.0
 	github.com/hashicorp/go-version v1.6.0
 	github.com/logrusorgru/aurora v2.0.3+incompatible
 	github.com/otiai10/copy v1.14.0
