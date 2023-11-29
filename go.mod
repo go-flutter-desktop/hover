@@ -3,7 +3,7 @@ module github.com/go-flutter-desktop/hover
 go 1.19
 
 require (
-	github.com/JackMordaunt/icns v1.0.0
+	github.com/JackMordaunt/icns/v2 v2.2.7
 	github.com/Kodeworks/golang-image-ico v0.0.0-20141118225523-73f0f4cfade9
 	github.com/google/uuid v1.4.0
 	github.com/hashicorp/go-version v1.6.0
