@@ -2,7 +2,7 @@ module github.com/go-flutter-desktop/hover
 
 go 1.22.0
 
-toolchain go1.23.4
+toolchain go1.23.5
 
 require (
 	github.com/JackMordaunt/icns v1.0.0
