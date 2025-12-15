@@ -18,6 +18,7 @@ require (
 	golang.org/x/mod v0.31.0
 	golang.org/x/sys v0.24.0
 	gopkg.in/yaml.v2 v2.4.0
+	gopkg.in/yaml.v3 v3.0.1
 )
 
 require (
@@ -31,5 +32,4 @@ require (
 	github.com/spf13/pflag v1.0.9 // indirect
 	golang.org/x/net v0.0.0-20220708220712-1185a9018129 // indirect
 	golang.org/x/sync v0.8.0 // indirect
-	gopkg.in/yaml.v3 v3.0.1 // indirect
 )
