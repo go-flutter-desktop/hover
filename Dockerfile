@@ -3,8 +3,8 @@ FROM snapcore/snapcraft AS snapcraft
 
 FROM ubuntu:groovy-20210723 AS flutterbuilder
 RUN apt-get update \
-    && apt-get install -y \
-        git curl unzip
+    && apt-get install -y --no-install-recommends \
+        git curl unzip ca-certificates
 # Install Flutter from the beta channel
 RUN git clone --single-branch --depth=1 --branch beta https://github.com/flutter/flutter /opt/flutter 2>&1 \
     && /opt/flutter/bin/flutter doctor -v
