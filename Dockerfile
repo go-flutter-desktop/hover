@@ -37,7 +37,7 @@ RUN apt-get update \
 	&& apt-get install -y \
 	    curl
 RUN cd /opt \
-	&& curl -LO https://github.com/AppImage/AppImageKit/releases/download/continuous/appimagetool-x86_64.AppImage \
+	&& curl -LO https://github.com/AppImage/appimagetool/releases/download/continuous/appimagetool-x86_64.AppImage \
 	&& chmod a+x appimagetool-x86_64.AppImage \
 	&& sed 's|AI\x02|\x00\x00\x00|g' -i appimagetool-x86_64.AppImage \
 	&& ./appimagetool-x86_64.AppImage --appimage-extract \
