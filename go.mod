@@ -1,6 +1,6 @@
 module github.com/go-flutter-desktop/hover
 
-go 1.25.0
+go 1.26.0
 
 toolchain go1.27.1
 
@@ -15,7 +15,7 @@ require (
 	github.com/spf13/cobra v1.10.2
 	github.com/stretchr/testify v1.12.1
 	github.com/tcnksm/go-latest v0.0.0-20170313132115-e3007ae9052e
-	golang.org/x/mod v0.40.0
+	golang.org/x/mod v0.41.0
 	golang.org/x/sys v0.24.0
 	gopkg.in/yaml.v2 v2.4.0
 )
