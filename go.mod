@@ -5,7 +5,7 @@ go 1.26.0
 toolchain go1.27.1
 
 require (
-	github.com/JackMordaunt/icns v1.0.0
+	github.com/JackMordaunt/icns/v4 v4.2.0
 	github.com/Kodeworks/golang-image-ico v0.0.0-20141118225523-73f0f4cfade9
 	github.com/google/uuid v1.6.0
 	github.com/hashicorp/go-version v1.9.0
